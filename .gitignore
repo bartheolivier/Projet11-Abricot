@@ -1,0 +1,14 @@
+# Dépendances
+**/node_modules/
+**/.next/
+**/dist/
+
+# Environnement et base de données locale
+**/.env
+**/dev.db
+**/dev.db-journal
+**/.env*.local
+
+# Système
+.DS_Store
+Thumbs.db
