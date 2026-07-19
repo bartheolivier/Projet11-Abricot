@@ -88,6 +88,12 @@ Il s'agit d'une interface web générée automatiquement (disponible sur l'URL d
 
 ---
 
+## 6. Ajustements et Corrections
+
+*   **Alignement avec la spécification Swagger (Route `GET /auth/profile`) :** Le contrôleur `getProfile` (dans `src/controllers/authController.ts`) a été modifié pour renvoyer directement l'objet `user` sous la propriété `data` (`sendSuccess(res, ..., user)`) au lieu de l'imbriquer sous `{ data: { user } }`. Ce changement permet de respecter la documentation officielle générée et simplifie l'accès aux données utilisateur sur le frontend (ex: `responseJson.data.name` au lieu de `responseJson.data.user.name`).
+
+---
+
 ## En Résumé
 
 1. Le **Frontend (Next.js)** envoie une requête JSON à l'API (`http://localhost:8000/...`).

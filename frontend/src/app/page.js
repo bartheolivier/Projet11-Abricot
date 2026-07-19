@@ -48,55 +48,62 @@ export default function Home() {
   };
 
   return (
-    <div style={{ maxWidth: "400px", margin: "0 auto" }}>
-      <h1>Connexion</h1>
-      
-      {error && <p style={{ color: "var(--error)", fontWeight: "bold" }}>{error}</p>}
+    <div className="auth-screen">
+      {/* Partie Gauche : Formulaire */}
+      <div className="auth-left-pane">
+        <div className="auth-form-container">
+          <div className="auth-logo-container">
+            <img src="/images/Logo_orange.png" alt="Abricot Logo" className="auth-logo" />
+          </div>
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-        
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <label htmlFor="email">Adresse e-mail</label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{ padding: "0.5rem", borderRadius: "var(--border-radius)" }}
-          />
+          <h1 className="auth-title">Connexion</h1>
+          
+          {error && <p className="auth-error-msg">{error}</p>}
+
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="form-group">
+              <label htmlFor="email">Email</label>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="form-input"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="password">Mot de passe</label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="form-input"
+              />
+            </div>
+
+            <button type="submit" className="auth-btn-submit">
+              Se connecter
+            </button>
+          </form>
+
+          <div className="auth-forgot-password">
+            <Link href="/forgot-password">Mot de passe oublié ?</Link>
+          </div>
+          
+          <div className="auth-footer">
+            Pas encore de compte ? <Link href="/register">Créer un compte</Link>
+          </div>
         </div>
+      </div>
 
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <label htmlFor="password">Mot de passe</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ padding: "0.5rem", borderRadius: "var(--border-radius)" }}
-          />
-        </div>
-
-        <button 
-          type="submit" 
-          style={{ 
-            padding: "0.75rem", 
-            background: "var(--primary-color)", 
-            color: "white", 
-            border: "none", 
-            borderRadius: "var(--border-radius)",
-            cursor: "pointer"
-          }}
-        >
-          Se connecter
-        </button>
-
-      </form>
-      <p style={{ marginTop: "1rem", textAlign: "center" }}>
-        Pas encore de compte ? <Link href="/register" style={{ color: "var(--primary-color)", textDecoration: "underline" }}>S'inscrire</Link>
-      </p>
+      {/* Partie Droite : Image */}
+      <div className="auth-right-pane">
+        <div className="auth-bg-image auth-bg-login" />
+      </div>
     </div>
   );
 }

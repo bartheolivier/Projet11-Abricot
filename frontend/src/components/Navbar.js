@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 
 export default function Navbar() {
   const pathname = usePathname();
-  const [initials, setInitials] = useState("AD");
+  const [initials, setInitials] = useState("");
 
     useEffect(() => {
         // Ne pas fetch le profil si on est sur la page de connexion ou d'inscription
@@ -23,6 +23,7 @@ export default function Navbar() {
 
             if (!token) {
             console.log("Navbar: Aucun token trouvé dans les cookies.");
+            setInitials("");
             return;
             }
 
@@ -48,12 +49,16 @@ export default function Navbar() {
                     initials = nameParts[0].substring(0, 2).toUpperCase();
                 }
                 setInitials(initials);
+            } else {
+                setInitials("");
             }
             } else {
             console.error("Navbar: Erreur API profil, statut :", response.status);
+            setInitials("");
             }
         } catch (error) {
             console.error("Navbar: Erreur réseau ou autre :", error);
+            setInitials("");
         }
         };
 
@@ -98,7 +103,11 @@ export default function Navbar() {
       </div>
 
       <div className="navbar-user">
-        <div className="avatar-circle">{initials}</div>
+        <Link href="/profile" style={{ textDecoration: "none", display: "flex" }}>
+          <div className={`avatar-circle ${pathname === "/profile" ? "active" : ""}`}>
+            {initials}
+          </div>
+        </Link>
       </div>
     </nav>
   );

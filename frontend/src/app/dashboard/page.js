@@ -75,10 +75,7 @@ export default function Dashboard() {
     fetchTasks();
   }, []);
 
-  const handleLogout = () => {
-    document.cookie = "token=; path=/; max-age=0; SameSite=Strict";
-    router.push("/");
-  };
+
 
   // Petite fonction utilitaire pour traduire le statut de l'API en classe CSS et en texte lisible
   const getStatusBadge = (status) => {
@@ -94,6 +91,10 @@ export default function Dashboard() {
     }
   };
 
+  const todoTasks = tasks ? tasks.filter((t) => t.status === "TODO") : [];
+  const inProgressTasks = tasks ? tasks.filter((t) => t.status === "IN_PROGRESS") : [];
+  const doneTasks = tasks ? tasks.filter((t) => t.status === "DONE") : [];
+
   return (
     <div className="dashboard-container">
       {/* En-tête */}
@@ -106,10 +107,6 @@ export default function Dashboard() {
         <div className="header-actions">
           <button className="btn-primary">
             <Plus size={16} /> Créer un projet
-          </button>
-          
-          <button onClick={handleLogout} className="btn-danger">
-            Déconnexion
           </button>
         </div>
       </div>
@@ -136,39 +133,93 @@ export default function Dashboard() {
       </div>
 
       {/* Zone d'affichage des tâches */}
-      <div className="tasks-container">
+      <div className="tasks-display-area">
         {isLoading ? (
-          <p>Chargement de vos tâches...</p>
+          <div className="tasks-container">
+            <p>Chargement de vos tâches...</p>
+          </div>
         ) : (
           <div>
             {view === "list" ? (
-              <div className="task-list">
-                
-                {/* Champ de recherche */}
-                <div className="list-header">
-                  <p className="list-title">
-                    Mes tâches assignées<br/>
-                    <span className="list-subtitle">Par ordre de priorité</span>
-                  </p>
-                  <input 
-                    type="search" 
-                    placeholder="Rechercher une tâche" 
-                    className="search-input"
-                  />
-                </div>
+              <div className="tasks-container">
+                <div className="task-list">
+                  
+                  {/* Champ de recherche */}
+                  <div className="list-header">
+                    <p className="list-title">
+                      Mes tâches assignées<br/>
+                      <span className="list-subtitle">Par ordre de priorité</span>
+                    </p>
+                    <input 
+                      type="search" 
+                      placeholder="Rechercher une tâche" 
+                      className="search-input"
+                    />
+                  </div>
 
-                {/* Boucle sur les tâches */}
-                {tasks && tasks.length > 0 ? (
-                  tasks.map((task) => {
-                    const badge = getStatusBadge(task.status);
-                    
-                    return (
-                      <div key={task.id} className="task-card">
-                        <div>
-                          <h3 className="task-title">{task.title}</h3>
-                          <p className="task-desc">{task.description}</p>
-                          
-                          <div className="task-meta">
+                  {/* Boucle sur les tâches */}
+                  {tasks && tasks.length > 0 ? (
+                    tasks.map((task) => {
+                      const badge = getStatusBadge(task.status);
+                      
+                      return (
+                        <div key={task.id} className="task-card">
+                          <div>
+                            <h3 className="task-title">{task.title}</h3>
+                            <p className="task-desc">{task.description}</p>
+                            
+                            <div className="task-meta">
+                              <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                                <Folder size={14} /> {task.project?.name || "Sans projet"}
+                              </span>
+                              {task.dueDate && (
+                                <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                                  <Calendar size={14} /> {new Date(task.dueDate).toLocaleDateString("fr-FR")}
+                                </span>
+                              )}
+                              <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                                <MessageSquare size={14} /> {task.comments?.length || 0}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="task-actions">
+                            <span className={`badge-status ${badge.class}`}>
+                              {badge.text}
+                            </span>
+                            <button className="btn-secondary">
+                              Voir
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p style={{ textAlign: "center", color: "#888", padding: "2rem" }}>Aucune tâche assignée pour le moment.</p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="kanban-board">
+                {/* Colonne "À faire" */}
+                <div className="kanban-column">
+                  <div className="kanban-column-header">
+                    <h2>À faire</h2>
+                    <span className="kanban-column-count">{todoTasks.length}</span>
+                  </div>
+                  <div className="kanban-column-tasks">
+                    {todoTasks.map((task) => {
+                      const badge = getStatusBadge(task.status);
+                      return (
+                        <div key={task.id} className="kanban-card">
+                          <div className="kanban-card-header">
+                            <h3 className="kanban-card-title">{task.title}</h3>
+                            <span className={`badge-status ${badge.class}`}>
+                              {badge.text}
+                            </span>
+                          </div>
+                          <p className="kanban-card-desc">{task.description}</p>
+                          <div className="kanban-card-meta">
                             <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
                               <Folder size={14} /> {task.project?.name || "Sans projet"}
                             </span>
@@ -181,25 +232,110 @@ export default function Dashboard() {
                               <MessageSquare size={14} /> {task.comments?.length || 0}
                             </span>
                           </div>
+                          <div className="kanban-card-actions">
+                            <button className="btn-secondary">
+                              Voir
+                            </button>
+                          </div>
                         </div>
+                      );
+                    })}
+                    {todoTasks.length === 0 && (
+                      <p className="kanban-empty-msg">Aucune tâche À faire</p>
+                    )}
+                  </div>
+                </div>
 
-                        <div className="task-actions">
-                          <span className={`badge-status ${badge.class}`}>
-                            {badge.text}
-                          </span>
-                          <button className="btn-secondary">
-                            Voir
-                          </button>
+                {/* Colonne "En cours" */}
+                <div className="kanban-column">
+                  <div className="kanban-column-header">
+                    <h2>En cours</h2>
+                    <span className="kanban-column-count">{inProgressTasks.length}</span>
+                  </div>
+                  <div className="kanban-column-tasks">
+                    {inProgressTasks.map((task) => {
+                      const badge = getStatusBadge(task.status);
+                      return (
+                        <div key={task.id} className="kanban-card">
+                          <div className="kanban-card-header">
+                            <h3 className="kanban-card-title">{task.title}</h3>
+                            <span className={`badge-status ${badge.class}`}>
+                              {badge.text}
+                            </span>
+                          </div>
+                          <p className="kanban-card-desc">{task.description}</p>
+                          <div className="kanban-card-meta">
+                            <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                              <Folder size={14} /> {task.project?.name || "Sans projet"}
+                            </span>
+                            {task.dueDate && (
+                              <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                                <Calendar size={14} /> {new Date(task.dueDate).toLocaleDateString("fr-FR")}
+                              </span>
+                            )}
+                            <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                              <MessageSquare size={14} /> {task.comments?.length || 0}
+                            </span>
+                          </div>
+                          <div className="kanban-card-actions">
+                            <button className="btn-secondary">
+                              Voir
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <p style={{ textAlign: "center", color: "#888", padding: "2rem" }}>Aucune tâche assignée pour le moment.</p>
-                )}
+                      );
+                    })}
+                    {inProgressTasks.length === 0 && (
+                      <p className="kanban-empty-msg">Aucune tâche En cours</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Colonne "Terminées" */}
+                <div className="kanban-column">
+                  <div className="kanban-column-header">
+                    <h2>Terminées</h2>
+                    <span className="kanban-column-count">{doneTasks.length}</span>
+                  </div>
+                  <div className="kanban-column-tasks">
+                    {doneTasks.map((task) => {
+                      const badge = getStatusBadge(task.status);
+                      return (
+                        <div key={task.id} className="kanban-card">
+                          <div className="kanban-card-header">
+                            <h3 className="kanban-card-title">{task.title}</h3>
+                            <span className={`badge-status ${badge.class}`}>
+                              {badge.text}
+                            </span>
+                          </div>
+                          <p className="kanban-card-desc">{task.description}</p>
+                          <div className="kanban-card-meta">
+                            <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                              <Folder size={14} /> {task.project?.name || "Sans projet"}
+                            </span>
+                            {task.dueDate && (
+                              <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                                <Calendar size={14} /> {new Date(task.dueDate).toLocaleDateString("fr-FR")}
+                              </span>
+                            )}
+                            <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                              <MessageSquare size={14} /> {task.comments?.length || 0}
+                            </span>
+                          </div>
+                          <div className="kanban-card-actions">
+                            <button className="btn-secondary">
+                              Voir
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {doneTasks.length === 0 && (
+                      <p className="kanban-empty-msg">Aucune tâche Terminée</p>
+                    )}
+                  </div>
+                </div>
               </div>
-            ) : (
-              <p>📍 Ici viendra la structure du <strong>Kanban</strong> (comme sur dashboard2.png)</p>
             )}
           </div>
         )}
