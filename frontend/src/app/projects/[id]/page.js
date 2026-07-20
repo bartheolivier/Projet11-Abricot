@@ -16,6 +16,9 @@ import {
   Send,
   Loader2
 } from "lucide-react";
+import EditProjectModal from "@/components/EditProjectModal";
+import CreateTaskModal from "@/components/CreateTaskModal";
+import EditTaskModal from "@/components/EditTaskModal";
 
 export default function ProjectDetails({ params }) {
   const { id: projectId } = use(params);
@@ -25,6 +28,28 @@ export default function ProjectDetails({ params }) {
   const [tasks, setTasks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState(null);
+
+  // État pour la modale d'édition
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // États pour les modales de tâche
+  const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
+  const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false);
+  const [taskToEdit, setTaskToEdit] = useState(null);
+
+  // État pour le menu contextuel "..."
+  const [activeTaskMenu, setActiveTaskMenu] = useState(null);
+
+  // Fermer le menu au clic n'importe où (en dehors du bouton et du menu)
+  useEffect(() => {
+    const handleDocumentClick = (e) => {
+      if (!e.target.closest(".task-menu-btn") && !e.target.closest(".task-action-dropdown-menu")) {
+        setActiveTaskMenu(null);
+      }
+    };
+    document.addEventListener("click", handleDocumentClick);
+    return () => document.removeEventListener("click", handleDocumentClick);
+  }, []);
 
   // États pour les commentaires
   const [expandedComments, setExpandedComments] = useState({}); // { [taskId]: boolean }
@@ -90,21 +115,71 @@ export default function ProjectDetails({ params }) {
   }, [projectId]);
 
   const handleEditProjectPlaceholder = () => {
-    toast.info("L'édition du projet sera disponible dans la prochaine étape.");
+    setIsEditModalOpen(true);
   };
 
   const handleCreateTaskPlaceholder = () => {
-    toast.info("La création de tâches sera intégrée dans la prochaine étape !");
+    setIsCreateTaskModalOpen(true);
   };
 
   const handleIaGenerationPlaceholder = () => {
     toast.info("La génération automatique de tâches par l'IA sera disponible dans une prochaine étape.");
   };
 
-  const handleTaskActionPlaceholder = (e) => {
+  const handleToggleMenu = (e, taskId) => {
     e.preventDefault();
     e.stopPropagation();
-    toast.info("La gestion des actions de tâche sera disponible très prochainement.");
+    setActiveTaskMenu(prev => prev === taskId ? null : taskId);
+  };
+
+  const handleEditTaskClick = (e, task) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setTaskToEdit(task);
+    setIsEditTaskModalOpen(true);
+    setActiveTaskMenu(null);
+  };
+
+  const handleDeleteTask = async (e, taskId, taskTitle) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setActiveTaskMenu(null);
+
+    if (!confirm(`Voulez-vous vraiment supprimer la tâche "${taskTitle}" ?`)) {
+      return;
+    }
+
+    try {
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("token="))
+        ?.split("=")[1];
+
+      if (!token) return;
+
+      const response = await fetch(`/api/projects/${projectId}/tasks/${taskId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        const errorJson = await response.json();
+        throw new Error(errorJson.message || "Erreur de suppression");
+      }
+
+      toast.success("Tâche supprimée avec succès !");
+      
+      // Rafraîchir les tâches
+      const tasksRes = await fetch(`/api/projects/${projectId}/tasks`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (tasksRes.ok) {
+        const tasksJson = await tasksRes.json();
+        setTasks(tasksJson.data?.tasks || []);
+      }
+    } catch (err) {
+      toast.error(err.message);
+    }
   };
 
   // Basculer l'affichage des commentaires pour une tâche
@@ -344,6 +419,8 @@ export default function ProjectDetails({ params }) {
             {tasks.map((task) => {
               const status = getStatusDetails(task.status);
               const isCommentsOpen = !!expandedComments[task.id];
+              const isTaskCreator = task.creatorId === currentUserId || task.creator?.id === currentUserId;
+              const canManageTask = isAdmin || isTaskCreator;
 
               return (
                 <div key={task.id} className="task-card">
@@ -356,13 +433,34 @@ export default function ProjectDetails({ params }) {
                       </span>
                     </div>
 
-                    <button 
-                      className="task-menu-btn" 
-                      onClick={handleTaskActionPlaceholder}
-                      title="Actions"
-                    >
-                      <MoreHorizontal size={18} />
-                    </button>
+                    {canManageTask && (
+                      <>
+                        <button 
+                          className="task-menu-btn" 
+                          onClick={(e) => handleToggleMenu(e, task.id)}
+                          title="Actions"
+                        >
+                          <MoreHorizontal size={18} />
+                        </button>
+
+                        {activeTaskMenu === task.id && (
+                          <div className="task-action-dropdown-menu">
+                            <button 
+                              onClick={(e) => handleEditTaskClick(e, task)}
+                              className="dropdown-menu-item"
+                            >
+                              Modifier
+                            </button>
+                            <button 
+                              onClick={(e) => handleDeleteTask(e, task.id, task.title)}
+                              className="dropdown-menu-item delete"
+                            >
+                              Supprimer
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
 
                   <p className="task-card-desc">
@@ -473,6 +571,31 @@ export default function ProjectDetails({ params }) {
           </div>
         )}
       </div>
+
+      <EditProjectModal 
+        isOpen={isEditModalOpen} 
+        project={project} 
+        onClose={() => setIsEditModalOpen(false)} 
+        onProjectUpdated={fetchData} 
+      />
+
+      <CreateTaskModal 
+        isOpen={isCreateTaskModalOpen}
+        project={project}
+        onClose={() => setIsCreateTaskModalOpen(false)}
+        onTaskCreated={fetchData}
+      />
+
+      <EditTaskModal 
+        isOpen={isEditTaskModalOpen}
+        project={project}
+        task={taskToEdit}
+        onClose={() => {
+          setIsEditTaskModalOpen(false);
+          setTaskToEdit(null);
+        }}
+        onTaskUpdated={fetchData}
+      />
     </div>
   );
 }

@@ -1180,7 +1180,7 @@ body {
   gap: 1.5rem;
 }
 
-.task-card {
+.project-tasks-list .task-card {
   background: white;
   border: 1px solid #eee;
   border-radius: 12px;
@@ -1188,9 +1188,13 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.01);
   position: relative;
   transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
 }
 
-.task-card:hover {
+.project-tasks-list .task-card:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
@@ -1216,20 +1220,22 @@ body {
 }
 
 .task-menu-btn {
-  background: none;
-  border: none;
+  background: #fdfdfd;
+  border: 1px solid #ddd;
   color: #888;
   cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 4px;
+  width: 44px;
+  height: 32px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s, color 0.2s;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
 }
 
 .task-menu-btn:hover {
   background-color: #f5f5f5;
+  border-color: #ccc;
   color: #333;
 }
 
@@ -1242,8 +1248,8 @@ body {
 
 .task-card-meta {
   display: flex;
-  flex-wrap: wrap;
-  gap: 2rem;
+  flex-direction: column;
+  gap: 1rem;
   margin-bottom: 1.5rem;
 }
 
@@ -1491,7 +1497,397 @@ body {
     flex-direction: column;
     align-items: flex-start;
   }
-  .task-card {
+  .project-tasks-list .task-card {
     padding: 1.25rem;
   }
+}
+
+/* --- COMPOSANTS MODALES (CRÉER / MODIFIER PROJET) --- */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal-content {
+  background: white;
+  width: 100%;
+  max-width: 500px;
+  border-radius: 12px;
+  padding: 3rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  position: relative;
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.modal-close-btn:hover {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.modal-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0 0 2rem 0;
+  color: var(--text-color);
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.modal-textarea {
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+}
+
+/* Dropdown de contributeurs */
+.contributors-select-input {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  user-select: none;
+}
+
+.contributors-select-input:hover {
+  border-color: #bbb;
+}
+
+.contributors-select-input .placeholder-text {
+  color: #888;
+}
+
+.contributors-select-input .selected-count-text {
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.contributors-dropdown-menu {
+  position: absolute;
+  margin-top: 5px;
+  width: 100%;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  z-index: 100;
+  overflow: hidden;
+}
+
+/* Conteneur du sélecteur (relative) pour aligner le menu absolu */
+.form-group {
+  position: relative;
+}
+
+.search-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid #eee;
+  padding: 0.5rem 1rem;
+  background-color: #fafafa;
+}
+
+.search-input-wrapper .search-icon {
+  color: #888;
+}
+
+.dropdown-search-input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  font-size: 0.9rem;
+  color: #333;
+  outline: none;
+  padding: 0.25rem 0;
+}
+
+.dropdown-options-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.contributor-option-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.contributor-option-item:hover {
+  background-color: #f9f9f9;
+}
+
+.contributor-option-item.selected {
+  background-color: #ffe8d6; /* Légère teinte orange */
+}
+
+.option-checkbox {
+  width: 18px;
+  height: 18px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  transition: background-color 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+}
+
+.contributor-option-item.selected .option-checkbox {
+  background-color: #d35400;
+  border-color: #d35400;
+  color: white;
+}
+
+.option-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.option-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.option-email {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.dropdown-status-item {
+  padding: 1rem;
+  font-size: 0.85rem;
+  color: #888;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.dropdown-status-item.instructions {
+  font-style: italic;
+}
+
+/* Boutons de soumission des modales */
+.modal-btn-submit {
+  width: 100%;
+  padding: 0.85rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s, color 0.2s;
+  margin-top: 1rem;
+}
+
+.modal-btn-submit.active {
+  background-color: #1a1a1a;
+  color: white;
+}
+
+.modal-btn-submit.active:hover {
+  background-color: #333;
+}
+
+.modal-btn-submit.disabled {
+  background-color: #eaebec;
+  color: #a0a5aa;
+  cursor: not-allowed;
+}
+
+/* --- STATUTS ET ACTIONS TÂCHES --- */
+
+.status-pill-group {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.status-pill-btn {
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: white;
+  transition: all 0.2s;
+}
+
+.status-pill-btn.todo-pill {
+  color: #d63031;
+  background-color: #ffe3e3;
+  border-color: #ffcccc;
+}
+
+.status-pill-btn.progress-pill {
+  color: #d35400;
+  background-color: #ffeaa7;
+  border-color: #fde8a1;
+}
+
+.status-pill-btn.done-pill {
+  color: #155724;
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+}
+
+/* Modificateurs au clic / actif */
+.status-pill-btn.todo-pill.active {
+  box-shadow: 0 0 0 2px #d63031;
+}
+
+.status-pill-btn.progress-pill.active {
+  box-shadow: 0 0 0 2px #d35400;
+}
+
+.status-pill-btn.done-pill.active {
+  box-shadow: 0 0 0 2px #155724;
+}
+
+/* Petit menu contextuel (actions rapides de tâche ...) */
+.task-card-header {
+  position: relative; /* Pour positionner le menu absolu */
+}
+
+.task-action-dropdown-menu {
+  position: absolute;
+  top: 2.25rem;
+  right: 0.5rem;
+  background: white;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  z-index: 100;
+  overflow: hidden;
+  width: 120px;
+  animation: dropdownFadeIn 0.2s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.dropdown-menu-item {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border: none;
+  background: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+  display: block;
+}
+
+.dropdown-menu-item:hover {
+  background-color: #f5f5f5;
+  color: #1a1a1a;
+}
+
+.dropdown-menu-item.delete {
+  color: var(--error);
+}
+
+.dropdown-menu-item.delete:hover {
+  background-color: #ffe5e5;
+  color: #d63031;
+}
+
+/* Badges de statut des cartes de tâches (Page Détail Projet) */
+.status-badge {
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-badge.badge-todo {
+  background-color: #ffe3e3;
+  color: #d63031;
+}
+
+.status-badge.badge-progress {
+  background-color: #ffeaa7;
+  color: #d35400;
+}
+
+.status-badge.badge-done {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-badge.badge-cancelled {
+  background-color: #f5f5f5;
+  color: #7f8c8d;
 }

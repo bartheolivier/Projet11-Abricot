@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { LayoutList, Kanban, Plus, Folder, Calendar, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
+import CreateProjectModal from "@/components/CreateProjectModal";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function Dashboard() {
   const [tasks, setTasks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState("");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const fetchProfile = async () => {
     try {
@@ -105,7 +107,7 @@ export default function Dashboard() {
         </div>
         
         <div className="header-actions">
-          <button className="btn-primary">
+          <button className="btn-primary" onClick={() => setIsCreateModalOpen(true)}>
             <Plus size={16} /> Créer un projet
           </button>
         </div>
@@ -340,6 +342,14 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      <CreateProjectModal 
+        isOpen={isCreateModalOpen} 
+        onClose={() => setIsCreateModalOpen(false)} 
+        onProjectCreated={() => {
+          fetchTasks();
+        }} 
+      />
     </div>
   );
 }

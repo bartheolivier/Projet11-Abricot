@@ -5,12 +5,19 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Plus, Edit2, Trash2, Folder } from "lucide-react";
+import CreateProjectModal from "@/components/CreateProjectModal";
+import EditProjectModal from "@/components/EditProjectModal";
 
 export default function Projects() {
   const router = useRouter();
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState(null);
+
+  // États pour les modales
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [projectToEdit, setProjectToEdit] = useState(null);
 
   const fetchProfileAndProjects = async () => {
     try {
@@ -90,14 +97,11 @@ export default function Projects() {
     fetchProfileAndProjects();
   }, []);
 
-  const handleCreateProjectPlaceholder = () => {
-    toast.info("La création de projet sera intégrée lors de la prochaine étape !");
-  };
-
-  const handleEditProject = (e, projectId) => {
+  const handleEditProject = (e, project) => {
     e.preventDefault(); // Empêcher le clic de naviguer vers les détails du projet
     e.stopPropagation();
-    toast.info("L'édition de projet sera intégrée dans la prochaine étape.");
+    setProjectToEdit(project);
+    setIsEditModalOpen(true);
   };
 
   const handleDeleteProject = async (e, projectId, projectName) => {
@@ -165,7 +169,7 @@ export default function Projects() {
           <h1 className="projects-title">Mes projets</h1>
           <p className="projects-subtitle">Gerez vos projets</p>
         </div>
-        <button className="btn-primary" onClick={handleCreateProjectPlaceholder}>
+        <button className="btn-primary" onClick={() => setIsCreateModalOpen(true)}>
           <Plus size={16} /> Créer un projet
         </button>
       </div>
@@ -197,7 +201,7 @@ export default function Projects() {
                 {isAdmin && (
                   <div className="project-card-actions">
                     <button 
-                      onClick={(e) => handleEditProject(e, project.id)}
+                      onClick={(e) => handleEditProject(e, project)}
                       className="card-action-btn edit-btn"
                       title="Modifier le projet"
                     >
@@ -271,6 +275,23 @@ export default function Projects() {
           })}
         </div>
       )}
+
+      {/* Rendu des modales */}
+      <CreateProjectModal 
+        isOpen={isCreateModalOpen} 
+        onClose={() => setIsCreateModalOpen(false)} 
+        onProjectCreated={fetchProfileAndProjects} 
+      />
+
+      <EditProjectModal 
+        isOpen={isEditModalOpen} 
+        project={projectToEdit} 
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setProjectToEdit(null);
+        }} 
+        onProjectUpdated={fetchProfileAndProjects} 
+      />
     </div>
   );
 }
