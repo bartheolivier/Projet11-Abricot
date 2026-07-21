@@ -17,6 +17,18 @@ export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreate
 
   const dropdownRef = useRef(null);
 
+  // Verrouiller le défilement du fond quand la modale est ouverte
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   // Fermer le dropdown si on clique en dehors
   useEffect(() => {
     function handleClickOutside(event) {

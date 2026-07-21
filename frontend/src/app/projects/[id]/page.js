@@ -19,6 +19,7 @@ import {
 import EditProjectModal from "@/components/EditProjectModal";
 import CreateTaskModal from "@/components/CreateTaskModal";
 import EditTaskModal from "@/components/EditTaskModal";
+import AiTaskGenerationModal from "@/components/AiTaskGenerationModal";
 
 export default function ProjectDetails({ params }) {
   const { id: projectId } = use(params);
@@ -36,6 +37,9 @@ export default function ProjectDetails({ params }) {
   const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
   const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState(null);
+
+  // État pour la modale IA
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   // État pour le menu contextuel "..."
   const [activeTaskMenu, setActiveTaskMenu] = useState(null);
@@ -123,7 +127,7 @@ export default function ProjectDetails({ params }) {
   };
 
   const handleIaGenerationPlaceholder = () => {
-    toast.info("La génération automatique de tâches par l'IA sera disponible dans une prochaine étape.");
+    setIsAiModalOpen(true);
   };
 
   const handleToggleMenu = (e, taskId) => {
@@ -595,6 +599,13 @@ export default function ProjectDetails({ params }) {
           setTaskToEdit(null);
         }}
         onTaskUpdated={fetchData}
+      />
+
+      <AiTaskGenerationModal
+        isOpen={isAiModalOpen}
+        project={project}
+        onClose={() => setIsAiModalOpen(false)}
+        onTasksAdded={fetchData}
       />
     </div>
   );

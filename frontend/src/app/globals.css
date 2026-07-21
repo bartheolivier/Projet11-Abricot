@@ -1516,6 +1516,7 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 2000;
+  overscroll-behavior: contain;
 }
 
 .modal-content {
@@ -1527,6 +1528,7 @@ body {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
   position: relative;
   animation: modalFadeIn 0.3s ease-out;
+  overscroll-behavior: contain;
 }
 
 @keyframes modalFadeIn {
@@ -1890,4 +1892,415 @@ body {
 .status-badge.badge-cancelled {
   background-color: #f5f5f5;
   color: #7f8c8d;
+}
+
+/* --- MODALE DE GÉNÉRATION D'IA DE TÂCHES --- */
+
+.ai-modal-container {
+  max-width: 620px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.ai-sparkle-icon {
+  color: #e65100;
+}
+
+.ai-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-color);
+}
+
+.ai-modal-body {
+  min-height: 200px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* États de chargement et d'absence de données */
+.ai-loading-state,
+.ai-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.ai-spinner {
+  color: #e65100;
+  margin-bottom: 1rem;
+}
+
+.ai-loading-text,
+.ai-empty-text {
+  color: #666;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+/* Liste des cartes générées */
+.ai-tasks-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ai-generated-task-card {
+  background: white;
+  border: 1px solid #eef0f2;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  transition: border-color 0.2s;
+}
+
+.ai-generated-task-card:hover {
+  border-color: #ddd;
+}
+
+.ai-card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 0.4rem 0;
+}
+
+.ai-card-desc {
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.4;
+  margin: 0 0 1rem 0;
+}
+
+.ai-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.ai-action-btn {
+  background: none;
+  border: none;
+  color: #777;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.ai-action-btn.delete:hover {
+  color: #d63031;
+}
+
+.ai-action-btn.edit:hover {
+  color: #1a1a1a;
+}
+
+.ai-actions-separator {
+  color: #ddd;
+}
+
+/* Mode Édition de carte */
+.ai-card-edit-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.edit-title-input {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.btn-save-inline {
+  align-self: flex-end;
+  background: #1a1a1a;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* Bouton principal "+ Ajouter les tâches" */
+.ai-submit-tasks-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.ai-btn-add-all {
+  background-color: #1a1a1a;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.8rem 2.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.ai-btn-add-all:hover:not(:disabled) {
+  background-color: #333;
+}
+
+.ai-btn-add-all:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Barre de Prompt en Bas */
+.ai-prompt-bar-container {
+  margin-top: 1rem;
+}
+
+.ai-prompt-bar {
+  background: #f5f6f8;
+  border-radius: 30px;
+  padding: 0.4rem 0.4rem 0.4rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid #eaebec;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.ai-prompt-bar:focus-within {
+  border-color: #d0d2d6;
+  background: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+.ai-prompt-input {
+  border: none;
+  background: transparent;
+  flex: 1;
+  font-size: 0.9rem;
+  outline: none;
+  color: #333;
+}
+
+.ai-prompt-send-btn {
+  background-color: #d0d2d6;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: not-allowed;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.ai-prompt-send-btn.active {
+  background-color: #e65100;
+  cursor: pointer;
+}
+
+.ai-prompt-send-btn.active:hover {
+  background-color: #d35400;
+  transform: scale(1.05);
+}
+
+/* --- MODALE DE CONSULTATION DE TÂCHE (VIEW TASK MODAL) --- */
+
+.view-task-modal-content {
+  max-width: 580px;
+  width: 90%;
+}
+
+.view-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.view-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-height: 65vh;
+  overflow-y: auto;
+  padding-right: 0.35rem;
+}
+
+.view-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.view-field-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #777;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.view-field-value {
+  font-size: 0.95rem;
+  color: #1a1a1a;
+}
+
+.view-field-value.title-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111;
+}
+
+.view-field-value.desc-value {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  color: #444;
+  line-height: 1.5;
+  border: 1px solid #eee;
+  min-height: 60px;
+}
+
+.view-fields-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.view-field-value.inline-flex {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.field-icon {
+  color: #e65100;
+}
+
+.view-assignees-capsules-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.25rem;
+}
+
+.no-assignees-text {
+  font-size: 0.9rem;
+  color: #888;
+  font-style: italic;
+  margin: 0;
+}
+
+.view-modal-footer {
+  margin-top: 1.75rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.modal-btn-close-only {
+  background: #1a1a1a;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.65rem 1.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.modal-btn-close-only:hover {
+  background: #333;
+}
+
+/* Section Commentaires dans la modale de consultation */
+.view-comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+}
+
+.view-comment-item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.view-comment-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  flex-shrink: 0;
+  margin-top: 0.2rem;
+}
+
+.view-comment-content-box {
+  background: #f8f9fa;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  padding: 0.6rem 0.85rem;
+  flex: 1;
+}
+
+.view-comment-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.view-comment-author {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #222;
+}
+
+.view-comment-date {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.view-comment-text {
+  font-size: 0.88rem;
+  color: #555;
+  margin: 0;
+  line-height: 1.4;
 }

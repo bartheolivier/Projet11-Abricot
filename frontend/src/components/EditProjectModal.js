@@ -16,6 +16,18 @@ export default function EditProjectModal({ isOpen, project, onClose, onProjectUp
 
   const dropdownRef = useRef(null);
 
+  // Verrouiller le défilement du fond quand la modale est ouverte
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   // Charger les données du projet lorsque le modal s'ouvre
   useEffect(() => {
     if (project) {

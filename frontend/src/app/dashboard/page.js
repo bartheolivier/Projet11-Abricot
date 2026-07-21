@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { LayoutList, Kanban, Plus, Folder, Calendar, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import CreateProjectModal from "@/components/CreateProjectModal";
+import ViewTaskModal from "@/components/ViewTaskModal";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -14,6 +15,13 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [taskToView, setTaskToView] = useState(null);
+
+  const handleOpenViewModal = (task) => {
+    setTaskToView(task);
+    setIsViewModalOpen(true);
+  };
 
   const fetchProfile = async () => {
     try {
@@ -189,7 +197,10 @@ export default function Dashboard() {
                             <span className={`badge-status ${badge.class}`}>
                               {badge.text}
                             </span>
-                            <button className="btn-secondary">
+                            <button 
+                              className="btn-secondary"
+                              onClick={() => handleOpenViewModal(task)}
+                            >
                               Voir
                             </button>
                           </div>
@@ -235,7 +246,10 @@ export default function Dashboard() {
                             </span>
                           </div>
                           <div className="kanban-card-actions">
-                            <button className="btn-secondary">
+                            <button 
+                              className="btn-secondary"
+                              onClick={() => handleOpenViewModal(task)}
+                            >
                               Voir
                             </button>
                           </div>
@@ -280,7 +294,10 @@ export default function Dashboard() {
                             </span>
                           </div>
                           <div className="kanban-card-actions">
-                            <button className="btn-secondary">
+                            <button 
+                              className="btn-secondary"
+                              onClick={() => handleOpenViewModal(task)}
+                            >
                               Voir
                             </button>
                           </div>
@@ -325,7 +342,10 @@ export default function Dashboard() {
                             </span>
                           </div>
                           <div className="kanban-card-actions">
-                            <button className="btn-secondary">
+                            <button 
+                              className="btn-secondary"
+                              onClick={() => handleOpenViewModal(task)}
+                            >
                               Voir
                             </button>
                           </div>
@@ -349,6 +369,15 @@ export default function Dashboard() {
         onProjectCreated={() => {
           fetchTasks();
         }} 
+      />
+
+      <ViewTaskModal
+        isOpen={isViewModalOpen}
+        task={taskToView}
+        onClose={() => {
+          setIsViewModalOpen(false);
+          setTaskToView(null);
+        }}
       />
     </div>
   );

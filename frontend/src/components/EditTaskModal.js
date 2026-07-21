@@ -17,6 +17,18 @@ export default function EditTaskModal({ isOpen, project, task, onClose, onTaskUp
 
   const dropdownRef = useRef(null);
 
+  // Verrouiller le défilement du fond quand la modale est ouverte
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   // Charger les données de la tâche
   useEffect(() => {
     if (task) {
