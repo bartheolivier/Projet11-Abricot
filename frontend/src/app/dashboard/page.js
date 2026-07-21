@@ -12,6 +12,7 @@ export default function Dashboard() {
   
   const [view, setView] = useState("list");
   const [tasks, setTasks] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -101,9 +102,18 @@ export default function Dashboard() {
     }
   };
 
-  const todoTasks = tasks ? tasks.filter((t) => t.status === "TODO") : [];
-  const inProgressTasks = tasks ? tasks.filter((t) => t.status === "IN_PROGRESS") : [];
-  const doneTasks = tasks ? tasks.filter((t) => t.status === "DONE") : [];
+  const filteredTasks = tasks ? tasks.filter((t) => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return true;
+    const titleMatch = t.title && t.title.toLowerCase().includes(query);
+    const descMatch = t.description && t.description.toLowerCase().includes(query);
+    const projectMatch = t.project?.name && t.project.name.toLowerCase().includes(query);
+    return titleMatch || descMatch || projectMatch;
+  }) : [];
+
+  const todoTasks = filteredTasks.filter((t) => t.status === "TODO");
+  const inProgressTasks = filteredTasks.filter((t) => t.status === "IN_PROGRESS");
+  const doneTasks = filteredTasks.filter((t) => t.status === "DONE");
 
   return (
     <div className="dashboard-container">
@@ -162,14 +172,16 @@ export default function Dashboard() {
                     </p>
                     <input 
                       type="search" 
-                      placeholder="Rechercher une tâche" 
+                      placeholder="Rechercher une tâche par titre, description ou projet..." 
                       className="search-input"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </div>
 
-                  {/* Boucle sur les tâches */}
-                  {tasks && tasks.length > 0 ? (
-                    tasks.map((task) => {
+                  {/* Boucle sur les tâches filtrées */}
+                  {filteredTasks && filteredTasks.length > 0 ? (
+                    filteredTasks.map((task) => {
                       const badge = getStatusBadge(task.status);
                       
                       return (
@@ -208,7 +220,11 @@ export default function Dashboard() {
                       );
                     })
                   ) : (
-                    <p style={{ textAlign: "center", color: "#888", padding: "2rem" }}>Aucune tâche assignée pour le moment.</p>
+                    <p style={{ textAlign: "center", color: "#888", padding: "2rem" }}>
+                      {searchQuery.trim() 
+                        ? `Aucune tâche ne correspond à la recherche "${searchQuery}".` 
+                        : "Aucune tâche assignée pour le moment."}
+                    </p>
                   )}
                 </div>
               </div>

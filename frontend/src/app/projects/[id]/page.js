@@ -6,7 +6,8 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { 
   ArrowLeft, 
-  Calendar, 
+  Calendar,
+  LayoutList,
   MessageSquare, 
   ChevronDown, 
   ChevronUp, 
@@ -20,6 +21,8 @@ import EditProjectModal from "@/components/EditProjectModal";
 import CreateTaskModal from "@/components/CreateTaskModal";
 import EditTaskModal from "@/components/EditTaskModal";
 import AiTaskGenerationModal from "@/components/AiTaskGenerationModal";
+import ViewTaskModal from "@/components/ViewTaskModal";
+import ProjectCalendarView from "@/components/ProjectCalendarView";
 
 export default function ProjectDetails({ params }) {
   const { id: projectId } = use(params);
@@ -40,6 +43,17 @@ export default function ProjectDetails({ params }) {
 
   // État pour la modale IA
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+
+  // État pour la vue Liste / Calendrier
+  const [activeView, setActiveView] = useState("list");
+
+  // État pour la modale de consultation de tâche
+  const [isViewTaskModalOpen, setIsViewTaskModalOpen] = useState(false);
+  const [taskToView, setTaskToView] = useState(null);
+
+  // État pour le filtre et la recherche de tâches
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL"); // ALL, TODO, IN_PROGRESS, DONE
 
   // État pour le menu contextuel "..."
   const [activeTaskMenu, setActiveTaskMenu] = useState(null);
@@ -390,44 +404,98 @@ export default function ProjectDetails({ params }) {
             <p className="tasks-section-subtitle">Par ordre de priorité</p>
           </div>
 
-          {/* Commandes visuelles conformes à la maquette */}
+          {/* Commandes visuelles et toggle segmented control */}
           <div className="tasks-section-controls">
-            <div className="view-toggles">
-              <button className="toggle-btn active">
-                Liste
+            <div className="segmented-toggle">
+              <button 
+                className={`segmented-btn ${activeView === "list" ? "active" : ""}`}
+                onClick={() => setActiveView("list")}
+              >
+                <LayoutList size={16} /> Liste
               </button>
-              <button className="toggle-btn disabled" disabled>
-                Calendrier
+              <button 
+                className={`segmented-btn ${activeView === "calendar" ? "active" : ""}`}
+                onClick={() => setActiveView("calendar")}
+              >
+                <Calendar size={16} /> Calendrier
               </button>
             </div>
 
             <div className="control-select">
-              <span>Statut</span>
-              <ChevronDown size={14} />
+              <select 
+                value={statusFilter} 
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="status-filter-select"
+              >
+                <option value="ALL">Tous les statuts</option>
+                <option value="TODO">À faire</option>
+                <option value="IN_PROGRESS">En cours</option>
+                <option value="DONE">Terminée</option>
+              </select>
+              <ChevronDown size={14} className="control-select-icon" />
             </div>
 
             <div className="control-search">
-              <input type="text" placeholder="Rechercher une tâche" disabled />
+              <input 
+                type="text" 
+                placeholder="Rechercher une tâche" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
           </div>
         </div>
 
-        {/* Cartes de Tâches */}
-        {tasks.length === 0 ? (
-          <div className="tasks-empty-state">
-            <p className="empty-title">Aucune tâche</p>
-            <p className="empty-subtitle">Il n'y a pas encore de tâche dans ce projet.</p>
-          </div>
-        ) : (
-          <div className="project-tasks-list">
-            {tasks.map((task) => {
-              const status = getStatusDetails(task.status);
-              const isCommentsOpen = !!expandedComments[task.id];
-              const isTaskCreator = task.creatorId === currentUserId || task.creator?.id === currentUserId;
-              const canManageTask = isAdmin || isTaskCreator;
+        {/* Vue Liste ou Vue Calendrier selon l'onglet actif */}
+        {(() => {
+          const filteredTasks = tasks.filter((t) => {
+            if (statusFilter !== "ALL" && t.status !== statusFilter) {
+              return false;
+            }
+            const query = searchQuery.trim().toLowerCase();
+            if (!query) return true;
+            const titleMatch = t.title && t.title.toLowerCase().includes(query);
+            const descMatch = t.description && t.description.toLowerCase().includes(query);
+            return titleMatch || descMatch;
+          });
 
-              return (
-                <div key={task.id} className="task-card">
+          if (activeView === "calendar") {
+            return (
+              <ProjectCalendarView
+                tasks={filteredTasks}
+                onSelectTask={(task) => {
+                  setTaskToView(task);
+                  setIsViewTaskModalOpen(true);
+                }}
+              />
+            );
+          }
+
+          if (filteredTasks.length === 0) {
+            return (
+              <div className="tasks-empty-state">
+                <p className="empty-title">
+                  {tasks.length === 0 ? "Aucune tâche" : "Aucun résultat"}
+                </p>
+                <p className="empty-subtitle">
+                  {tasks.length === 0
+                    ? "Il n'y a pas encore de tâche dans ce projet."
+                    : "Aucune tâche ne correspond au filtre et au mot-clé sélectionnés."}
+                </p>
+              </div>
+            );
+          }
+
+          return (
+            <div className="project-tasks-list">
+              {filteredTasks.map((task) => {
+                const status = getStatusDetails(task.status);
+                const isCommentsOpen = !!expandedComments[task.id];
+                const isTaskCreator = task.creatorId === currentUserId || task.creator?.id === currentUserId;
+                const canManageTask = isAdmin || isTaskCreator;
+
+                return (
+                  <div key={task.id} className="task-card">
                   {/* Titre de tâche et badges */}
                   <div className="task-card-header">
                     <div className="task-title-group">
@@ -572,8 +640,9 @@ export default function ProjectDetails({ params }) {
                 </div>
               );
             })}
-          </div>
-        )}
+            </div>
+          );
+        })()}
       </div>
 
       <EditProjectModal 
@@ -605,7 +674,18 @@ export default function ProjectDetails({ params }) {
         isOpen={isAiModalOpen}
         project={project}
         onClose={() => setIsAiModalOpen(false)}
-        onTasksAdded={fetchData}
+        onTasksAdded={() => {
+          fetchProjectData();
+        }}
+      />
+
+      <ViewTaskModal
+        isOpen={isViewTaskModalOpen}
+        task={taskToView}
+        onClose={() => {
+          setIsViewTaskModalOpen(false);
+          setTaskToView(null);
+        }}
       />
     </div>
   );
