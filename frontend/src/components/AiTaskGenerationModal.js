@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Sparkles, Plus, Trash2, Edit3, Check, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -15,17 +15,25 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
   const [editTitle, setEditTitle] = useState("");
   const [editDesc, setEditDesc] = useState("");
 
-  // Verrouiller le défilement du fond quand la modale est ouverte
-  React.useEffect(() => {
+  // Verrouiller le défilement du fond + Gestion de la touche Échap (WCAG 2.1)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      window.addEventListener("keydown", handleKeyDown);
     } else {
       document.body.style.overflow = "";
     }
     return () => {
       document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   if (!isOpen || !project) return null;
 
@@ -46,7 +54,7 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
       const response = await fetch("/api/ai/generate-tasks", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${token || ""}`,
+          "Authorization": token ? `Bearer ${token}` : "",
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -62,10 +70,9 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
       }
 
       if (json.tasks && Array.isArray(json.tasks)) {
-        // Ajouter les nouvelles tâches générées à la liste existante
         setGeneratedTasks((prev) => [...prev, ...json.tasks]);
         toast.success(`${json.tasks.length} tâche(s) générée(s) par l'IA !`);
-        setPrompt(""); // Réinitialiser le prompt
+        setPrompt("");
       } else {
         toast.error("Aucune tâche n'a été renvoyée par l'IA.");
       }
@@ -77,7 +84,6 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
     }
   };
 
-  // Suppression d'une tâche de la prévisualisation
   const handleDeleteCard = (index) => {
     setGeneratedTasks((prev) => prev.filter((_, i) => i !== index));
     if (editingIndex === index) {
@@ -85,14 +91,12 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
     }
   };
 
-  // Activer le mode édition d'une tâche
   const handleStartEdit = (index, task) => {
     setEditingIndex(index);
     setEditTitle(task.title);
     setEditDesc(task.description);
   };
 
-  // Sauvegarder les modifications d'une tâche
   const handleSaveEdit = (index) => {
     if (!editTitle.trim()) {
       toast.error("Le titre ne peut pas être vide.");
@@ -106,7 +110,6 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
     setEditingIndex(null);
   };
 
-  // Validation finale : Ajouter toutes les tâches validées au projet
   const handleConfirmAddTasks = async () => {
     if (generatedTasks.length === 0) return;
 
@@ -122,14 +125,12 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
         return;
       }
 
-      // Date d'échéance par défaut : Dans 7 jours
       const defaultDueDate = new Date();
       defaultDueDate.setDate(defaultDueDate.getDate() + 7);
       const formattedDueDate = defaultDueDate.toISOString().split("T")[0];
 
       let addedCount = 0;
 
-      // Créer chaque tâche dans le backend
       for (const t of generatedTasks) {
         const res = await fetch(`/api/projects/${project.id}/tasks`, {
           method: "POST",
@@ -152,153 +153,185 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
 
       toast.success(`${addedCount} tâche(s) ajoutée(s) au projet avec succès !`);
       
-      // Réinitialiser la modale
       setGeneratedTasks([]);
       setPrompt("");
       if (onTasksAdded) onTasksAdded();
       onClose();
     } catch (err) {
-      toast.error(err.message || "Erreur lors de l'ajout des tâches au projet.");
+      toast.error("Erreur lors de l'intégration des tâches.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const hasTasks = generatedTasks.length > 0;
-
   return (
-    <div className="modal-overlay">
-      <div className="modal-content ai-modal-container">
-        {/* Bouton fermer */}
-        <button className="modal-close-btn" onClick={onClose} title="Fermer">
-          <X size={20} />
+    <div className="modal-overlay" onClick={onClose}>
+      <div
+        className="modal-content ai-modal-content"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title-ai"
+      >
+        <button
+          className="modal-close-btn"
+          onClick={onClose}
+          aria-label="Fermer la modale d'assistance IA"
+          title="Fermer"
+        >
+          <X size={20} aria-hidden="true" />
         </button>
 
-        {/* Titre dynamique avec icône étincelle */}
         <div className="ai-modal-header">
-          <Sparkles className="ai-sparkle-icon" size={24} />
-          <h2 className="modal-title ai-title">
-            {hasTasks ? "Vos tâches..." : "Créer une tâche"}
-          </h2>
+          <div className="ai-modal-icon-badge">
+            <Sparkles size={20} className="ai-badge-sparkle" aria-hidden="true" />
+          </div>
+          <div>
+            <h2 id="modal-title-ai" className="modal-title">
+              Générateur de Tâches IA (RAG & Gemini)
+            </h2>
+            <p className="modal-subtitle">
+              Saisissez vos besoins et l'IA créera des tâches précises sans doublons pour <strong>{project.name}</strong>.
+            </p>
+          </div>
         </div>
 
-        {/* Corps de la modale */}
         <div className="ai-modal-body">
-          {isLoading ? (
-            <div className="ai-loading-state">
-              <Loader2 size={32} className="animate-spin ai-spinner" />
-              <p className="ai-loading-text">Analyse RAG du projet et génération des tâches par l'IA...</p>
-            </div>
-          ) : hasTasks ? (
-            <div className="ai-tasks-preview-section">
-              <div className="ai-tasks-cards-list">
-                {generatedTasks.map((t, index) => (
-                  <div key={index} className="ai-generated-task-card">
-                    {editingIndex === index ? (
-                      /* Mode Édition */
-                      <div className="ai-card-edit-mode">
-                        <input
-                          type="text"
-                          value={editTitle}
-                          onChange={(e) => setEditTitle(e.target.value)}
-                          className="form-input edit-title-input"
-                          placeholder="Titre de la tâche"
-                        />
-                        <textarea
-                          value={editDesc}
-                          onChange={(e) => setEditDesc(e.target.value)}
-                          className="form-input modal-textarea edit-desc-input"
-                          placeholder="Description de la tâche"
-                          rows={2}
-                        />
-                        <button
-                          type="button"
-                          className="btn-save-inline"
-                          onClick={() => handleSaveEdit(index)}
-                        >
-                          <Check size={14} /> Valider
-                        </button>
-                      </div>
-                    ) : (
-                      /* Mode Lecture */
-                      <>
-                        <h4 className="ai-card-title">{t.title}</h4>
-                        <p className="ai-card-desc">{t.description || "Aucune description"}</p>
-                        
-                        <div className="ai-card-actions">
-                          <button
-                            type="button"
-                            className="ai-action-btn delete"
-                            onClick={() => handleDeleteCard(index)}
-                          >
-                            <Trash2 size={14} /> Supprimer
-                          </button>
-                          <span className="ai-actions-separator">|</span>
-                          <button
-                            type="button"
-                            className="ai-action-btn edit"
-                            onClick={() => handleStartEdit(index, t)}
-                          >
-                            <Edit3 size={14} /> Modifier
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ))}
+          {generatedTasks.length > 0 ? (
+            <div className="ai-generated-tasks-section">
+              <div className="section-title-row">
+                <h3>✨ Tâches générées ({generatedTasks.length})</h3>
+                <span className="section-help-text">
+                  Vous pouvez modifier ou supprimer les tâches avant de les ajouter au projet.
+                </span>
               </div>
 
-              {/* Bouton principal Ajouter les tâches */}
-              <div className="ai-submit-tasks-wrapper">
-                <button
-                  type="button"
-                  onClick={handleConfirmAddTasks}
-                  className="ai-btn-add-all"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" /> Ajout en cours...
-                    </>
-                  ) : (
-                    "+ Ajouter les tâches"
-                  )}
-                </button>
+              <div className="ai-tasks-cards-grid">
+                {generatedTasks.map((t, idx) => {
+                  const isEditing = editingIndex === idx;
+
+                  return (
+                    <div key={idx} className="ai-task-card">
+                      {isEditing ? (
+                        <div className="ai-task-edit-form">
+                          <input
+                            type="text"
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            className="form-input edit-title-input"
+                            placeholder="Titre de la tâche"
+                            aria-label="Titre de la tâche générée"
+                            autoFocus
+                          />
+                          <textarea
+                            value={editDesc}
+                            onChange={(e) => setEditDesc(e.target.value)}
+                            className="form-input modal-textarea edit-desc-input"
+                            placeholder="Description de la tâche"
+                            aria-label="Description de la tâche générée"
+                            rows={3}
+                          />
+                          <div className="ai-card-edit-actions">
+                            <button
+                              type="button"
+                              className="btn-card-save"
+                              onClick={() => handleSaveEdit(idx)}
+                            >
+                              <Check size={14} aria-hidden="true" /> Valider
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="ai-task-card-header">
+                            <h4 className="ai-task-card-title">{t.title}</h4>
+                            <div className="ai-task-card-actions">
+                              <button
+                                type="button"
+                                className="btn-icon-action edit"
+                                onClick={() => handleStartEdit(idx, t)}
+                                title="Modifier cette tâche"
+                                aria-label={`Modifier la tâche ${t.title}`}
+                              >
+                                <Edit3 size={15} aria-hidden="true" />
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-icon-action delete"
+                                onClick={() => handleDeleteCard(idx)}
+                                title="Supprimer cette tâche"
+                                aria-label={`Supprimer la tâche ${t.title}`}
+                              >
+                                <Trash2 size={15} aria-hidden="true" />
+                              </button>
+                            </div>
+                          </div>
+                          <p className="ai-task-card-desc">
+                            {t.description || "Aucune description fournie."}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ) : (
-            <div className="ai-empty-state">
-              <p className="ai-empty-text">
-                Utilisez l'IA pour générer automatiquement des tâches adaptées à votre projet.
-              </p>
+            <div className="ai-empty-prompt-state">
+              <Sparkles size={40} className="empty-sparkle-icon" aria-hidden="true" />
+              <p>Décrivez ce que vous souhaitez accomplir ci-dessous pour générer des tâches sur mesure.</p>
             </div>
           )}
         </div>
 
-        {/* Barre de Prompt en bas (Conforme Figma) */}
-        <form onSubmit={handleGenerate} className="ai-prompt-bar-container">
-          <div className="ai-prompt-bar">
+        <form onSubmit={handleGenerate} className="ai-prompt-form-footer">
+          <div className="ai-prompt-input-group">
             <input
               type="text"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Décrivez les tâches que vous souhaitez ajouter..."
+              placeholder="Ex: Ajouter 2 tâches pour l'intégration de la facturation..."
               className="ai-prompt-input"
-              disabled={isLoading}
+              disabled={isLoading || isSubmitting}
+              aria-label="Saisir la description des tâches à générer"
             />
             <button
               type="submit"
-              className={`ai-prompt-send-btn ${prompt.trim() ? "active" : ""}`}
-              disabled={!prompt.trim() || isLoading}
-              title="Générer avec l'IA"
+              className="btn-ai-generate"
+              disabled={!prompt.trim() || isLoading || isSubmitting}
             >
               {isLoading ? (
-                <Loader2 size={16} className="animate-spin" />
+                <>
+                  <Loader2 size={16} className="animate-spin" aria-hidden="true" /> Génération...
+                </>
               ) : (
-                <Plus size={18} />
+                <>
+                  <Sparkles size={16} aria-hidden="true" /> Générer
+                </>
               )}
             </button>
           </div>
+
+          {generatedTasks.length > 0 && (
+            <div className="ai-confirm-actions-row">
+              <button
+                type="button"
+                className="btn-confirm-add-tasks"
+                onClick={handleConfirmAddTasks}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" aria-hidden="true" /> Ajout au projet...
+                  </>
+                ) : (
+                  <>
+                    <Plus size={16} aria-hidden="true" /> Ajouter les {generatedTasks.length} tâche(s) au projet
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </form>
       </div>
     </div>

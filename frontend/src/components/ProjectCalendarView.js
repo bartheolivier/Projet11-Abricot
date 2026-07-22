@@ -22,7 +22,6 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
   for (let y = currentYearNow - 5; y <= currentYearNow + 5; y++) {
     yearsList.push(y);
   }
-  // S'assurer que l'année affichée est présente dans la liste
   if (!yearsList.includes(year)) {
     yearsList.push(year);
     yearsList.sort((a, b) => a - b);
@@ -134,17 +133,18 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
   };
 
   return (
-    <div className="project-calendar-container">
+    <div className="project-calendar-container" role="region" aria-label="Calendrier du projet">
       {/* En-tête de navigation du calendrier */}
       <div className="calendar-header-nav">
         <div className="calendar-month-title">
-          <CalendarIcon size={20} className="cal-header-icon" />
+          <CalendarIcon size={20} className="cal-header-icon" aria-hidden="true" />
           <div className="calendar-select-group">
-            {/* Sélecteur de mois */}
+            {/* Sélecteur de mois avec aria-label */}
             <select
               value={month}
               onChange={handleMonthChange}
               className="cal-header-select"
+              aria-label="Sélectionner le mois"
             >
               {monthNames.map((mName, idx) => (
                 <option key={idx} value={idx}>
@@ -153,11 +153,12 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
               ))}
             </select>
 
-            {/* Sélecteur rapide d'année */}
+            {/* Sélecteur d'année avec aria-label */}
             <select
               value={year}
               onChange={handleYearChange}
               className="cal-header-select year-select"
+              aria-label="Sélectionner l'année"
             >
               {yearsList.map((y) => (
                 <option key={y} value={y}>
@@ -169,38 +170,42 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
         </div>
 
         <div className="calendar-nav-actions">
-          <button className="btn-cal-today" onClick={handleToday}>
+          <button className="btn-cal-today" onClick={handleToday} aria-label="Revenir à la date d'aujourd'hui">
             Aujourd'hui
           </button>
           
-          <div className="btn-group-nav">
+          <div className="btn-group-nav" role="group" aria-label="Navigation dans le temps">
             <button
               className="btn-cal-nav"
               onClick={handlePrevYear}
+              aria-label="Année précédente (-1 an)"
               title="Année précédente (-1 an)"
             >
-              <ChevronsLeft size={18} />
+              <ChevronsLeft size={18} aria-hidden="true" />
             </button>
             <button
               className="btn-cal-nav"
               onClick={handlePrevMonth}
+              aria-label="Mois précédent"
               title="Mois précédent"
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft size={18} aria-hidden="true" />
             </button>
             <button
               className="btn-cal-nav"
               onClick={handleNextMonth}
+              aria-label="Mois suivant"
               title="Mois suivant"
             >
-              <ChevronRight size={18} />
+              <ChevronRight size={18} aria-hidden="true" />
             </button>
             <button
               className="btn-cal-nav"
               onClick={handleNextYear}
+              aria-label="Année suivante (+1 an)"
               title="Année suivante (+1 an)"
             >
-              <ChevronsRight size={18} />
+              <ChevronsRight size={18} aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -209,9 +214,9 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
       {/* Grille du calendrier */}
       <div className="calendar-grid">
         {/* Jours de la semaine */}
-        <div className="calendar-weekdays-header">
+        <div className="calendar-weekdays-header" role="row">
           {dayNames.map((name, i) => (
-            <div key={i} className="weekday-name">
+            <div key={i} className="weekday-name" role="columnheader">
               {name}
             </div>
           ))}
@@ -238,16 +243,25 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
                   )}
                 </div>
 
-                {/* Liste des tâches du jour */}
+                {/* Liste des tâches du jour avec support clavier WCAG */}
                 <div className="cell-tasks-list">
                   {dayTasks.map((task) => (
                     <div
                       key={task.id}
                       className={`calendar-task-chip ${getStatusClass(task.status)}`}
                       onClick={() => onSelectTask && onSelectTask(task)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onSelectTask && onSelectTask(task);
+                        }
+                      }}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`Voir les détails de la tâche: ${task.title}`}
                       title={`${task.title} (${task.status})`}
                     >
-                      <span className="chip-status-dot" />
+                      <span className="chip-status-dot" aria-hidden="true" />
                       <span className="chip-task-title">{task.title}</span>
                     </div>
                   ))}

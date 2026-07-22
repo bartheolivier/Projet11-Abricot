@@ -16,17 +16,25 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
 
   const dropdownRef = useRef(null);
 
-  // Verrouiller le défilement du fond quand la modale est ouverte
+  // Verrouiller le défilement du fond + Touche Échap (WCAG 2.1)
   useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      window.addEventListener("keydown", handleKeyDown);
     } else {
       document.body.style.overflow = "";
     }
     return () => {
       document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   // Fermer le dropdown si on clique en dehors
   useEffect(() => {
@@ -69,7 +77,7 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
       } finally {
         setIsSearching(false);
       }
-    }, 300); // Debounce de 300ms
+    }, 300);
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
@@ -128,9 +136,8 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
       }
 
       toast.success("Projet créé avec succès !");
-      onProjectCreated(); // Recharger les projets
+      onProjectCreated();
       
-      // Réinitialiser le formulaire et fermer
       setName("");
       setDescription("");
       setSelectedUsers([]);
@@ -146,14 +153,26 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
   const isFormValid = name.trim().length > 0 && description.trim().length > 0;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        {/* Bouton fermer en haut à droite */}
-        <button className="modal-close-btn" onClick={onClose} title="Fermer">
-          <X size={20} />
+    <div className="modal-overlay" onClick={onClose}>
+      <div
+        className="modal-content"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title-create-project"
+      >
+        <button
+          className="modal-close-btn"
+          onClick={onClose}
+          aria-label="Fermer la modale de création de projet"
+          title="Fermer"
+        >
+          <X size={20} aria-hidden="true" />
         </button>
 
-        <h2 className="modal-title">Créer un projet</h2>
+        <h2 id="modal-title-create-project" className="modal-title">
+          Créer un projet
+        </h2>
 
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-group">
@@ -182,12 +201,22 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
             />
           </div>
 
-          {/* Sélecteur de collaborateurs / Contributeurs */}
           <div className="form-group" ref={dropdownRef}>
-            <label>Contributeurs</label>
+            <label id="contributors-label">Contributeurs</label>
             <div 
               className="contributors-select-input" 
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setIsDropdownOpen(!isDropdownOpen);
+                }
+              }}
+              tabIndex={0}
+              role="button"
+              aria-haspopup="listbox"
+              aria-expanded={isDropdownOpen}
+              aria-labelledby="contributors-label"
             >
               <span className={selectedUsers.length === 0 ? "placeholder-text" : "selected-count-text"}>
                 {selectedUsers.length === 0 
@@ -195,34 +224,43 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
                   : `${selectedUsers.length} collaborateur${selectedUsers.length > 1 ? "s" : ""}`
                 }
               </span>
-              {isDropdownOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              {isDropdownOpen ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
             </div>
 
             {isDropdownOpen && (
-              <div className="contributors-dropdown-menu">
+              <div className="contributors-dropdown-menu" role="listbox">
                 <div className="search-input-wrapper">
-                  <Search size={14} className="search-icon" />
+                  <Search size={14} className="search-icon" aria-hidden="true" />
                   <input
                     type="text"
                     placeholder="Rechercher par nom ou e-mail..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="dropdown-search-input"
-                    onClick={(e) => e.stopPropagation()} // Éviter de fermer le menu
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label="Rechercher des contributeurs"
                     autoFocus
                   />
                 </div>
 
                 <div className="dropdown-options-list">
-                  {/* Affichage des utilisateurs sélectionnés en premier */}
                   {selectedUsers.map((user) => (
                     <div 
                       key={`sel-${user.id}`}
                       className="contributor-option-item selected"
                       onClick={() => handleToggleUser(user)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleToggleUser(user);
+                        }
+                      }}
+                      tabIndex={0}
+                      role="option"
+                      aria-selected="true"
                     >
                       <div className="option-checkbox checked">
-                        <Check size={12} strokeWidth={3} />
+                        <Check size={12} strokeWidth={3} aria-hidden="true" />
                       </div>
                       <div className="option-details">
                         <span className="option-name">{user.name || "Utilisateur sans nom"}</span>
@@ -231,10 +269,9 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
                     </div>
                   ))}
 
-                  {/* Affichage des résultats de recherche non encore sélectionnés */}
                   {isSearching ? (
                     <div className="dropdown-status-item">
-                      <Loader2 size={16} className="animate-spin" />
+                      <Loader2 size={16} className="animate-spin" aria-hidden="true" />
                       <span>Recherche...</span>
                     </div>
                   ) : searchResults.length === 0 ? (
@@ -255,6 +292,15 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
                           key={user.id}
                           className="contributor-option-item"
                           onClick={() => handleToggleUser(user)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              handleToggleUser(user);
+                            }
+                          }}
+                          tabIndex={0}
+                          role="option"
+                          aria-selected="false"
                         >
                           <div className="option-checkbox" />
                           <div className="option-details">
@@ -276,7 +322,7 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
           >
             {isSubmitting ? (
               <>
-                <Loader2 size={16} className="animate-spin" /> Création...
+                <Loader2 size={16} className="animate-spin" aria-hidden="true" /> Création...
               </>
             ) : (
               "Ajouter un projet"

@@ -2623,3 +2623,196 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ==========================================================================
+   DESIGN RESPONSIVE (ORDINATEURS, TABLETTES, MOBILES - WCAG 2.1)
+   ========================================================================== */
+
+/* 1. TABLETTES (Largeur <= 1024px) */
+@media (max-width: 1024px) {
+  .projects-grid,
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .kanban-board {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    overflow-x: auto;
+  }
+
+  .project-header-actions {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .search-filter-bar {
+    width: 100%;
+    flex-direction: row;
+  }
+}
+
+/* 2. MOBILES (Largeur <= 768px) */
+@media (max-width: 768px) {
+  /* Layout principal */
+  .main-content,
+  .dashboard-container,
+  .project-details-container {
+    padding: 1rem;
+  }
+
+  /* Navigation & En-tête */
+  .navbar {
+    padding: 0.75rem 1rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .navbar-actions {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  /* Grilles Projets & Tableau de Bord */
+  .projects-grid,
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  /* Kanban sur Mobile */
+  .kanban-board {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .kanban-column {
+    min-height: auto;
+  }
+
+  /* En-tête de projet & Filtres */
+  .project-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .project-header-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .search-filter-bar {
+    flex-direction: column;
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .search-input-wrapper,
+  .status-filter-select {
+    width: 100%;
+  }
+
+  /* Sélecteur d'onglets (Segmented Control) */
+  .segmented-control {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .segmented-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 0.55rem 0.75rem;
+  }
+
+  /* Calendrier sur Mobile */
+  .calendar-header-nav {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .calendar-month-title {
+    justify-content: center;
+  }
+
+  .calendar-nav-actions {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .calendar-days-grid {
+    grid-auto-rows: minmax(80px, auto);
+  }
+
+  .calendar-day-cell {
+    padding: 0.25rem;
+    min-height: 80px;
+  }
+
+  .cell-day-header {
+    margin-bottom: 0.2rem;
+  }
+
+  .day-number {
+    font-size: 0.75rem;
+    width: 20px;
+    height: 20px;
+  }
+
+  .tasks-count-pill {
+    display: none; /* Masquer sur petit écran pour alléger */
+  }
+
+  .calendar-task-chip {
+    padding: 0.15rem 0.3rem;
+    font-size: 0.7rem;
+  }
+
+  /* Modales Responsive */
+  .modal-content,
+  .view-modal-content {
+    width: 94vw !important;
+    max-width: 100% !important;
+    margin: 1rem;
+    max-height: 88vh;
+    padding: 1.25rem;
+  }
+
+  .modal-footer {
+    flex-direction: column-reverse;
+    gap: 0.5rem;
+  }
+
+  .modal-footer button {
+    width: 100%;
+  }
+}
+
+/* 3. TRÈS PETITS ÉCRANS (Largeur <= 480px) */
+@media (max-width: 480px) {
+  .weekday-name {
+    font-size: 0.7rem;
+    padding: 0.5rem 0;
+  }
+
+  .cal-header-select {
+    font-size: 0.95rem;
+    padding: 0.25rem 0.4rem;
+  }
+
+  .btn-cal-today {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.78rem;
+  }
+
+  .btn-cal-nav {
+    width: 28px;
+    height: 28px;
+  }
+}

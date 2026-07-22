@@ -1,20 +1,28 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { X, Calendar, Folder, MessageSquare, CheckCircle, Clock, AlertCircle } from "lucide-react";
 
 export default function ViewTaskModal({ isOpen, task, onClose }) {
-  // Verrouiller le défilement du fond quand la modale est ouverte
-  React.useEffect(() => {
+  // Verrouiller le défilement du fond + Gestion de la touche Échap (WCAG 2.1)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      window.addEventListener("keydown", handleKeyDown);
     } else {
       document.body.style.overflow = "";
     }
     return () => {
       document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   if (!isOpen || !task) return null;
 
@@ -70,14 +78,27 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content view-task-modal-content" onClick={(e) => e.stopPropagation()}>
-        {/* Bouton fermer */}
-        <button className="modal-close-btn" onClick={onClose} title="Fermer">
-          <X size={20} />
+      <div
+        className="modal-content view-task-modal-content"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title-view"
+      >
+        {/* Bouton fermer avec aria-label WCAG */}
+        <button
+          className="modal-close-btn"
+          onClick={onClose}
+          aria-label="Fermer la modale de détails"
+          title="Fermer"
+        >
+          <X size={20} aria-hidden="true" />
         </button>
 
         <div className="view-modal-header">
-          <h2 className="modal-title">Détails de la tâche</h2>
+          <h2 id="modal-title-view" className="modal-title">
+            Détails de la tâche
+          </h2>
         </div>
 
         <div className="view-modal-body">
@@ -100,7 +121,7 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
             <div className="view-field-group">
               <label className="view-field-label">Projet associé</label>
               <div className="view-field-value inline-flex">
-                <Folder size={16} className="field-icon" />
+                <Folder size={16} className="field-icon" aria-hidden="true" />
                 <span>{task.project?.name || "Sans projet"}</span>
               </div>
             </div>
@@ -108,13 +129,13 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
             <div className="view-field-group">
               <label className="view-field-label">Échéance</label>
               <div className="view-field-value inline-flex">
-                <Calendar size={16} className="field-icon" />
+                <Calendar size={16} className="field-icon" aria-hidden="true" />
                 <span>{formatDate(task.dueDate)}</span>
               </div>
             </div>
           </div>
 
-          {/* Collaborateurs assignés (Visuels en capsules ultra-lisibles) */}
+          {/* Collaborateurs assignés */}
           <div className="view-field-group">
             <label className="view-field-label">
               Assigné à ({assigneesList.length})
@@ -126,6 +147,7 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
                     <div
                       className="assignee-capsule-avatar"
                       style={{ backgroundColor: getAvatarColor(user.name || user.email) }}
+                      aria-hidden="true"
                     >
                       {getInitials(user.name || user.email)}
                     </div>
@@ -145,12 +167,13 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
             <label className="view-field-label">Statut</label>
             <div>
               <span className={`status-badge ${statusDetails.className}`}>
+                <StatusIcon size={14} className="status-icon" aria-hidden="true" />
                 {statusDetails.label}
               </span>
             </div>
           </div>
 
-          {/* Commentaires de la tâche (tout en bas) */}
+          {/* Commentaires de la tâche */}
           <div className="view-field-group">
             <label className="view-field-label">
               Commentaires ({(task.comments || []).length})
@@ -164,6 +187,7 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
                       <div
                         className="view-comment-avatar"
                         style={{ backgroundColor: getAvatarColor(authorName) }}
+                        aria-hidden="true"
                       >
                         {getInitials(authorName)}
                       </div>
@@ -188,7 +212,7 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
           </div>
         </div>
 
-        {/* Pied de modale avec bouton fermer */}
+        {/* Pied de modale */}
         <div className="view-modal-footer">
           <button type="button" className="modal-btn-close-only" onClick={onClose}>
             Fermer
