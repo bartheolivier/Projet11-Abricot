@@ -675,7 +675,7 @@ export default function ProjectDetails({ params }) {
         project={project}
         onClose={() => setIsAiModalOpen(false)}
         onTasksAdded={() => {
-          fetchProjectData();
+          fetchData();
         }}
       />
 

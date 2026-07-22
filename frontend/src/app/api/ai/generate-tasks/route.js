@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { Document, SummaryIndex, Settings } from "llamaindex";
+import { Gemini, GEMINI_MODEL, GeminiEmbedding, GEMINI_EMBEDDING_MODEL } from "@llamaindex/google";
 
 export async function POST(request) {
   try {
@@ -13,63 +15,7 @@ export async function POST(request) {
       );
     }
 
-    // 1. Récupération des tâches existantes pour constituer le contexte RAG
-    let existingTasks = [];
-    let projectDetails = null;
-
-    try {
-      // Récupération des tâches existantes depuis l'API backend
-      const tasksRes = await fetch(`http://localhost:3000/api/projects/${projectId}/tasks`, {
-        headers: { Authorization: authHeader || "" },
-      });
-      if (tasksRes.ok) {
-        const tasksData = await tasksRes.json();
-        existingTasks = tasksData.data?.tasks || [];
-      }
-
-      // Récupération du détail du projet
-      const projRes = await fetch(`http://localhost:3000/api/projects/${projectId}`, {
-        headers: { Authorization: authHeader || "" },
-      });
-      if (projRes.ok) {
-        const projData = await projRes.json();
-        projectDetails = projData.data?.project || null;
-      }
-    } catch (err) {
-      console.warn("Impossible de charger le contexte RAG depuis le backend:", err.message);
-    }
-
-    // 2. Construction du Prompt Augmenté (RAG)
-    const existingTasksContext = existingTasks.length > 0
-      ? existingTasks.map((t) => `- Titre: "${t.title}" | Description: "${t.description || ""}"`).join("\n")
-      : "Aucune tâche existante.";
-
-    const systemPrompt = `Vous êtes un assistant expert en gestion de projet et création de tâches.
-
-Contexte du Projet :
-- Nom : "${projectDetails?.name || "Projet"}"
-- Description : "${projectDetails?.description || ""}"
-
-Tâches déjà existantes dans le projet (Ne PAS créer de doublons) :
-${existingTasksContext}
-
-Demande de l'utilisateur :
-"${prompt.trim()}"
-
-Instructions :
-1. Générez entre 2 et 5 tâches précises et concrètes pour répondre à la demande de l'utilisateur.
-2. Assurez-vous que les nouvelles tâches soient complémentaires et ne dupliquent pas les tâches existantes.
-3. Répondez STRICTEMENT sous forme d'un tableau JSON d'objets, sans aucun texte ou balise markdown avant ou après :
-[
-  {
-    "title": "Titre court et clair de la tâche",
-    "description": "Description explicite de ce qu'il faut accomplir"
-  }
-]`;
-
-    // 3. Appel sécurisé à l'API Gemini côté serveur
     const apiKey = process.env.GEMINI_API_KEY;
-
     if (!apiKey || apiKey.includes("votre_cle")) {
       return NextResponse.json(
         { 
@@ -80,74 +26,102 @@ Instructions :
       );
     }
 
-    // Essayer les modèles Gemini 2.5 Flash, 2.0 Flash puis 1.5 Flash en fallback
-    const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
-    let geminiResponse = null;
-    let geminiData = null;
-    let lastError = null;
+    // Sélection de la constante de modèle LLM officielle LlamaIndex.TS
+    const modelEnum = GEMINI_MODEL.GEMINI_2_5_FLASH_LATEST || GEMINI_MODEL.GEMINI_PRO_1_5_FLASH_LATEST || GEMINI_MODEL.GEMINI_PRO;
 
-    for (const modelName of modelsToTry) {
-      try {
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+    // Configurer le modèle LLM et le modèle d'Embedding de LlamaIndex.TS
+    const geminiLlm = new Gemini({
+      apiKey: apiKey,
+      model: modelEnum,
+    });
 
-        const res = await fetch(geminiUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [{ text: systemPrompt }],
-              },
-            ],
-            generationConfig: {
-              responseMimeType: "application/json",
-              temperature: 0.7,
-            },
-          }),
-        });
+    const geminiEmbed = new GeminiEmbedding({
+      apiKey: apiKey,
+      model: GEMINI_EMBEDDING_MODEL.TEXT_EMBEDDING_004 || "text-embedding-004",
+    });
 
-        const data = await res.json();
+    // Correctif indispensable LlamaIndex.TS : GeminiEmbedding ne définit pas .metadata par défaut
+    geminiEmbed.metadata = {
+      model: GEMINI_EMBEDDING_MODEL.TEXT_EMBEDDING_004 || "text-embedding-004",
+      contextWindow: 2048,
+    };
 
-        if (res.ok) {
-          geminiResponse = res;
-          geminiData = data;
-          break; // Modèle fonctionnel trouvé !
-        } else {
-          lastError = data;
-          console.warn(`Le modèle ${modelName} a échoué:`, data.error?.message);
-        }
-      } catch (e) {
-        console.warn(`Erreur lors de l'appel au modèle ${modelName}:`, e.message);
-      }
-    }
+    Settings.llm = geminiLlm;
+    Settings.embedModel = geminiEmbed;
 
-    if (!geminiResponse || !geminiData) {
-      console.error("Tous les modèles Gemini ont échoué:", lastError);
-      const errMsg = lastError?.error?.message || "Erreur de communication avec l'API Gemini.";
-      
-      return NextResponse.json(
-        { 
-          message: `Erreur API Gemini: ${errMsg}. Vérifiez votre clé sur https://aistudio.google.com/app/apikey`,
-          errorDetails: lastError?.error
-        },
-        { status: 400 }
-      );
-    }
-
-    // 4. Extraction et nettoyage du résultat JSON généré par Gemini
-    const textOutput = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    let generatedTasks = [];
+    // 1. Récupération des données du projet et des tâches existantes (Retrieval)
+    let existingTasks = [];
+    let projectDetails = null;
 
     try {
-      // Nettoyer d'éventuelles balises ```json si présent
+      const tasksRes = await fetch(`http://localhost:3000/api/projects/${projectId}/tasks`, {
+        headers: { Authorization: authHeader || "" },
+      });
+      if (tasksRes.ok) {
+        const tasksData = await tasksRes.json();
+        existingTasks = tasksData.data?.tasks || [];
+      }
+
+      const projRes = await fetch(`http://localhost:3000/api/projects/${projectId}`, {
+        headers: { Authorization: authHeader || "" },
+      });
+      if (projRes.ok) {
+        const projData = await projRes.json();
+        projectDetails = projData.data?.project || null;
+      }
+    } catch (err) {
+      console.warn("Impossible de charger les données du projet:", err.message);
+    }
+
+    // 2. Création du Document de contexte LlamaIndex.TS
+    const projectInfoText = `Nom du Projet: ${projectDetails?.name || "Projet"}
+Description: ${projectDetails?.description || "Aucune description"}`;
+
+    const tasksInfoText = existingTasks.length > 0
+      ? existingTasks.map((t, idx) => `Tâche ${idx + 1}: ${t.title} | Description: ${t.description || "Sans description"}`).join("\n")
+      : "Aucune tâche existante.";
+
+    // Instanciation de la classe Document officielle de LlamaIndex.TS
+    const contextDocument = new Document({
+      text: `INFORMATIONS DU PROJET:\n${projectInfoText}\n\nTÂCHES DÉJÀ EXISTANTES DANS CE PROJET (NE PAS DUPLIQUER):\n${tasksInfoText}`,
+      metadata: { projectId, tasksCount: existingTasks.length },
+    });
+
+    // 3. Indexation et Moteur de Recherche RAG via LlamaIndex.TS (SummaryIndex)
+    const index = await SummaryIndex.fromDocuments([contextDocument]);
+    const queryEngine = index.asQueryEngine({
+      llm: geminiLlm,
+    });
+
+    // Prompt structuré envoyé au QueryEngine de LlamaIndex.TS
+    const ragQuery = `Vous êtes un assistant expert en gestion de projet.
+Sur la base du contexte du projet et des tâches existantes fournies dans le document :
+Demande de l'utilisateur : "${prompt.trim()}"
+
+Consignes :
+1. Analysez la demande de l'utilisateur : si un nombre précis de tâches est demandé (ex: "une tâche", "1 tâche", "3 tâches"), générez EXACTEMENT le nombre de tâches demandé. Si aucune quantité précise n'est spécifiée dans la demande, générez entre 1 et 3 tâches pertinentes.
+2. Évitez TOUT doublon avec les tâches existantes.
+3. Votre réponse DOIT ÊTRE STRICTEMENT un tableau JSON valide au format suivant, sans aucun texte ou balise markdown avant ou après :
+[
+  {
+    "title": "Titre explicite de la tâche",
+    "description": "Description détaillée du travail à effectuer"
+  }
+]`;
+
+    // 4. Exécution du RAG LlamaIndex.TS
+    const response = await queryEngine.query({ query: ragQuery });
+    const textOutput = response.toString();
+
+    // 5. Nettoyage et Parsing du résultat JSON
+    let generatedTasks = [];
+    try {
       const cleanJson = textOutput.replace(/```json/g, "").replace(/```/g, "").trim();
       generatedTasks = JSON.parse(cleanJson);
     } catch (parseErr) {
-      console.error("Erreur de parsing du JSON Gemini:", parseErr, textOutput);
+      console.error("Erreur de parsing du JSON LlamaIndex.TS:", parseErr, textOutput);
       return NextResponse.json(
-        { message: "Le format de réponse de l'IA n'a pas pu être analysé.", rawText: textOutput },
+        { message: "Le format de réponse de l'IA via LlamaIndex.TS n'a pas pu être analysé.", rawText: textOutput },
         { status: 500 }
       );
     }
@@ -156,11 +130,12 @@ Instructions :
       success: true,
       tasks: generatedTasks,
       ragContextCount: existingTasks.length,
+      framework: "LlamaIndex.TS",
     });
   } catch (err) {
-    console.error("Erreur interne lors de la génération IA:", err);
+    console.error("Erreur interne lors du RAG LlamaIndex.TS:", err);
     return NextResponse.json(
-      { message: err.message || "Une erreur interne est survenue." },
+      { message: err.message || "Une erreur interne est survenue lors de l'exécution de LlamaIndex.TS." },
       { status: 500 }
     );
   }
