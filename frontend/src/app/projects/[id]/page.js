@@ -1,9 +1,7 @@
 "use client";
 
 import React, { use, useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { toast } from "sonner";
 import { 
   ArrowLeft, 
   Calendar,
@@ -23,42 +21,42 @@ import EditTaskModal from "@/components/EditTaskModal";
 import AiTaskGenerationModal from "@/components/AiTaskGenerationModal";
 import ViewTaskModal from "@/components/ViewTaskModal";
 import ProjectCalendarView from "@/components/ProjectCalendarView";
+import { useProjectDetailsQuery } from "@/hooks/useProjectsQuery";
+import { useProjectTasksQuery, useDeleteTaskMutation, useAddCommentMutation } from "@/hooks/useTasksQuery";
+import { useProfileQuery } from "@/hooks/useProfileQuery";
 
 export default function ProjectDetails({ params }) {
   const { id: projectId } = use(params);
-  const router = useRouter();
 
-  const [project, setProject] = useState(null);
-  const [tasks, setTasks] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentUserId, setCurrentUserId] = useState(null);
+  // Custom Hooks React Query (remplace les useEffect / fetch complexes)
+  const { data: userProfile } = useProfileQuery();
+  const { data: project, isLoading: isProjectLoading } = useProjectDetailsQuery(projectId);
+  const { data: tasks = [], isLoading: isTasksLoading } = useProjectTasksQuery(projectId);
 
-  // État pour la modale d'édition
+  const deleteTaskMutation = useDeleteTaskMutation();
+  const addCommentMutation = useAddCommentMutation();
+
+  const currentUserId = userProfile?.id;
+
+  // États pour les modales
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
-  // États pour les modales de tâche
   const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
   const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState(null);
-
-  // État pour la modale IA
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-
-  // État pour la vue Liste / Calendrier
   const [activeView, setActiveView] = useState("list");
-
-  // État pour la modale de consultation de tâche
   const [isViewTaskModalOpen, setIsViewTaskModalOpen] = useState(false);
   const [taskToView, setTaskToView] = useState(null);
 
-  // État pour le filtre et la recherche de tâches
+  // État pour le filtre et la recherche
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL"); // ALL, TODO, IN_PROGRESS, DONE
-
-  // État pour le menu contextuel "..."
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [activeTaskMenu, setActiveTaskMenu] = useState(null);
 
-  // Fermer le menu au clic n'importe où (en dehors du bouton et du menu)
+  // États pour les commentaires
+  const [expandedComments, setExpandedComments] = useState({});
+  const [newComments, setNewComments] = useState({});
+
   useEffect(() => {
     const handleDocumentClick = (e) => {
       if (!e.target.closest(".task-menu-btn") && !e.target.closest(".task-action-dropdown-menu")) {
@@ -69,85 +67,10 @@ export default function ProjectDetails({ params }) {
     return () => document.removeEventListener("click", handleDocumentClick);
   }, []);
 
-  // États pour les commentaires
-  const [expandedComments, setExpandedComments] = useState({}); // { [taskId]: boolean }
-  const [newComments, setNewComments] = useState({}); // { [taskId]: string }
-  const [submittingComment, setSubmittingComment] = useState({}); // { [taskId]: boolean }
-
-  const fetchData = async () => {
-    try {
-      const token = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("token="))
-        ?.split("=")[1];
-
-      if (!token) {
-        router.push("/");
-        return;
-      }
-
-      // 1. Récupérer le profil pour avoir l'ID utilisateur
-      const profileRes = await fetch("/api/auth/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (profileRes.ok) {
-        const profileData = await profileRes.ok ? await profileRes.json() : null;
-        setCurrentUserId(profileData?.data?.id);
-      }
-
-      // 2. Récupérer les détails du projet
-      const projectRes = await fetch(`/api/projects/${projectId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!projectRes.ok) {
-        if (projectRes.status === 403) {
-          toast.error("Accès refusé à ce projet");
-          router.push("/projects");
-          return;
-        }
-        throw new Error("Impossible de charger les détails du projet");
-      }
-
-      const projectJson = await projectRes.json();
-      setProject(projectJson.data?.project);
-
-      // 3. Récupérer les tâches (avec assignations et commentaires)
-      const tasksRes = await fetch(`/api/projects/${projectId}/tasks`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (tasksRes.ok) {
-        const tasksJson = await tasksRes.json();
-        setTasks(tasksJson.data?.tasks || []);
-      }
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [projectId]);
-
-  const handleEditProjectPlaceholder = () => {
-    setIsEditModalOpen(true);
-  };
-
-  const handleCreateTaskPlaceholder = () => {
-    setIsCreateTaskModalOpen(true);
-  };
-
-  const handleIaGenerationPlaceholder = () => {
-    setIsAiModalOpen(true);
-  };
-
   const handleToggleMenu = (e, taskId) => {
     e.preventDefault();
     e.stopPropagation();
-    setActiveTaskMenu(prev => prev === taskId ? null : taskId);
+    setActiveTaskMenu((prev) => (prev === taskId ? null : taskId));
   };
 
   const handleEditTaskClick = (e, task) => {
@@ -158,49 +81,16 @@ export default function ProjectDetails({ params }) {
     setActiveTaskMenu(null);
   };
 
-  const handleDeleteTask = async (e, taskId, taskTitle) => {
+  const handleDeleteTask = (e, taskId, taskTitle) => {
     e.preventDefault();
     e.stopPropagation();
     setActiveTaskMenu(null);
 
-    if (!confirm(`Voulez-vous vraiment supprimer la tâche "${taskTitle}" ?`)) {
-      return;
-    }
-
-    try {
-      const token = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("token="))
-        ?.split("=")[1];
-
-      if (!token) return;
-
-      const response = await fetch(`/api/projects/${projectId}/tasks/${taskId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (!response.ok) {
-        const errorJson = await response.json();
-        throw new Error(errorJson.message || "Erreur de suppression");
-      }
-
-      toast.success("Tâche supprimée avec succès !");
-      
-      // Rafraîchir les tâches
-      const tasksRes = await fetch(`/api/projects/${projectId}/tasks`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (tasksRes.ok) {
-        const tasksJson = await tasksRes.json();
-        setTasks(tasksJson.data?.tasks || []);
-      }
-    } catch (err) {
-      toast.error(err.message);
+    if (confirm(`Voulez-vous vraiment supprimer la tâche "${taskTitle}" ?`)) {
+      deleteTaskMutation.mutate(taskId);
     }
   };
 
-  // Basculer l'affichage des commentaires pour une tâche
   const toggleComments = (taskId) => {
     setExpandedComments((prev) => ({
       ...prev,
@@ -208,7 +98,6 @@ export default function ProjectDetails({ params }) {
     }));
   };
 
-  // Gérer la saisie d'un nouveau commentaire
   const handleCommentChange = (taskId, text) => {
     setNewComments((prev) => ({
       ...prev,
@@ -216,57 +105,21 @@ export default function ProjectDetails({ params }) {
     }));
   };
 
-  // Envoyer un nouveau commentaire
-  const handleAddComment = async (e, taskId) => {
+  const handleAddComment = (e, taskId) => {
     e.preventDefault();
     const commentContent = newComments[taskId]?.trim();
     if (!commentContent) return;
 
-    setSubmittingComment((prev) => ({ ...prev, [taskId]: true }));
-
-    try {
-      const token = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("token="))
-        ?.split("=")[1];
-
-      if (!token) return;
-
-      const response = await fetch(`/api/projects/${projectId}/tasks/${taskId}/comments`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
+    addCommentMutation.mutate(
+      { projectId, taskId, content: commentContent },
+      {
+        onSuccess: () => {
+          setNewComments((prev) => ({ ...prev, [taskId]: "" }));
         },
-        body: JSON.stringify({ content: commentContent }),
-      });
-
-      if (!response.ok) {
-        const errorJson = await response.json();
-        throw new Error(errorJson.message || "Erreur lors de l'ajout du commentaire");
       }
-
-      toast.success("Commentaire ajouté !");
-      
-      // Vider le champ de saisie
-      setNewComments((prev) => ({ ...prev, [taskId]: "" }));
-
-      // Rafraîchir les tâches pour obtenir les commentaires mis à jour
-      const tasksRes = await fetch(`/api/projects/${projectId}/tasks`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (tasksRes.ok) {
-        const tasksJson = await tasksRes.json();
-        setTasks(tasksJson.data?.tasks || []);
-      }
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setSubmittingComment((prev) => ({ ...prev, [taskId]: false }));
-    }
+    );
   };
 
-  // Traduction des badges de statut
   const getStatusDetails = (status) => {
     switch (status) {
       case "TODO":
@@ -282,14 +135,12 @@ export default function ProjectDetails({ params }) {
     }
   };
 
-  // Formatage de la date en français
   const formatDate = (dateString) => {
     if (!dateString) return "Aucune";
     const date = new Date(dateString);
     return date.toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
   };
 
-  // Génération de couleurs pastels pour les avatars
   const colors = ["#ffe8d6", "#e2ece9", "#f0efeb", "#ddbea9", "#a8dadc", "#f4a261"];
   const getAvatarColor = (name) => {
     if (!name) return colors[0];
@@ -305,6 +156,8 @@ export default function ProjectDetails({ params }) {
     }
     return parts[0] ? parts[0].substring(0, 2).toUpperCase() : "";
   };
+
+  const isLoading = isProjectLoading || isTasksLoading;
 
   if (isLoading) {
     return (
@@ -323,12 +176,24 @@ export default function ProjectDetails({ params }) {
     );
   }
 
-  const otherMembers = project.members.filter((m) => m.user.id !== project.ownerId);
+  const otherMembers = (project.members || []).filter((m) => m.user?.id !== project.ownerId);
   const isAdmin = project.userRole === "ADMIN" || project.ownerId === currentUserId;
+
+  // Filtrage des tâches
+  const filteredTasks = tasks.filter((t) => {
+    if (statusFilter !== "ALL" && t.status !== statusFilter) {
+      return false;
+    }
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return true;
+    const titleMatch = t.title && t.title.toLowerCase().includes(query);
+    const descMatch = t.description && t.description.toLowerCase().includes(query);
+    return titleMatch || descMatch;
+  });
 
   return (
     <div className="project-details-container">
-      {/* Ligne d'en-tête principale */}
+      {/* En-tête du projet */}
       <div className="project-details-header">
         <div className="title-section-wrapper">
           <Link href="/projects" className="btn-back" title="Retour aux projets">
@@ -339,7 +204,7 @@ export default function ProjectDetails({ params }) {
               <h1 className="project-details-title">{project.name}</h1>
               {isAdmin && (
                 <button 
-                  onClick={handleEditProjectPlaceholder} 
+                  onClick={() => setIsEditModalOpen(true)} 
                   className="project-edit-link"
                 >
                   Modifier
@@ -353,10 +218,10 @@ export default function ProjectDetails({ params }) {
         </div>
 
         <div className="header-actions">
-          <button className="btn-primary" onClick={handleCreateTaskPlaceholder}>
+          <button className="btn-primary" onClick={() => setIsCreateTaskModalOpen(true)}>
             <Plus size={16} /> Créer une tâche
           </button>
-          <button className="btn-orange" onClick={handleIaGenerationPlaceholder}>
+          <button className="btn-orange" onClick={() => setIsAiModalOpen(true)}>
             <Sparkles size={16} /> IA
           </button>
         </div>
@@ -368,266 +233,212 @@ export default function ProjectDetails({ params }) {
           Contributeurs <span className="light-text">{1 + otherMembers.length} personnes</span>
         </span>
         <div className="contributors-list">
-          {/* Propriétaire */}
-          <div className="contributor-capsule">
-            <div 
-              className="capsule-avatar"
-              style={{ backgroundColor: getAvatarColor(project.owner.name || project.owner.email) }}
-            >
-              {getInitials(project.owner.name) || getInitials(project.owner.email)}
-            </div>
-            <span className="capsule-name owner-badge">Propriétaire</span>
-          </div>
-
-          {/* Autres Membres */}
-          {otherMembers.map((member) => (
-            <div className="contributor-capsule" key={member.user.id}>
+          {project.owner && (
+            <div className="contributor-capsule">
               <div 
                 className="capsule-avatar"
-                style={{ backgroundColor: getAvatarColor(member.user.name || member.user.email) }}
+                style={{ backgroundColor: getAvatarColor(project.owner.name || project.owner.email) }}
               >
-                {getInitials(member.user.name) || getInitials(member.user.email)}
+                {getInitials(project.owner.name) || getInitials(project.owner.email)}
+              </div>
+              <span className="capsule-name owner-badge">Propriétaire</span>
+            </div>
+          )}
+
+          {otherMembers.map((member) => (
+            <div className="contributor-capsule" key={member.user?.id || member.id}>
+              <div 
+                className="capsule-avatar"
+                style={{ backgroundColor: getAvatarColor(member.user?.name || member.user?.email) }}
+              >
+                {getInitials(member.user?.name) || getInitials(member.user?.email)}
               </div>
               <span className="capsule-name">
-                {member.user.name || member.user.email}
+                {member.user?.name || member.user?.email}
               </span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Liste des Tâches */}
+      {/* Zone principale des tâches */}
       <div className="tasks-section-card">
         <div className="tasks-section-header">
-          <div>
-            <h2 className="tasks-section-title">Tâches</h2>
-            <p className="tasks-section-subtitle">Par ordre de priorité</p>
+          <div className="segmented-control" role="tablist" aria-label="Affichage des tâches">
+            <button
+              className={`segmented-btn ${activeView === "list" ? "active" : ""}`}
+              onClick={() => setActiveView("list")}
+              role="tab"
+              aria-selected={activeView === "list"}
+            >
+              <LayoutList size={16} aria-hidden="true" />
+              <span>Liste</span>
+            </button>
+            <button
+              className={`segmented-btn ${activeView === "calendar" ? "active" : ""}`}
+              onClick={() => setActiveView("calendar")}
+              role="tab"
+              aria-selected={activeView === "calendar"}
+            >
+              <Calendar size={16} aria-hidden="true" />
+              <span>Calendrier</span>
+            </button>
           </div>
 
-          {/* Commandes visuelles et toggle segmented control */}
-          <div className="tasks-section-controls">
-            <div className="segmented-toggle">
-              <button 
-                className={`segmented-btn ${activeView === "list" ? "active" : ""}`}
-                onClick={() => setActiveView("list")}
-              >
-                <LayoutList size={16} /> Liste
-              </button>
-              <button 
-                className={`segmented-btn ${activeView === "calendar" ? "active" : ""}`}
-                onClick={() => setActiveView("calendar")}
-              >
-                <Calendar size={16} /> Calendrier
-              </button>
-            </div>
-
-            <div className="control-select">
-              <select 
-                value={statusFilter} 
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="status-filter-select"
-              >
-                <option value="ALL">Tous les statuts</option>
-                <option value="TODO">À faire</option>
-                <option value="IN_PROGRESS">En cours</option>
-                <option value="DONE">Terminée</option>
-              </select>
-              <ChevronDown size={14} className="control-select-icon" />
-            </div>
-
-            <div className="control-search">
-              <input 
-                type="text" 
-                placeholder="Rechercher une tâche" 
+          <div className="search-filter-bar">
+            <div className="search-input-wrapper">
+              <input
+                type="text"
+                placeholder="Rechercher une tâche..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                className="task-search-input"
               />
             </div>
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="status-filter-select"
+            >
+              <option value="ALL">Tous les statuts</option>
+              <option value="TODO">À faire</option>
+              <option value="IN_PROGRESS">En cours</option>
+              <option value="DONE">Terminée</option>
+            </select>
           </div>
         </div>
 
-        {/* Vue Liste ou Vue Calendrier selon l'onglet actif */}
-        {(() => {
-          const filteredTasks = tasks.filter((t) => {
-            if (statusFilter !== "ALL" && t.status !== statusFilter) {
-              return false;
-            }
-            const query = searchQuery.trim().toLowerCase();
-            if (!query) return true;
-            const titleMatch = t.title && t.title.toLowerCase().includes(query);
-            const descMatch = t.description && t.description.toLowerCase().includes(query);
-            return titleMatch || descMatch;
-          });
-
-          if (activeView === "calendar") {
-            return (
-              <ProjectCalendarView
-                tasks={filteredTasks}
-                onSelectTask={(task) => {
-                  setTaskToView(task);
-                  setIsViewTaskModalOpen(true);
-                }}
-              />
-            );
-          }
-
-          if (filteredTasks.length === 0) {
-            return (
-              <div className="tasks-empty-state">
-                <p className="empty-title">
-                  {tasks.length === 0 ? "Aucune tâche" : "Aucun résultat"}
-                </p>
-                <p className="empty-subtitle">
-                  {tasks.length === 0
-                    ? "Il n'y a pas encore de tâche dans ce projet."
-                    : "Aucune tâche ne correspond au filtre et au mot-clé sélectionnés."}
-                </p>
+        {activeView === "list" ? (
+          <div className="project-tasks-list">
+            {filteredTasks.length === 0 ? (
+              <div className="no-tasks-state">
+                <p>Aucune tâche ne correspond à vos critères.</p>
               </div>
-            );
-          }
-
-          return (
-            <div className="project-tasks-list">
-              {filteredTasks.map((task) => {
-                const status = getStatusDetails(task.status);
-                const isCommentsOpen = !!expandedComments[task.id];
-                const isTaskCreator = task.creatorId === currentUserId || task.creator?.id === currentUserId;
-                const canManageTask = isAdmin || isTaskCreator;
+            ) : (
+              filteredTasks.map((task) => {
+                const statusDetails = getStatusDetails(task.status);
+                const assignees = (task.assignees || []).map((a) => a.user || a);
+                const comments = task.comments || [];
+                const isCommentsExpanded = expandedComments[task.id];
 
                 return (
-                  <div key={task.id} className="task-card">
-                  {/* Titre de tâche et badges */}
-                  <div className="task-card-header">
-                    <div className="task-title-group">
-                      <h3 className="task-card-title">{task.title}</h3>
-                      <span className={`status-badge ${status.className}`}>
-                        {status.label}
-                      </span>
-                    </div>
+                  <div key={task.id} className="project-task-item-card">
+                    <div className="task-item-main-row">
+                      <div className="task-item-info">
+                        <h3 className="task-item-title">{task.title}</h3>
+                        <p className="task-item-desc">{task.description}</p>
+                      </div>
 
-                    {canManageTask && (
-                      <>
-                        <button 
-                          className="task-menu-btn" 
-                          onClick={(e) => handleToggleMenu(e, task.id)}
-                          title="Actions"
-                        >
-                          <MoreHorizontal size={18} />
-                        </button>
+                      <div className="task-item-right-actions">
+                        <span className={`status-badge ${statusDetails.className}`}>
+                          {statusDetails.label}
+                        </span>
 
-                        {activeTaskMenu === task.id && (
-                          <div className="task-action-dropdown-menu">
-                            <button 
-                              onClick={(e) => handleEditTaskClick(e, task)}
-                              className="dropdown-menu-item"
-                            >
-                              Modifier
-                            </button>
-                            <button 
-                              onClick={(e) => handleDeleteTask(e, task.id, task.title)}
-                              className="dropdown-menu-item delete"
-                            >
-                              Supprimer
-                            </button>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
+                        <div className="task-item-menu-container">
+                          <button 
+                            className="task-menu-btn" 
+                            onClick={(e) => handleToggleMenu(e, task.id)}
+                            title="Actions"
+                          >
+                            <MoreHorizontal size={18} />
+                          </button>
 
-                  <p className="task-card-desc">
-                    {task.description || "Aucune description fournie."}
-                  </p>
-
-                  <div className="task-card-meta">
-                    <div className="meta-item">
-                      <span className="meta-label">Échéance :</span>
-                      <Calendar size={14} className="meta-icon" />
-                      <span className="meta-value">{formatDate(task.dueDate)}</span>
-                    </div>
-
-                    {task.assignees && task.assignees.length > 0 && (
-                      <div className="meta-item assignees-meta">
-                        <span className="meta-label">Assigné à :</span>
-                        <div className="assignees-capsules-list">
-                          {task.assignees.map((assignee) => (
-                            <div className="assignee-capsule" key={assignee.user.id}>
-                              <div 
-                                className="assignee-capsule-avatar"
-                                style={{ backgroundColor: getAvatarColor(assignee.user.name || assignee.user.email) }}
+                          {activeTaskMenu === task.id && (
+                            <div className="task-action-dropdown-menu">
+                              <button onClick={(e) => handleEditTaskClick(e, task)}>
+                                Modifier la tâche
+                              </button>
+                              <button 
+                                onClick={(e) => handleDeleteTask(e, task.id, task.title)}
+                                className="delete-action"
                               >
-                                {getInitials(assignee.user.name) || getInitials(assignee.user.email)}
-                              </div>
-                              <span className="assignee-capsule-name">
-                                {assignee.user.name || assignee.user.email}
-                              </span>
+                                Supprimer la tâche
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="task-item-footer-row">
+                      <div className="task-footer-left">
+                        <div className="task-assignees-avatars">
+                          {assignees.map((user) => (
+                            <div
+                              key={user.id || user.email}
+                              className="mini-assignee-avatar"
+                              style={{ backgroundColor: getAvatarColor(user.name || user.email) }}
+                              title={user.name || user.email}
+                            >
+                              {getInitials(user.name || user.email)}
                             </div>
                           ))}
                         </div>
+
+                        <div className="task-due-date-chip">
+                          <Calendar size={14} />
+                          <span>{formatDate(task.dueDate)}</span>
+                        </div>
                       </div>
-                    )}
-                  </div>
 
-                  {/* Section Commentaires Rétractable */}
-                  <div className="task-comments-section">
-                    <button 
-                      onClick={() => toggleComments(task.id)}
-                      className="comments-toggle-btn"
-                    >
-                      <span>Commentaires ({task.comments?.length || 0})</span>
-                      {isCommentsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                    </button>
-
-                    {isCommentsOpen && (
-                      <div className="comments-expanded-content">
-                        {/* Liste des commentaires */}
-                        {task.comments && task.comments.length > 0 ? (
-                          <div className="comments-list">
-                            {task.comments.map((comment) => (
-                              <div className="comment-item" key={comment.id}>
-                                <div className="comment-header">
-                                  <div className="comment-author-info">
-                                    <div 
-                                      className="comment-author-avatar"
-                                      style={{ backgroundColor: getAvatarColor(comment.author.name || comment.author.email) }}
-                                    >
-                                      {getInitials(comment.author.name) || getInitials(comment.author.email)}
-                                    </div>
-                                    <span className="comment-author-name">
-                                      {comment.author.name || comment.author.email}
-                                    </span>
-                                  </div>
-                                  <span className="comment-date">
-                                    Le {formatDate(comment.createdAt)}
-                                  </span>
-                                </div>
-                                <p className="comment-content">{comment.content}</p>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="no-comments-text">Aucun commentaire pour le moment.</p>
-                        )}
-
-                        {/* Formulaire d'ajout de commentaire */}
-                        <form 
-                          onSubmit={(e) => handleAddComment(e, task.id)}
-                          className="comment-form"
+                      <div className="task-footer-right">
+                        <button
+                          className="btn-toggle-comments"
+                          onClick={() => toggleComments(task.id)}
                         >
+                          <MessageSquare size={14} />
+                          <span>{comments.length} commentaire{comments.length > 1 ? "s" : ""}</span>
+                          {isCommentsExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Section Commentaires */}
+                    {isCommentsExpanded && (
+                      <div className="task-comments-collapsible-section">
+                        <div className="comments-list">
+                          {comments.map((c, idx) => {
+                            const authorName = c.user?.name || c.user?.email || "Utilisateur";
+                            return (
+                              <div key={c.id || idx} className="comment-item">
+                                <div
+                                  className="comment-avatar"
+                                  style={{ backgroundColor: getAvatarColor(authorName) }}
+                                >
+                                  {getInitials(authorName)}
+                                </div>
+                                <div className="comment-body-box">
+                                  <div className="comment-meta-header">
+                                    <span className="comment-author-name">{authorName}</span>
+                                    {c.createdAt && (
+                                      <span className="comment-date">
+                                        {new Date(c.createdAt).toLocaleDateString("fr-FR")}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="comment-text-content">{c.content}</p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Formulaire nouveau commentaire */}
+                        <form onSubmit={(e) => handleAddComment(e, task.id)} className="add-comment-input-row">
                           <input
                             type="text"
-                            placeholder="Écrivez un commentaire..."
+                            placeholder="Écrire un commentaire..."
                             value={newComments[task.id] || ""}
                             onChange={(e) => handleCommentChange(task.id, e.target.value)}
-                            className="comment-input"
-                            required
+                            className="comment-input-field"
                           />
-                          <button 
-                            type="submit" 
-                            className="comment-submit-btn"
-                            disabled={submittingComment[task.id]}
+                          <button
+                            type="submit"
+                            className="btn-send-comment"
+                            disabled={!newComments[task.id]?.trim() || addCommentMutation.isPending}
                           >
-                            {submittingComment[task.id] ? (
+                            {addCommentMutation.isPending ? (
                               <Loader2 size={16} className="animate-spin" />
                             ) : (
                               <Send size={16} />
@@ -637,29 +448,35 @@ export default function ProjectDetails({ params }) {
                       </div>
                     )}
                   </div>
-                </div>
-              );
-            })}
-            </div>
-          );
-        })()}
+                );
+              })
+            )}
+          </div>
+        ) : (
+          <ProjectCalendarView
+            tasks={filteredTasks}
+            onSelectTask={(task) => {
+              setTaskToView(task);
+              setIsViewTaskModalOpen(true);
+            }}
+          />
+        )}
       </div>
 
-      <EditProjectModal 
-        isOpen={isEditModalOpen} 
-        project={project} 
-        onClose={() => setIsEditModalOpen(false)} 
-        onProjectUpdated={fetchData} 
+      {/* Modales */}
+      <EditProjectModal
+        isOpen={isEditModalOpen}
+        project={project}
+        onClose={() => setIsEditModalOpen(false)}
       />
 
-      <CreateTaskModal 
+      <CreateTaskModal
         isOpen={isCreateTaskModalOpen}
         project={project}
         onClose={() => setIsCreateTaskModalOpen(false)}
-        onTaskCreated={fetchData}
       />
 
-      <EditTaskModal 
+      <EditTaskModal
         isOpen={isEditTaskModalOpen}
         project={project}
         task={taskToEdit}
@@ -667,16 +484,12 @@ export default function ProjectDetails({ params }) {
           setIsEditTaskModalOpen(false);
           setTaskToEdit(null);
         }}
-        onTaskUpdated={fetchData}
       />
 
       <AiTaskGenerationModal
         isOpen={isAiModalOpen}
         project={project}
         onClose={() => setIsAiModalOpen(false)}
-        onTasksAdded={() => {
-          fetchData();
-        }}
       />
 
       <ViewTaskModal

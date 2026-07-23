@@ -11,12 +11,14 @@
   },
   "dependencies": {
     "@llamaindex/google": "^0.4.0",
+    "@tanstack/react-query": "^5.101.4",
     "llamaindex": "^0.12.1",
     "lucide-react": "^1.25.0",
     "next": "16.2.10",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "sonner": "^2.0.7"
+    "sonner": "^2.0.7",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "eslint": "^9",

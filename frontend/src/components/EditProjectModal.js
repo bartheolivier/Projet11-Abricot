@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { X, ChevronDown, ChevronUp, Search, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useUpdateProjectMutation } from "@/hooks/useProjectsQuery";
+import { api } from "@/lib/api";
 
 export default function EditProjectModal({ isOpen, project, onClose, onProjectUpdated }) {
   const [name, setName] = useState("");
@@ -12,32 +14,45 @@ export default function EditProjectModal({ isOpen, project, onClose, onProjectUp
   const [searchResults, setSearchResults] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const dropdownRef = useRef(null);
 
-  // Verrouiller le défilement du fond quand la modale est ouverte
+  const updateProjectMutation = useUpdateProjectMutation({
+    onSuccess: () => {
+      if (onProjectUpdated) onProjectUpdated();
+      onClose();
+    },
+  });
+
+  // Verrouiller le défilement du fond + Touche Échap (WCAG 2.1)
   useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      window.addEventListener("keydown", handleKeyDown);
     } else {
       document.body.style.overflow = "";
     }
     return () => {
       document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
-  // Charger les données du projet lorsque le modal s'ouvre
+  // Charger les données du projet
   useEffect(() => {
     if (project) {
       setName(project.name || "");
       setDescription(project.description || "");
       
-      // Filtrer l'owner des contributeurs de départ pour ne pas permettre sa modification/suppression
       const contributorsOnly = (project.members || [])
-        .filter((m) => m.user.id !== project.ownerId)
-        .map((m) => m.user);
+        .filter((m) => (m.user?.id || m.id) !== project.ownerId)
+        .map((m) => m.user || m);
       setSelectedUsers(contributorsOnly);
     }
   }, [project, isOpen]);
@@ -53,7 +68,7 @@ export default function EditProjectModal({ isOpen, project, onClose, onProjectUp
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Rechercher des utilisateurs via l'API
+  // Rechercher des utilisateurs via le client API
   useEffect(() => {
     if (searchQuery.trim().length < 2) {
       setSearchResults([]);
@@ -63,27 +78,14 @@ export default function EditProjectModal({ isOpen, project, onClose, onProjectUp
     const delayDebounceFn = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const token = document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("token="))
-          ?.split("=")[1];
-
-        if (!token) return;
-
-        const response = await fetch(`/api/users/search?query=${encodeURIComponent(searchQuery)}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (response.ok) {
-          const json = await response.json();
-          setSearchResults(json.data?.users || []);
-        }
+        const json = await api.searchUsers(searchQuery);
+        setSearchResults(json.data?.users || []);
       } catch (err) {
         console.error("Erreur recherche utilisateurs:", err);
       } finally {
         setIsSearching(false);
       }
-    }, 300); // Debounce de 300ms
+    }, 300);
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
@@ -101,151 +103,91 @@ export default function EditProjectModal({ isOpen, project, onClose, onProjectUp
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (!name.trim() || !description.trim()) {
       toast.error("Veuillez remplir le titre et la description.");
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      const token = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("token="))
-        ?.split("=")[1];
+    const contributors = selectedUsers.map((u) => u.email);
 
-      if (!token) {
-        toast.error("Session expirée. Veuillez vous reconnecter.");
-        return;
-      }
-
-      // 1. Mettre à jour les informations de base (Titre et Description)
-      const updateRes = await fetch(`/api/projects/${project.id}`, {
-        method: "PUT",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: name.trim(),
-          description: description.trim(),
-        }),
-      });
-
-      const updateJson = await updateRes.json();
-
-      if (!updateRes.ok) {
-        throw new Error(updateJson.message || "Erreur lors de la mise à jour du projet");
-      }
-
-      // 2. Synchroniser les contributeurs (Différentiel)
-      const initialEmails = (project.members || [])
-        .filter((m) => m.user.id !== project.ownerId)
-        .map((m) => m.user.email.toLowerCase());
-      const selectedEmails = selectedUsers.map((u) => u.email.toLowerCase());
-
-      // Contributeurs à ajouter
-      const toAdd = selectedUsers.filter(
-        (u) => !initialEmails.includes(u.email.toLowerCase())
-      );
-      // Membres à supprimer
-      const toRemove = (project.members || []).filter(
-        (m) =>
-          m.user.id !== project.ownerId &&
-          !selectedEmails.includes(m.user.email.toLowerCase())
-      );
-
-      // Effectuer les requêtes d'ajout en parallèle
-      await Promise.all(
-        toAdd.map(async (user) => {
-          const res = await fetch(`/api/projects/${project.id}/contributors`, {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ email: user.email }),
-          });
-          if (!res.ok) {
-            const errJson = await res.json();
-            throw new Error(`Erreur lors de l'ajout de ${user.email} : ${errJson.message}`);
-          }
-        })
-      );
-
-      // Effectuer les requêtes de retrait en parallèle
-      await Promise.all(
-        toRemove.map(async (member) => {
-          const res = await fetch(
-            `/api/projects/${project.id}/contributors/${member.user.id}`,
-            {
-              method: "DELETE",
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
-          if (!res.ok) {
-            const errJson = await res.json();
-            throw new Error(`Erreur lors du retrait de ${member.user.email} : ${errJson.message}`);
-          }
-        })
-      );
-
-      toast.success("Projet mis à jour avec succès !");
-      onProjectUpdated(); // Recharger les données du projet
-      onClose(); // Fermer le modal
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setIsSubmitting(false);
-    }
+    updateProjectMutation.mutate({
+      id: project.id,
+      name: name.trim(),
+      description: description.trim(),
+      contributors,
+    });
   };
 
   const isFormValid = name.trim().length > 0 && description.trim().length > 0;
+  const isSubmitting = updateProjectMutation.isPending;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        {/* Bouton fermer en haut à droite */}
-        <button className="modal-close-btn" onClick={onClose} title="Fermer">
-          <X size={20} />
+    <div className="modal-overlay" onClick={onClose}>
+      <div
+        className="modal-content"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title-edit-project"
+      >
+        <button
+          className="modal-close-btn"
+          onClick={onClose}
+          aria-label="Fermer la modale de modification de projet"
+          title="Fermer"
+        >
+          <X size={20} aria-hidden="true" />
         </button>
 
-        <h2 className="modal-title">Modifier un projet</h2>
+        <h2 id="modal-title-edit-project" className="modal-title">
+          Modifier le projet
+        </h2>
 
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-group">
-            <label htmlFor="modal-edit-title">Titre*</label>
+            <label htmlFor="edit-modal-title">Titre*</label>
             <input
               type="text"
-              id="modal-edit-title"
+              id="edit-modal-title"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="form-input"
-              placeholder="Titre du projet"
+              placeholder="Saisissez le titre du projet"
               required
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="modal-edit-description">Description*</label>
+            <label htmlFor="edit-modal-description">Description*</label>
             <textarea
-              id="modal-edit-description"
+              id="edit-modal-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="form-input modal-textarea"
-              placeholder="Description du projet"
+              placeholder="Saisissez la description du projet"
               rows={4}
               required
             />
           </div>
 
-          {/* Sélecteur de collaborateurs / Contributeurs */}
           <div className="form-group" ref={dropdownRef}>
-            <label>Contributeurs</label>
+            <label id="edit-contributors-label">Contributeurs</label>
             <div 
               className="contributors-select-input" 
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setIsDropdownOpen(!isDropdownOpen);
+                }
+              }}
+              tabIndex={0}
+              role="button"
+              aria-haspopup="listbox"
+              aria-expanded={isDropdownOpen}
+              aria-labelledby="edit-contributors-label"
             >
               <span className={selectedUsers.length === 0 ? "placeholder-text" : "selected-count-text"}>
                 {selectedUsers.length === 0 
@@ -253,34 +195,43 @@ export default function EditProjectModal({ isOpen, project, onClose, onProjectUp
                   : `${selectedUsers.length} collaborateur${selectedUsers.length > 1 ? "s" : ""}`
                 }
               </span>
-              {isDropdownOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              {isDropdownOpen ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
             </div>
 
             {isDropdownOpen && (
-              <div className="contributors-dropdown-menu">
+              <div className="contributors-dropdown-menu" role="listbox">
                 <div className="search-input-wrapper">
-                  <Search size={14} className="search-icon" />
+                  <Search size={14} className="search-icon" aria-hidden="true" />
                   <input
                     type="text"
                     placeholder="Rechercher par nom ou e-mail..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="dropdown-search-input"
-                    onClick={(e) => e.stopPropagation()} // Éviter de fermer le menu
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label="Rechercher des contributeurs"
                     autoFocus
                   />
                 </div>
 
                 <div className="dropdown-options-list">
-                  {/* Affichage des utilisateurs sélectionnés en premier */}
                   {selectedUsers.map((user) => (
                     <div 
                       key={`sel-${user.id}`}
                       className="contributor-option-item selected"
                       onClick={() => handleToggleUser(user)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleToggleUser(user);
+                        }
+                      }}
+                      tabIndex={0}
+                      role="option"
+                      aria-selected="true"
                     >
                       <div className="option-checkbox checked">
-                        <Check size={12} strokeWidth={3} />
+                        <Check size={12} strokeWidth={3} aria-hidden="true" />
                       </div>
                       <div className="option-details">
                         <span className="option-name">{user.name || "Utilisateur sans nom"}</span>
@@ -289,10 +240,9 @@ export default function EditProjectModal({ isOpen, project, onClose, onProjectUp
                     </div>
                   ))}
 
-                  {/* Affichage des résultats de recherche non encore sélectionnés */}
                   {isSearching ? (
                     <div className="dropdown-status-item">
-                      <Loader2 size={16} className="animate-spin" />
+                      <Loader2 size={16} className="animate-spin" aria-hidden="true" />
                       <span>Recherche...</span>
                     </div>
                   ) : searchResults.length === 0 ? (
@@ -307,12 +257,21 @@ export default function EditProjectModal({ isOpen, project, onClose, onProjectUp
                     )
                   ) : (
                     searchResults
-                      .filter((user) => !selectedUsers.some((u) => u.id === user.id))
+                      .filter((user) => user.id !== project.ownerId && !selectedUsers.some((u) => u.id === user.id))
                       .map((user) => (
                         <div 
                           key={user.id}
                           className="contributor-option-item"
                           onClick={() => handleToggleUser(user)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              handleToggleUser(user);
+                            }
+                          }}
+                          tabIndex={0}
+                          role="option"
+                          aria-selected="false"
                         >
                           <div className="option-checkbox" />
                           <div className="option-details">
@@ -334,10 +293,10 @@ export default function EditProjectModal({ isOpen, project, onClose, onProjectUp
           >
             {isSubmitting ? (
               <>
-                <Loader2 size={16} className="animate-spin" /> Enregistrement...
+                <Loader2 size={16} className="animate-spin" aria-hidden="true" /> Enregistrement...
               </>
             ) : (
-              "Enregistrer"
+              "Enregistrer les modifications"
             )}
           </button>
         </form>

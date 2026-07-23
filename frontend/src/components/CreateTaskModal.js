@@ -3,31 +3,52 @@
 import React, { useState, useEffect, useRef } from "react";
 import { X, ChevronDown, ChevronUp, Search, Check, Loader2, Calendar } from "lucide-react";
 import { toast } from "sonner";
+import { useCreateTaskMutation } from "@/hooks/useTasksQuery";
 
 export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreated }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [selectedAssignees, setSelectedAssignees] = useState([]);
-  const [status, setStatus] = useState("TODO"); // TODO, IN_PROGRESS, DONE
+  const [status, setStatus] = useState("TODO");
   
   const [searchQuery, setSearchQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const dropdownRef = useRef(null);
 
-  // Verrouiller le défilement du fond quand la modale est ouverte
+  const createTaskMutation = useCreateTaskMutation({
+    onSuccess: () => {
+      setTitle("");
+      setDescription("");
+      setDueDate("");
+      setSelectedAssignees([]);
+      setStatus("TODO");
+      setSearchQuery("");
+      if (onTaskCreated) onTaskCreated();
+      onClose();
+    },
+  });
+
+  // Verrouiller le défilement du fond + Touche Échap (WCAG 2.1)
   useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      window.addEventListener("keydown", handleKeyDown);
     } else {
       document.body.style.overflow = "";
     }
     return () => {
       document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   // Fermer le dropdown si on clique en dehors
   useEffect(() => {
@@ -42,26 +63,25 @@ export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreate
 
   if (!isOpen || !project) return null;
 
-  // Rassembler tous les membres du projet éligibles pour l'assignation
   const allMembers = [];
   if (project.owner) {
     allMembers.push(project.owner);
   }
   if (project.members) {
     project.members.forEach((m) => {
-      if (!allMembers.some((u) => u.id === m.user.id)) {
-        allMembers.push(m.user);
+      const u = m.user || m;
+      if (u && !allMembers.some((existing) => existing.id === u.id)) {
+        allMembers.push(u);
       }
     });
   }
 
-  // Filtrer localement les membres selon la recherche
   const filteredMembers = allMembers.filter((u) => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return true;
     return (
       (u.name && u.name.toLowerCase().includes(query)) ||
-      u.email.toLowerCase().includes(query)
+      (u.email && u.email.toLowerCase().includes(query))
     );
   });
 
@@ -76,95 +96,49 @@ export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreate
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim() || !description.trim() || !dueDate) {
       toast.error("Veuillez remplir le titre, la description et l'échéance.");
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      const token = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("token="))
-        ?.split("=")[1];
+    const assigneeIds = selectedAssignees.map((u) => u.id);
 
-      if (!token) {
-        toast.error("Session expirée. Veuillez vous reconnecter.");
-        return;
-      }
-
-      const assigneeIds = selectedAssignees.map((u) => u.id);
-
-      // 1. Création de la tâche (par défaut statut TODO dans le controller backend)
-      const response = await fetch(`/api/projects/${project.id}/tasks`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: title.trim(),
-          description: description.trim(),
-          dueDate,
-          assigneeIds,
-          priority: "MEDIUM",
-        }),
-      });
-
-      const json = await response.json();
-
-      if (!response.ok) {
-        throw new Error(json.message || "Erreur de création de la tâche");
-      }
-
-      const createdTaskId = json.data?.task?.id;
-
-      // 2. Si le statut choisi est différent de TODO, mettre à jour le statut immédiatement après
-      if (status !== "TODO" && createdTaskId) {
-        const updateRes = await fetch(`/api/projects/${project.id}/tasks/${createdTaskId}`, {
-          method: "PUT",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            status,
-          }),
-        });
-        if (!updateRes.ok) {
-          console.error("Erreur lors de la mise à jour immédiate du statut");
-        }
-      }
-
-      toast.success("Tâche créée avec succès !");
-      onTaskCreated(); // Recharger les tâches sur le détail du projet
-      
-      // Réinitialiser les champs
-      setTitle("");
-      setDescription("");
-      setDueDate("");
-      setSelectedAssignees([]);
-      setStatus("TODO");
-      onClose();
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setIsSubmitting(false);
-    }
+    createTaskMutation.mutate({
+      projectId: project.id,
+      title: title.trim(),
+      description: description.trim(),
+      dueDate,
+      status,
+      assigneeIds,
+    });
   };
 
-  const isFormValid = title.trim().length > 0 && description.trim().length > 0 && dueDate !== "";
+  const isFormValid = title.trim().length > 0 && description.trim().length > 0 && dueDate.length > 0;
+  const isSubmitting = createTaskMutation.isPending;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <button className="modal-close-btn" onClick={onClose} title="Fermer">
-          <X size={20} />
+    <div className="modal-overlay" onClick={onClose}>
+      <div
+        className="modal-content"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title-create-task"
+      >
+        <button
+          className="modal-close-btn"
+          onClick={onClose}
+          aria-label="Fermer la modale de création de tâche"
+          title="Fermer"
+        >
+          <X size={20} aria-hidden="true" />
         </button>
 
-        <h2 className="modal-title">Créer une tâche</h2>
+        <h2 id="modal-title-create-task" className="modal-title">
+          Créer une tâche
+        </h2>
 
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-group">
@@ -205,73 +179,90 @@ export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreate
             />
           </div>
 
-          {/* Assignation */}
+          <div className="form-group">
+            <label htmlFor="task-status">Statut</label>
+            <select
+              id="task-status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="form-input"
+            >
+              <option value="TODO">À faire</option>
+              <option value="IN_PROGRESS">En cours</option>
+              <option value="DONE">Terminée</option>
+            </select>
+          </div>
+
           <div className="form-group" ref={dropdownRef}>
-            <label>Assigné à :</label>
-            <div 
-              className="contributors-select-input" 
+            <label id="assignees-label">Assigner à des collaborateurs</label>
+            <div
+              className="contributors-select-input"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setIsDropdownOpen(!isDropdownOpen);
+                }
+              }}
+              tabIndex={0}
+              role="button"
+              aria-haspopup="listbox"
+              aria-expanded={isDropdownOpen}
+              aria-labelledby="assignees-label"
             >
               <span className={selectedAssignees.length === 0 ? "placeholder-text" : "selected-count-text"}>
-                {selectedAssignees.length === 0 
-                  ? "Choisir un ou plusieurs collaborateurs" 
-                  : `${selectedAssignees.length} collaborateur${selectedAssignees.length > 1 ? "s" : ""}`
-                }
+                {selectedAssignees.length === 0
+                  ? "Sélectionner un ou plusieurs membres"
+                  : `${selectedAssignees.length} membre${selectedAssignees.length > 1 ? "s" : ""} assigné(s)`}
               </span>
-              {isDropdownOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              {isDropdownOpen ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
             </div>
 
             {isDropdownOpen && (
-              <div className="contributors-dropdown-menu">
+              <div className="contributors-dropdown-menu" role="listbox">
                 <div className="search-input-wrapper">
-                  <Search size={14} className="search-icon" />
+                  <Search size={14} className="search-icon" aria-hidden="true" />
                   <input
                     type="text"
-                    placeholder="Rechercher un membre du projet..."
+                    placeholder="Filtrer les membres..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="dropdown-search-input"
                     onClick={(e) => e.stopPropagation()}
+                    aria-label="Rechercher des collaborateurs à assigner"
                     autoFocus
                   />
                 </div>
 
                 <div className="dropdown-options-list">
-                  {/* Affichage des personnes sélectionnées en premier */}
-                  {selectedAssignees.map((user) => (
-                    <div 
-                      key={`sel-${user.id}`}
-                      className="contributor-option-item selected"
-                      onClick={() => handleToggleAssignee(user)}
-                    >
-                      <div className="option-checkbox checked">
-                        <Check size={12} strokeWidth={3} />
-                      </div>
-                      <div className="option-details">
-                        <span className="option-name">{user.name || "Collaborateur"}</span>
-                        <span className="option-email">{user.email}</span>
-                      </div>
-                    </div>
-                  ))}
+                  {filteredMembers.map((user) => {
+                    const isSelected = selectedAssignees.some((u) => u.id === user.id);
 
-                  {/* Affichage des autres membres filtrés */}
-                  {filteredMembers
-                    .filter((user) => !selectedAssignees.some((u) => u.id === user.id))
-                    .map((user) => (
-                      <div 
+                    return (
+                      <div
                         key={user.id}
-                        className="contributor-option-item"
+                        className={`contributor-option-item ${isSelected ? "selected" : ""}`}
                         onClick={() => handleToggleAssignee(user)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            handleToggleAssignee(user);
+                          }
+                        }}
+                        tabIndex={0}
+                        role="option"
+                        aria-selected={isSelected}
                       >
-                        <div className="option-checkbox" />
+                        <div className={`option-checkbox ${isSelected ? "checked" : ""}`}>
+                          {isSelected && <Check size={12} strokeWidth={3} aria-hidden="true" />}
+                        </div>
                         <div className="option-details">
-                          <span className="option-name">{user.name || "Collaborateur"}</span>
+                          <span className="option-name">{user.name || user.email}</span>
                           <span className="option-email">{user.email}</span>
                         </div>
                       </div>
-                    ))
-                  }
-
+                    );
+                  })}
                   {filteredMembers.length === 0 && (
                     <div className="dropdown-status-item">Aucun membre trouvé</div>
                   )}
@@ -280,45 +271,17 @@ export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreate
             )}
           </div>
 
-          {/* Choix du statut */}
-          <div className="form-group">
-            <label>Statut :</label>
-            <div className="status-pill-group">
-              <button
-                type="button"
-                onClick={() => setStatus("TODO")}
-                className={`status-pill-btn todo-pill ${status === "TODO" ? "active" : ""}`}
-              >
-                À faire
-              </button>
-              <button
-                type="button"
-                onClick={() => setStatus("IN_PROGRESS")}
-                className={`status-pill-btn progress-pill ${status === "IN_PROGRESS" ? "active" : ""}`}
-              >
-                En cours
-              </button>
-              <button
-                type="button"
-                onClick={() => setStatus("DONE")}
-                className={`status-pill-btn done-pill ${status === "DONE" ? "active" : ""}`}
-              >
-                Terminée
-              </button>
-            </div>
-          </div>
-
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className={`modal-btn-submit ${isFormValid ? "active" : "disabled"}`}
             disabled={!isFormValid || isSubmitting}
           >
             {isSubmitting ? (
               <>
-                <Loader2 size={16} className="animate-spin" /> Ajout...
+                <Loader2 size={16} className="animate-spin" aria-hidden="true" /> Création...
               </>
             ) : (
-              "+ Ajouter une tâche"
+              "Créer la tâche"
             )}
           </button>
         </form>

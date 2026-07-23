@@ -1,96 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { LayoutList, Kanban, Plus, Folder, Calendar, MessageSquare } from "lucide-react";
-import { toast } from "sonner";
+import { useState } from "react";
+import { Plus, Folder, Calendar, MessageSquare } from "lucide-react";
 import CreateProjectModal from "@/components/CreateProjectModal";
 import ViewTaskModal from "@/components/ViewTaskModal";
+import { useProfileQuery } from "@/hooks/useProfileQuery";
+import { useUserAssignedTasksQuery } from "@/hooks/useTasksQuery";
 
 export default function Dashboard() {
-  const router = useRouter();
-  
   const [view, setView] = useState("list");
-  const [tasks, setTasks] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [userName, setUserName] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [taskToView, setTaskToView] = useState(null);
+
+  // Utilisation des custom hooks React Query (suppression de 80 lignes de fetch/useEffect manuels)
+  const { data: userProfile } = useProfileQuery();
+  const { data: tasks = [], isLoading } = useUserAssignedTasksQuery();
 
   const handleOpenViewModal = (task) => {
     setTaskToView(task);
     setIsViewModalOpen(true);
   };
 
-  const fetchProfile = async () => {
-    try {
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('token='))
-        ?.split('=')[1];
-
-      if (!token) return;
-
-      const response = await fetch("/api/auth/profile", {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      });
-
-      if (response.ok) {
-        const responseJson = await response.json();
-        setUserName(responseJson.data?.name || "");
-      }
-    } catch (error) {
-      console.error("Erreur lors de la récupération du profil", error);
-    }
-  };
-
-  const fetchTasks = async () => {
-    try {
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('token='))
-        ?.split('=')[1];
-
-      const response = await fetch("/api/dashboard/assigned-tasks", {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      });
-      
-      if (!response.ok) {
-        if (response.status === 401) {
-          document.cookie = "token=; path=/; max-age=0; SameSite=Strict";
-          router.push("/"); 
-          return;
-        }
-        throw new Error("Erreur lors de la récupération des tâches");
-      }
-
-      const responseJson = await response.json();
-      setTasks(responseJson.data.tasks);
-    } catch (error) {
-      toast.error(error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchProfile();
-    fetchTasks();
-  }, []);
-
-
-
-  // Petite fonction utilitaire pour traduire le statut de l'API en classe CSS et en texte lisible
   const getStatusBadge = (status) => {
-    switch(status) {
+    switch (status) {
       case "TODO":
         return { class: "status-todo", text: "À faire" };
       case "IN_PROGRESS":
@@ -102,14 +36,14 @@ export default function Dashboard() {
     }
   };
 
-  const filteredTasks = tasks ? tasks.filter((t) => {
+  const filteredTasks = tasks.filter((t) => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return true;
     const titleMatch = t.title && t.title.toLowerCase().includes(query);
     const descMatch = t.description && t.description.toLowerCase().includes(query);
     const projectMatch = t.project?.name && t.project.name.toLowerCase().includes(query);
     return titleMatch || descMatch || projectMatch;
-  }) : [];
+  });
 
   const todoTasks = filteredTasks.filter((t) => t.status === "TODO");
   const inProgressTasks = filteredTasks.filter((t) => t.status === "IN_PROGRESS");
@@ -121,7 +55,9 @@ export default function Dashboard() {
       <div className="dashboard-header">
         <div>
           <h1 className="dashboard-title">Tableau de bord</h1>
-          <p className="dashboard-subtitle">Bonjour {userName ? userName : "Utilisateur"}, voici un aperçu de vos projets et tâches</p>
+          <p className="dashboard-subtitle">
+            Bonjour {userProfile?.name || "Utilisateur"}, voici un aperçu de vos projets et tâches
+          </p>
         </div>
         
         <div className="header-actions">
@@ -382,9 +318,6 @@ export default function Dashboard() {
       <CreateProjectModal 
         isOpen={isCreateModalOpen} 
         onClose={() => setIsCreateModalOpen(false)} 
-        onProjectCreated={() => {
-          fetchTasks();
-        }} 
       />
 
       <ViewTaskModal

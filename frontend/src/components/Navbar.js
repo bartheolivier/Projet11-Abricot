@@ -2,59 +2,31 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useProfileQuery } from "../hooks/useProfileQuery";
+import { useUserStore } from "../lib/useUserStore";
 
 export default function Navbar() {
   const pathname = usePathname();
-  const [initials, setInitials] = useState("");
+  
+  // Utilisation de React Query & Zustand (remplace les useEffect / fetch manuels)
+  const { data: userData } = useProfileQuery({
+    enabled: pathname !== "/" && pathname !== "/register",
+  });
 
-  useEffect(() => {
-    if (pathname === "/" || pathname === "/register") return;
-
-    const fetchProfile = async () => {
-      try {
-        const token = document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("token="))
-          ?.split("=")[1];
-
-        if (!token) {
-          setInitials("");
-          return;
-        }
-
-        const response = await fetch("/api/auth/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (response.ok) {
-          const responseJson = await response.json();
-          const userData = responseJson.data;
-          
-          if (userData?.name) {
-            const nameParts = userData.name.trim().split(/\s+/);
-            let userInitials = "";
-            if (nameParts.length >= 2) {
-              userInitials = (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
-            } else if (nameParts.length === 1 && nameParts[0].length > 0) {
-              userInitials = nameParts[0].substring(0, 2).toUpperCase();
-            }
-            setInitials(userInitials);
-          } else {
-            setInitials("");
-          }
-        } else {
-          setInitials("");
-        }
-      } catch (error) {
-        setInitials("");
-      }
-    };
-
-    fetchProfile();
-  }, [pathname]);
+  const user = useUserStore((state) => state.user) || userData;
 
   if (pathname === "/" || pathname === "/register") return null;
+
+  // Calcul des initiales utilisateur
+  let initials = "";
+  if (user?.name) {
+    const nameParts = user.name.trim().split(/\s+/);
+    if (nameParts.length >= 2) {
+      initials = (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
+    } else if (nameParts.length === 1 && nameParts[0].length > 0) {
+      initials = nameParts[0].substring(0, 2).toUpperCase();
+    }
+  }
 
   const isDashboardActive = pathname === "/dashboard";
   const isProjectsActive = pathname === "/projects";

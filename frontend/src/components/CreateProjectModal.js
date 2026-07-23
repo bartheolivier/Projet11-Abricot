@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { X, ChevronDown, ChevronUp, Search, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useCreateProjectMutation } from "@/hooks/useProjectsQuery";
+import { api } from "@/lib/api";
 
 export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }) {
   const [name, setName] = useState("");
@@ -12,9 +14,19 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
   const [searchResults, setSearchResults] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const dropdownRef = useRef(null);
+
+  const createProjectMutation = useCreateProjectMutation({
+    onSuccess: () => {
+      setName("");
+      setDescription("");
+      setSelectedUsers([]);
+      setSearchQuery("");
+      if (onProjectCreated) onProjectCreated();
+      onClose();
+    },
+  });
 
   // Verrouiller le défilement du fond + Touche Échap (WCAG 2.1)
   useEffect(() => {
@@ -47,7 +59,7 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Rechercher des utilisateurs via l'API
+  // Rechercher des utilisateurs via le client API
   useEffect(() => {
     if (searchQuery.trim().length < 2) {
       setSearchResults([]);
@@ -57,21 +69,8 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
     const delayDebounceFn = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const token = document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("token="))
-          ?.split("=")[1];
-
-        if (!token) return;
-
-        const response = await fetch(`/api/users/search?query=${encodeURIComponent(searchQuery)}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (response.ok) {
-          const json = await response.json();
-          setSearchResults(json.data?.users || []);
-        }
+        const json = await api.searchUsers(searchQuery);
+        setSearchResults(json.data?.users || []);
       } catch (err) {
         console.error("Erreur recherche utilisateurs:", err);
       } finally {
@@ -95,62 +94,23 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (!name.trim() || !description.trim()) {
       toast.error("Veuillez remplir le titre et la description.");
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      const token = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("token="))
-        ?.split("=")[1];
-
-      if (!token) {
-        toast.error("Session expirée. Veuillez vous reconnecter.");
-        return;
-      }
-
-      const contributors = selectedUsers.map((u) => u.email);
-
-      const response = await fetch("/api/projects", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: name.trim(),
-          description: description.trim(),
-          contributors,
-        }),
-      });
-
-      const json = await response.json();
-
-      if (!response.ok) {
-        throw new Error(json.message || "Erreur de création du projet");
-      }
-
-      toast.success("Projet créé avec succès !");
-      onProjectCreated();
-      
-      setName("");
-      setDescription("");
-      setSelectedUsers([]);
-      setSearchQuery("");
-      onClose();
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setIsSubmitting(false);
-    }
+    const contributors = selectedUsers.map((u) => u.email);
+    createProjectMutation.mutate({
+      name: name.trim(),
+      description: description.trim(),
+      contributors,
+    });
   };
 
   const isFormValid = name.trim().length > 0 && description.trim().length > 0;
+  const isSubmitting = createProjectMutation.isPending;
 
   return (
     <div className="modal-overlay" onClick={onClose}>

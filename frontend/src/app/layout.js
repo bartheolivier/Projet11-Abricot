@@ -1,6 +1,7 @@
 import { Toaster } from 'sonner';
-import Navbar from '../components/Navbar'; // Import du nouveau composant
-import Footer from '../components/Footer'; // Import du footer
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import QueryProvider from '../components/QueryProvider';
 import './globals.css';
 
 export const metadata = {
@@ -12,16 +13,17 @@ export default function RootLayout({ children }) {
   return (
     <html lang="fr">
       <body style={{ backgroundColor: "#fafafa", margin: 0, display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-        <Toaster position="bottom-right" richColors />
-        
-        {/* La barre de navigation s'affichera partout (et se cachera toute seule sur l'accueil) */}
-        <Navbar />
-        
-        <main style={{ padding: '2rem', flex: 1 }}>
-          {children}
-        </main>
+        <QueryProvider>
+          <Toaster position="bottom-right" richColors />
+          
+          <Navbar />
+          
+          <main style={{ padding: '2rem', flex: 1 }}>
+            {children}
+          </main>
 
-        <Footer />
+          <Footer />
+        </QueryProvider>
       </body>
     </html>
   );

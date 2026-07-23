@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Sparkles, Plus, Trash2, Edit3, Check, Loader2, AlertTriangle } from "lucide-react";
+import { X, Sparkles, Plus, Trash2, Edit3, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 
 export default function AiTaskGenerationModal({ isOpen, project, onClose, onTasksAdded }) {
   const [prompt, setPrompt] = useState("");
@@ -11,14 +13,14 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
 
-  // Édition d'une tâche individuelle
   const [editTitle, setEditTitle] = useState("");
   const [editDesc, setEditDesc] = useState("");
 
-  // Verrouiller le défilement du fond + Gestion de la touche Échap (WCAG 2.1)
+  const queryClient = useQueryClient();
+
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "Escape") {
+      if (e.key === "Escape" && onClose) {
         onClose();
       }
     };
@@ -33,7 +35,7 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
       document.body.style.overflow = "";
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen || !project) return null;
 
@@ -115,16 +117,6 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
 
     setIsSubmitting(true);
     try {
-      const token = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("token="))
-        ?.split("=")[1];
-
-      if (!token) {
-        toast.error("Session expirée. Veuillez vous reconnecter.");
-        return;
-      }
-
       const defaultDueDate = new Date();
       defaultDueDate.setDate(defaultDueDate.getDate() + 7);
       const formattedDueDate = defaultDueDate.toISOString().split("T")[0];
@@ -132,27 +124,26 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
       let addedCount = 0;
 
       for (const t of generatedTasks) {
-        const res = await fetch(`/api/projects/${project.id}/tasks`, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
+        try {
+          await api.createTask({
+            projectId: project.id,
             title: t.title,
             description: t.description || "",
             dueDate: formattedDueDate,
             priority: "MEDIUM",
-          }),
-        });
-
-        if (res.ok) {
+          });
           addedCount++;
+        } catch (e) {
+          console.error("Erreur création tâche IA", e);
         }
       }
 
       toast.success(`${addedCount} tâche(s) ajoutée(s) au projet avec succès !`);
       
+      // Invalidation automatique des requêtes React Query pour synchroniser instantanément l'UI
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+
       setGeneratedTasks([]);
       setPrompt("");
       if (onTasksAdded) onTasksAdded();
