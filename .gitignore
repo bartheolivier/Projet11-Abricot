@@ -12,3 +12,6 @@
 # Système
 .DS_Store
 Thumbs.db
+
+# Documentation ignorée
+documentation/
