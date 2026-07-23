@@ -94,8 +94,8 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <Dialog.Portal>
-        <Dialog.Overlay className="modal-overlay" />
-        <Dialog.Content className="modal-content" aria-describedby={undefined}>
+        <Dialog.Overlay className="radix-overlay" />
+        <Dialog.Content className="radix-content" aria-describedby={undefined}>
           <Dialog.Close
             className="modal-close-btn"
             aria-label="Fermer la modale de création de projet"
