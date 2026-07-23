@@ -6,7 +6,6 @@ import {
   ArrowLeft, 
   Calendar,
   LayoutList,
-  MessageSquare, 
   ChevronDown, 
   ChevronUp, 
   Plus, 
@@ -28,7 +27,7 @@ import { useProfileQuery } from "@/hooks/useProfileQuery";
 export default function ProjectDetails({ params }) {
   const { id: projectId } = use(params);
 
-  // Custom Hooks React Query (remplace les useEffect / fetch complexes)
+  // Custom Hooks React Query
   const { data: userProfile } = useProfileQuery();
   const { data: project, isLoading: isProjectLoading } = useProjectDetailsQuery(projectId);
   const { data: tasks = [], isLoading: isTasksLoading } = useProjectTasksQuery(projectId);
@@ -48,7 +47,7 @@ export default function ProjectDetails({ params }) {
   const [isViewTaskModalOpen, setIsViewTaskModalOpen] = useState(false);
   const [taskToView, setTaskToView] = useState(null);
 
-  // État pour le filtre et la recherche
+  // États pour filtre et recherche
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [activeTaskMenu, setActiveTaskMenu] = useState(null);
@@ -176,24 +175,12 @@ export default function ProjectDetails({ params }) {
     );
   }
 
-  const otherMembers = (project.members || []).filter((m) => m.user?.id !== project.ownerId);
+  const otherMembers = (project.members || []).filter((m) => (m.user?.id || m.id) !== project.ownerId);
   const isAdmin = project.userRole === "ADMIN" || project.ownerId === currentUserId;
-
-  // Filtrage des tâches
-  const filteredTasks = tasks.filter((t) => {
-    if (statusFilter !== "ALL" && t.status !== statusFilter) {
-      return false;
-    }
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return true;
-    const titleMatch = t.title && t.title.toLowerCase().includes(query);
-    const descMatch = t.description && t.description.toLowerCase().includes(query);
-    return titleMatch || descMatch;
-  });
 
   return (
     <div className="project-details-container">
-      {/* En-tête du projet */}
+      {/* Ligne d'en-tête principale */}
       <div className="project-details-header">
         <div className="title-section-wrapper">
           <Link href="/projects" className="btn-back" title="Retour aux projets">
@@ -261,83 +248,118 @@ export default function ProjectDetails({ params }) {
         </div>
       </div>
 
-      {/* Zone principale des tâches */}
+      {/* Liste des Tâches */}
       <div className="tasks-section-card">
         <div className="tasks-section-header">
-          <div className="segmented-control" role="tablist" aria-label="Affichage des tâches">
-            <button
-              className={`segmented-btn ${activeView === "list" ? "active" : ""}`}
-              onClick={() => setActiveView("list")}
-              role="tab"
-              aria-selected={activeView === "list"}
-            >
-              <LayoutList size={16} aria-hidden="true" />
-              <span>Liste</span>
-            </button>
-            <button
-              className={`segmented-btn ${activeView === "calendar" ? "active" : ""}`}
-              onClick={() => setActiveView("calendar")}
-              role="tab"
-              aria-selected={activeView === "calendar"}
-            >
-              <Calendar size={16} aria-hidden="true" />
-              <span>Calendrier</span>
-            </button>
+          <div>
+            <h2 className="tasks-section-title">Tâches</h2>
+            <p className="tasks-section-subtitle">Par ordre de priorité</p>
           </div>
 
-          <div className="search-filter-bar">
-            <div className="search-input-wrapper">
-              <input
-                type="text"
-                placeholder="Rechercher une tâche..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="task-search-input"
-              />
+          <div className="tasks-section-controls">
+            <div className="segmented-toggle">
+              <button
+                className={`segmented-btn ${activeView === "list" ? "active" : ""}`}
+                onClick={() => setActiveView("list")}
+              >
+                <LayoutList size={16} /> Liste
+              </button>
+              <button
+                className={`segmented-btn ${activeView === "calendar" ? "active" : ""}`}
+                onClick={() => setActiveView("calendar")}
+              >
+                <Calendar size={16} /> Calendrier
+              </button>
             </div>
 
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="status-filter-select"
-            >
-              <option value="ALL">Tous les statuts</option>
-              <option value="TODO">À faire</option>
-              <option value="IN_PROGRESS">En cours</option>
-              <option value="DONE">Terminée</option>
-            </select>
+            <div className="control-select">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="status-filter-select"
+              >
+                <option value="ALL">Tous les statuts</option>
+                <option value="TODO">À faire</option>
+                <option value="IN_PROGRESS">En cours</option>
+                <option value="DONE">Terminée</option>
+              </select>
+              <ChevronDown size={14} className="control-select-icon" />
+            </div>
+
+            <div className="control-search">
+              <input
+                type="text"
+                placeholder="Rechercher une tâche"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
         </div>
 
-        {activeView === "list" ? (
-          <div className="project-tasks-list">
-            {filteredTasks.length === 0 ? (
-              <div className="no-tasks-state">
-                <p>Aucune tâche ne correspond à vos critères.</p>
+        {/* Vue Liste ou Vue Calendrier */}
+        {(() => {
+          const filteredTasks = tasks.filter((t) => {
+            if (statusFilter !== "ALL" && t.status !== statusFilter) {
+              return false;
+            }
+            const query = searchQuery.trim().toLowerCase();
+            if (!query) return true;
+            const titleMatch = t.title && t.title.toLowerCase().includes(query);
+            const descMatch = t.description && t.description.toLowerCase().includes(query);
+            return titleMatch || descMatch;
+          });
+
+          if (activeView === "calendar") {
+            return (
+              <ProjectCalendarView
+                tasks={filteredTasks}
+                onSelectTask={(task) => {
+                  setTaskToView(task);
+                  setIsViewTaskModalOpen(true);
+                }}
+              />
+            );
+          }
+
+          if (filteredTasks.length === 0) {
+            return (
+              <div className="tasks-empty-state">
+                <p className="empty-title">
+                  {tasks.length === 0 ? "Aucune tâche" : "Aucun résultat"}
+                </p>
+                <p className="empty-subtitle">
+                  {tasks.length === 0
+                    ? "Il n'y a pas encore de tâche dans ce projet."
+                    : "Aucune tâche ne correspond au filtre et au mot-clé sélectionnés."}
+                </p>
               </div>
-            ) : (
-              filteredTasks.map((task) => {
-                const statusDetails = getStatusDetails(task.status);
-                const assignees = (task.assignees || []).map((a) => a.user || a);
-                const comments = task.comments || [];
-                const isCommentsExpanded = expandedComments[task.id];
+            );
+          }
+
+          return (
+            <div className="project-tasks-list">
+              {filteredTasks.map((task) => {
+                const status = getStatusDetails(task.status);
+                const isCommentsOpen = !!expandedComments[task.id];
+                const isTaskCreator = task.creatorId === currentUserId || task.creator?.id === currentUserId;
+                const canManageTask = isAdmin || isTaskCreator;
 
                 return (
-                  <div key={task.id} className="project-task-item-card">
-                    <div className="task-item-main-row">
-                      <div className="task-item-info">
-                        <h3 className="task-item-title">{task.title}</h3>
-                        <p className="task-item-desc">{task.description}</p>
+                  <div key={task.id} className="task-card">
+                    {/* Titre de tâche et badges */}
+                    <div className="task-card-header">
+                      <div className="task-title-group">
+                        <h3 className="task-card-title">{task.title}</h3>
+                        <span className={`status-badge ${status.className}`}>
+                          {status.label}
+                        </span>
                       </div>
 
-                      <div className="task-item-right-actions">
-                        <span className={`status-badge ${statusDetails.className}`}>
-                          {statusDetails.label}
-                        </span>
-
-                        <div className="task-item-menu-container">
-                          <button 
-                            className="task-menu-btn" 
+                      {canManageTask && (
+                        <>
+                          <button
+                            className="task-menu-btn"
                             onClick={(e) => handleToggleMenu(e, task.id)}
                             title="Actions"
                           >
@@ -346,124 +368,139 @@ export default function ProjectDetails({ params }) {
 
                           {activeTaskMenu === task.id && (
                             <div className="task-action-dropdown-menu">
-                              <button onClick={(e) => handleEditTaskClick(e, task)}>
-                                Modifier la tâche
-                              </button>
-                              <button 
-                                onClick={(e) => handleDeleteTask(e, task.id, task.title)}
-                                className="delete-action"
+                              <button
+                                onClick={(e) => handleEditTaskClick(e, task)}
+                                className="dropdown-menu-item"
                               >
-                                Supprimer la tâche
+                                Modifier
+                              </button>
+                              <button
+                                onClick={(e) => handleDeleteTask(e, task.id, task.title)}
+                                className="dropdown-menu-item delete"
+                              >
+                                Supprimer
                               </button>
                             </div>
                           )}
-                        </div>
-                      </div>
+                        </>
+                      )}
                     </div>
 
-                    <div className="task-item-footer-row">
-                      <div className="task-footer-left">
-                        <div className="task-assignees-avatars">
-                          {assignees.map((user) => (
-                            <div
-                              key={user.id || user.email}
-                              className="mini-assignee-avatar"
-                              style={{ backgroundColor: getAvatarColor(user.name || user.email) }}
-                              title={user.name || user.email}
-                            >
-                              {getInitials(user.name || user.email)}
-                            </div>
-                          ))}
-                        </div>
+                    <p className="task-card-desc">
+                      {task.description || "Aucune description fournie."}
+                    </p>
 
-                        <div className="task-due-date-chip">
-                          <Calendar size={14} />
-                          <span>{formatDate(task.dueDate)}</span>
-                        </div>
+                    <div className="task-card-meta">
+                      <div className="meta-item">
+                        <span className="meta-label">Échéance :</span>
+                        <Calendar size={14} className="meta-icon" />
+                        <span className="meta-value">{formatDate(task.dueDate)}</span>
                       </div>
 
-                      <div className="task-footer-right">
-                        <button
-                          className="btn-toggle-comments"
-                          onClick={() => toggleComments(task.id)}
-                        >
-                          <MessageSquare size={14} />
-                          <span>{comments.length} commentaire{comments.length > 1 ? "s" : ""}</span>
-                          {isCommentsExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Section Commentaires */}
-                    {isCommentsExpanded && (
-                      <div className="task-comments-collapsible-section">
-                        <div className="comments-list">
-                          {comments.map((c, idx) => {
-                            const authorName = c.user?.name || c.user?.email || "Utilisateur";
-                            return (
-                              <div key={c.id || idx} className="comment-item">
-                                <div
-                                  className="comment-avatar"
-                                  style={{ backgroundColor: getAvatarColor(authorName) }}
-                                >
-                                  {getInitials(authorName)}
-                                </div>
-                                <div className="comment-body-box">
-                                  <div className="comment-meta-header">
-                                    <span className="comment-author-name">{authorName}</span>
-                                    {c.createdAt && (
-                                      <span className="comment-date">
-                                        {new Date(c.createdAt).toLocaleDateString("fr-FR")}
-                                      </span>
-                                    )}
+                      {task.assignees && task.assignees.length > 0 && (
+                        <div className="meta-item assignees-meta">
+                          <span className="meta-label">Assigné à :</span>
+                          <div className="assignees-capsules-list">
+                            {task.assignees.map((assignee) => {
+                              const userObj = assignee.user || assignee;
+                              return (
+                                <div className="assignee-capsule" key={userObj.id || userObj.email}>
+                                  <div
+                                    className="assignee-capsule-avatar"
+                                    style={{ backgroundColor: getAvatarColor(userObj.name || userObj.email) }}
+                                  >
+                                    {getInitials(userObj.name) || getInitials(userObj.email)}
                                   </div>
-                                  <p className="comment-text-content">{c.content}</p>
+                                  <span className="assignee-capsule-name">
+                                    {userObj.name || userObj.email}
+                                  </span>
                                 </div>
-                              </div>
-                            );
-                          })}
+                              );
+                            })}
+                          </div>
                         </div>
+                      )}
+                    </div>
 
-                        {/* Formulaire nouveau commentaire */}
-                        <form onSubmit={(e) => handleAddComment(e, task.id)} className="add-comment-input-row">
-                          <input
-                            type="text"
-                            placeholder="Écrire un commentaire..."
-                            value={newComments[task.id] || ""}
-                            onChange={(e) => handleCommentChange(task.id, e.target.value)}
-                            className="comment-input-field"
-                          />
-                          <button
-                            type="submit"
-                            className="btn-send-comment"
-                            disabled={!newComments[task.id]?.trim() || addCommentMutation.isPending}
+                    {/* Section Commentaires Rétractable */}
+                    <div className="task-comments-section">
+                      <button
+                        onClick={() => toggleComments(task.id)}
+                        className="comments-toggle-btn"
+                      >
+                        <span>Commentaires ({task.comments?.length || 0})</span>
+                        {isCommentsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                      </button>
+
+                      {isCommentsOpen && (
+                        <div className="comments-expanded-content">
+                          {/* Liste des commentaires */}
+                          {task.comments && task.comments.length > 0 ? (
+                            <div className="comments-list">
+                              {task.comments.map((comment) => {
+                                const authorObj = comment.author || comment.user || {};
+                                const authorName = authorObj.name || authorObj.email || "Utilisateur";
+                                return (
+                                  <div className="comment-item" key={comment.id}>
+                                    <div className="comment-header">
+                                      <div className="comment-author-info">
+                                        <div
+                                          className="comment-author-avatar"
+                                          style={{ backgroundColor: getAvatarColor(authorName) }}
+                                        >
+                                          {getInitials(authorName)}
+                                        </div>
+                                        <span className="comment-author-name">{authorName}</span>
+                                      </div>
+                                      <span className="comment-date">
+                                        Le {formatDate(comment.createdAt)}
+                                      </span>
+                                    </div>
+                                    <p className="comment-content">{comment.content}</p>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <p className="no-comments-text">Aucun commentaire pour le moment.</p>
+                          )}
+
+                          {/* Formulaire d'ajout de commentaire */}
+                          <form
+                            onSubmit={(e) => handleAddComment(e, task.id)}
+                            className="comment-form"
                           >
-                            {addCommentMutation.isPending ? (
-                              <Loader2 size={16} className="animate-spin" />
-                            ) : (
-                              <Send size={16} />
-                            )}
-                          </button>
-                        </form>
-                      </div>
-                    )}
+                            <input
+                              type="text"
+                              placeholder="Écrivez un commentaire..."
+                              value={newComments[task.id] || ""}
+                              onChange={(e) => handleCommentChange(task.id, e.target.value)}
+                              className="comment-input"
+                              required
+                            />
+                            <button
+                              type="submit"
+                              className="comment-submit-btn"
+                              disabled={addCommentMutation.isPending}
+                            >
+                              {addCommentMutation.isPending ? (
+                                <Loader2 size={16} className="animate-spin" />
+                              ) : (
+                                <Send size={16} />
+                              )}
+                            </button>
+                          </form>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
-              })
-            )}
-          </div>
-        ) : (
-          <ProjectCalendarView
-            tasks={filteredTasks}
-            onSelectTask={(task) => {
-              setTaskToView(task);
-              setIsViewTaskModalOpen(true);
-            }}
-          />
-        )}
+              })}
+            </div>
+          );
+        })()}
       </div>
 
-      {/* Modales */}
       <EditProjectModal
         isOpen={isEditModalOpen}
         project={project}
