@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Sparkles, Plus, Trash2, Edit3, Check, Loader2, AlertTriangle } from "lucide-react";
+import { X, Sparkles, Plus, Trash2, Edit3, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AiTaskGenerationModal({ isOpen, project, onClose, onTasksAdded }) {
@@ -167,7 +167,7 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
-        className="modal-content ai-modal-content"
+        className="modal-content ai-modal-container"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -182,156 +182,133 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
           <X size={20} aria-hidden="true" />
         </button>
 
+        {/* En-tête conforme à la maquette : icône étincelle orange + titre */}
         <div className="ai-modal-header">
-          <div className="ai-modal-icon-badge">
-            <Sparkles size={20} className="ai-badge-sparkle" aria-hidden="true" />
-          </div>
-          <div>
-            <h2 id="modal-title-ai" className="modal-title">
-              Générateur de Tâches IA (RAG & Gemini)
-            </h2>
-            <p className="modal-subtitle">
-              Saisissez vos besoins et l'IA créera des tâches précises sans doublons pour <strong>{project.name}</strong>.
-            </p>
-          </div>
+          <Sparkles size={24} className="ai-sparkle-icon" aria-hidden="true" />
+          <h2 id="modal-title-ai" className="ai-title">
+            {generatedTasks.length > 0 ? "Vos tâches..." : "Créer une tâche"}
+          </h2>
         </div>
 
+        {/* Corps principal : chargement ou liste de cartes générées */}
         <div className="ai-modal-body">
-          {generatedTasks.length > 0 ? (
-            <div className="ai-generated-tasks-section">
-              <div className="section-title-row">
-                <h3>✨ Tâches générées ({generatedTasks.length})</h3>
-                <span className="section-help-text">
-                  Vous pouvez modifier ou supprimer les tâches avant de les ajouter au projet.
-                </span>
-              </div>
+          {isLoading ? (
+            <div className="ai-loading-state">
+              <Loader2 size={32} className="animate-spin ai-spinner" aria-hidden="true" />
+              <p className="ai-loading-text">Génération des tâches par l'IA en cours...</p>
+            </div>
+          ) : generatedTasks.length > 0 ? (
+            <div className="ai-tasks-cards-list">
+              {generatedTasks.map((t, idx) => {
+                const isEditing = editingIndex === idx;
 
-              <div className="ai-tasks-cards-grid">
-                {generatedTasks.map((t, idx) => {
-                  const isEditing = editingIndex === idx;
-
-                  return (
-                    <div key={idx} className="ai-task-card">
-                      {isEditing ? (
-                        <div className="ai-task-edit-form">
-                          <input
-                            type="text"
-                            value={editTitle}
-                            onChange={(e) => setEditTitle(e.target.value)}
-                            className="form-input edit-title-input"
-                            placeholder="Titre de la tâche"
-                            aria-label="Titre de la tâche générée"
-                            autoFocus
-                          />
-                          <textarea
-                            value={editDesc}
-                            onChange={(e) => setEditDesc(e.target.value)}
-                            className="form-input modal-textarea edit-desc-input"
-                            placeholder="Description de la tâche"
-                            aria-label="Description de la tâche générée"
-                            rows={3}
-                          />
-                          <div className="ai-card-edit-actions">
-                            <button
-                              type="button"
-                              className="btn-card-save"
-                              onClick={() => handleSaveEdit(idx)}
-                            >
-                              <Check size={14} aria-hidden="true" /> Valider
-                            </button>
-                          </div>
+                return (
+                  <div key={idx} className="ai-generated-task-card">
+                    {isEditing ? (
+                      <div className="ai-card-edit-mode">
+                        <input
+                          type="text"
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          className="form-input edit-title-input"
+                          placeholder="Titre de la tâche"
+                          aria-label="Titre de la tâche générée"
+                          autoFocus
+                        />
+                        <textarea
+                          value={editDesc}
+                          onChange={(e) => setEditDesc(e.target.value)}
+                          className="form-input modal-textarea edit-desc-input"
+                          placeholder="Description de la tâche"
+                          aria-label="Description de la tâche générée"
+                          rows={3}
+                        />
+                        <button
+                          type="button"
+                          className="btn-save-inline"
+                          onClick={() => handleSaveEdit(idx)}
+                        >
+                          <Check size={14} aria-hidden="true" /> Valider
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <h3 className="ai-card-title">{t.title}</h3>
+                        <p className="ai-card-desc">
+                          {t.description || "Aucune description fournie."}
+                        </p>
+                        <div className="ai-card-actions">
+                          <button
+                            type="button"
+                            className="ai-action-btn delete"
+                            onClick={() => handleDeleteCard(idx)}
+                            aria-label={`Supprimer la tâche ${t.title}`}
+                          >
+                            <Trash2 size={14} aria-hidden="true" /> Supprimer
+                          </button>
+                          <span className="ai-actions-separator">|</span>
+                          <button
+                            type="button"
+                            className="ai-action-btn edit"
+                            onClick={() => handleStartEdit(idx, t)}
+                            aria-label={`Modifier la tâche ${t.title}`}
+                          >
+                            <Edit3 size={14} aria-hidden="true" /> Modifier
+                          </button>
                         </div>
-                      ) : (
-                        <>
-                          <div className="ai-task-card-header">
-                            <h4 className="ai-task-card-title">{t.title}</h4>
-                            <div className="ai-task-card-actions">
-                              <button
-                                type="button"
-                                className="btn-icon-action edit"
-                                onClick={() => handleStartEdit(idx, t)}
-                                title="Modifier cette tâche"
-                                aria-label={`Modifier la tâche ${t.title}`}
-                              >
-                                <Edit3 size={15} aria-hidden="true" />
-                              </button>
-                              <button
-                                type="button"
-                                className="btn-icon-action delete"
-                                onClick={() => handleDeleteCard(idx)}
-                                title="Supprimer cette tâche"
-                                aria-label={`Supprimer la tâche ${t.title}`}
-                              >
-                                <Trash2 size={15} aria-hidden="true" />
-                              </button>
-                            </div>
-                          </div>
-                          <p className="ai-task-card-desc">
-                            {t.description || "Aucune description fournie."}
-                          </p>
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+
+              <div className="ai-submit-tasks-wrapper">
+                <button
+                  type="button"
+                  className="ai-btn-add-all"
+                  onClick={handleConfirmAddTasks}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" aria-hidden="true" /> Ajout au projet...
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={18} aria-hidden="true" /> Ajouter les tâches
+                    </>
+                  )}
+                </button>
               </div>
             </div>
-          ) : (
-            <div className="ai-empty-prompt-state">
-              <Sparkles size={40} className="empty-sparkle-icon" aria-hidden="true" />
-              <p>Décrivez ce que vous souhaitez accomplir ci-dessous pour générer des tâches sur mesure.</p>
-            </div>
-          )}
+          ) : null}
         </div>
 
-        <form onSubmit={handleGenerate} className="ai-prompt-form-footer">
-          <div className="ai-prompt-input-group">
+        {/* Barre de saisie en bas (Pill shape) conforme à la maquette */}
+        <form onSubmit={handleGenerate} className="ai-prompt-bar-container">
+          <div className="ai-prompt-bar">
             <input
               type="text"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Ex: Ajouter 2 tâches pour l'intégration de la facturation..."
+              placeholder="Décrivez les tâches que vous souhaitez ajouter..."
               className="ai-prompt-input"
               disabled={isLoading || isSubmitting}
-              aria-label="Saisir la description des tâches à générer"
+              aria-label="Décrivez les tâches que vous souhaitez ajouter"
             />
             <button
               type="submit"
-              className="btn-ai-generate"
+              className={`ai-prompt-send-btn ${prompt.trim() && !isLoading && !isSubmitting ? "active" : ""}`}
               disabled={!prompt.trim() || isLoading || isSubmitting}
+              aria-label="Envoyer"
             >
               {isLoading ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" aria-hidden="true" /> Génération...
-                </>
+                <Loader2 size={18} className="animate-spin" aria-hidden="true" />
               ) : (
-                <>
-                  <Sparkles size={16} aria-hidden="true" /> Générer
-                </>
+                <Plus size={20} aria-hidden="true" />
               )}
             </button>
           </div>
-
-          {generatedTasks.length > 0 && (
-            <div className="ai-confirm-actions-row">
-              <button
-                type="button"
-                className="btn-confirm-add-tasks"
-                onClick={handleConfirmAddTasks}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" aria-hidden="true" /> Ajout au projet...
-                  </>
-                ) : (
-                  <>
-                    <Plus size={16} aria-hidden="true" /> Ajouter les {generatedTasks.length} tâche(s) au projet
-                  </>
-                )}
-              </button>
-            </div>
-          )}
         </form>
       </div>
     </div>
