@@ -6,9 +6,10 @@
  * =========================================================================================
  * Fichier : src/app/projects/page.js
  * Rôle : Affiche la grille complète des projets auxquels l'utilisateur participe :
- *        1. Calcul dynamique du pourcentage de progression (% de tâches terminées).
- *        2. Distinction entre le Propriétaire (Admin) et les Contributeurs.
- *        3. Boutons d'édition et de suppression réservés exclusivement aux administrateurs.
+ *        1. En-tête "Mes projets" et sous-titre "Gérez vos projets" avec bouton "+ Créer un projet".
+ *        2. Cartes de projets avec barre de progression ("Progression", "X/Y tâches terminées").
+ *        3. Section équipe avec icône Users, avatar et badge "Propriétaire" + collaborateurs.
+ *        4. Boutons d'édition et de suppression réservés aux administrateurs (RBAC).
  * =========================================================================================
  */
 
@@ -16,7 +17,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Edit2, Trash2, Folder } from "lucide-react";
+import { Plus, Edit2, Trash2, Folder, Users } from "lucide-react";
 import CreateProjectModal from "@/components/CreateProjectModal";
 import EditProjectModal from "@/components/EditProjectModal";
 
@@ -171,14 +172,14 @@ export default function Projects() {
 
   return (
     <div className="projects-container">
-      {/* En-tête de la page projets */}
+      {/* En-tête de la page projets conforme à la maquette */}
       <div className="projects-header">
         <div>
-          <h1 className="projects-title">Tous les projets ({projects.length})</h1>
-          <p className="projects-subtitle">Consultez, gérez et créez vos espaces de travail collaboratifs</p>
+          <h1 className="projects-title">Mes projets</h1>
+          <p className="projects-subtitle">Gérez vos projets</p>
         </div>
         <button className="btn-primary" onClick={() => setIsCreateModalOpen(true)}>
-          <Plus size={18} aria-hidden="true" /> Nouveau Projet
+          <Plus size={18} aria-hidden="true" /> Créer un projet
         </button>
       </div>
 
@@ -190,13 +191,13 @@ export default function Projects() {
           const otherMembers = (project.members || []).filter(
             (m) => (m.user?.id || m.id) !== project.ownerId
           );
+          const totalTeamMembers = 1 + otherMembers.length;
 
           return (
             <Link href={`/projects/${project.id}`} key={project.id} className="project-card-link">
               <div className="project-card">
                 <div className="project-card-top">
                   <div className="project-icon-title">
-                    <Folder size={20} className="project-folder-icon" aria-hidden="true" />
                     <h2 className="project-card-title">{project.name}</h2>
                   </div>
 
@@ -230,7 +231,7 @@ export default function Projects() {
                 {/* Barre de progression visuelle (%) */}
                 <div className="project-progress-container">
                   <div className="project-progress-header">
-                    <span>Avancement</span>
+                    <span>Progression</span>
                     <span className="progress-percentage">{project.progress}%</span>
                   </div>
                   <div className="project-progress-bar-bg">
@@ -239,19 +240,28 @@ export default function Projects() {
                       style={{ width: `${project.progress}%` }}
                     />
                   </div>
+                  <span className="tasks-completed-text">
+                    {project.doneTasks || 0}/{project.totalTasks || 0} tâches terminées
+                  </span>
                 </div>
 
-                {/* Liste des contributeurs sous forme de capsules/avatars */}
+                {/* Liste des membres de l'équipe (Maquette avec badge Propriétaire) */}
                 <div className="project-team-container">
-                  <div className="project-team-title">Contributeurs</div>
-                  <div className="project-team-members">
+                  <div className="project-team-header">
+                    <Users size={14} aria-hidden="true" />
+                    <span>Équipe ({totalTeamMembers})</span>
+                  </div>
+                  <div className="project-team-pills">
                     {project.owner && (
-                      <div
-                        className="project-member-avatar owner"
-                        style={{ backgroundColor: getAvatarColor(project.owner.name || project.owner.email) }}
-                        title={`Propriétaire : ${project.owner.name || project.owner.email}`}
-                      >
-                        {getInitials(project.owner.name) || getInitials(project.owner.email)}
+                      <div className="owner-pill-wrapper">
+                        <div
+                          className="project-member-avatar owner"
+                          style={{ backgroundColor: "#ebdcd0" }}
+                          title={`Propriétaire : ${project.owner.name || project.owner.email}`}
+                        >
+                          {getInitials(project.owner.name) || getInitials(project.owner.email)}
+                        </div>
+                        <span className="project-owner-pill">Propriétaire</span>
                       </div>
                     )}
 
