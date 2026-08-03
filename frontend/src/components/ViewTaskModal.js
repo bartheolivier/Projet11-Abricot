@@ -75,6 +75,44 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
     return parts[0] ? parts[0].substring(0, 2).toUpperCase() : "";
   };
 
+  const getCreatorName = () => {
+    if (task.creator?.name) return task.creator.name;
+    if (task.creator?.email) return task.creator.email;
+    if (task.creatorName) return task.creatorName;
+    if (task.createdByName) return task.createdByName;
+
+    if (task.creatorId) {
+      if (task.project?.owner?.id === task.creatorId) {
+        return task.project.owner.name || task.project.owner.email;
+      }
+      if (task.assignees) {
+        for (const a of task.assignees) {
+          const u = a.user || a;
+          if (u && u.id === task.creatorId) return u.name || u.email;
+        }
+      }
+      if (task.comments) {
+        for (const c of task.comments) {
+          const u = c.author || c.user;
+          if (u && u.id === task.creatorId) return u.name || u.email;
+        }
+      }
+    }
+
+    if (task.assignees && task.assignees.length > 0) {
+      const firstUser = task.assignees[0].user || task.assignees[0];
+      if (firstUser?.name) return firstUser.name;
+    }
+
+    if (task.comments && task.comments.length > 0) {
+      const firstComment = task.comments[0];
+      const author = firstComment.author || firstComment.user;
+      if (author?.name) return author.name;
+    }
+
+    return "Non précisé";
+  };
+
   const statusInfo = getStatusDetails(task.status);
 
   return (
@@ -128,7 +166,7 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
                 <User size={16} aria-hidden="true" /> Créateur :
               </span>
               <span className="detail-value">
-                {task.creator?.name || task.creator?.email || "Non précisé"}
+                {getCreatorName()}
               </span>
             </div>
           </div>
