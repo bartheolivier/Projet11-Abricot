@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { 
   ArrowLeft, 
   Calendar,
+  CheckSquare,
   LayoutList,
   MessageSquare, 
   ChevronDown, 
@@ -28,6 +29,7 @@ import {
   Plus, 
   Sparkles, 
   MoreHorizontal,
+  Search,
   Send,
   Loader2
 } from "lucide-react";
@@ -396,7 +398,7 @@ export default function ProjectDetails({ params }) {
                 className={`segmented-btn ${activeView === "list" ? "active" : ""}`}
                 onClick={() => setActiveView("list")}
               >
-                <LayoutList size={16} aria-hidden="true" /> Liste
+                <CheckSquare size={16} aria-hidden="true" /> Liste
               </button>
               <button
                 className={`segmented-btn ${activeView === "calendar" ? "active" : ""}`}
@@ -413,7 +415,7 @@ export default function ProjectDetails({ params }) {
                 className="status-filter-select"
                 aria-label="Filtrer par statut"
               >
-                <option value="ALL">Tous les statuts</option>
+                <option value="ALL">Statut</option>
                 <option value="TODO">À faire</option>
                 <option value="IN_PROGRESS">En cours</option>
                 <option value="DONE">Terminée</option>
@@ -421,14 +423,16 @@ export default function ProjectDetails({ params }) {
               <ChevronDown size={14} className="control-select-icon" aria-hidden="true" />
             </div>
 
-            <div className="control-search">
+            <div className="search-bar-wrapper">
               <input
                 type="text"
                 placeholder="Rechercher une tâche"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                className="search-input-mockup"
                 aria-label="Rechercher une tâche"
               />
+              <Search size={16} className="search-input-icon" aria-hidden="true" />
             </div>
           </div>
         </div>

@@ -77,7 +77,7 @@ export default function Navbar() {
 
   // Calcul des états d'activation des liens de navigation
   const isDashboardActive = pathname === "/dashboard";
-  const isProjectsActive = pathname === "/projects";
+  const isProjectsActive = pathname.startsWith("/projects");
   const isProfileActive = pathname === "/profile";
 
   return (
