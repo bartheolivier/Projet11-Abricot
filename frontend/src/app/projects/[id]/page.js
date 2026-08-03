@@ -415,7 +415,8 @@ export default function ProjectDetails({ params }) {
                 className="status-filter-select"
                 aria-label="Filtrer par statut"
               >
-                <option value="ALL">Tous</option>
+                <option value="ALL" hidden>Statut</option>
+                <option value="ALL">Tous (défaut)</option>
                 <option value="TODO">À faire</option>
                 <option value="IN_PROGRESS">En cours</option>
                 <option value="DONE">Terminée</option>
