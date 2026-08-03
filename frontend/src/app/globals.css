@@ -160,29 +160,42 @@ main.app-main-content {
 }
 
 /* Boutons de bascule (Toggle) */
+/* --- COMMUTATEURS DE VUE (MAQUETTE CONFORME) --- */
 .view-toggles {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-}
-
-.btn-toggle {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  border: 1px solid #eee;
+  background: transparent;
+  padding: 0;
+  border: none;
+  margin-bottom: 1.5rem;
+}
+
+.btn-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: #d35400;
+  font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
-  background: white;
-  color: #666;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.btn-toggle:hover {
+  background: #fff0e6;
 }
 
 .btn-toggle.active {
-  background: #fff0e6;
-  color: #ff6b00;
-  border-color: #fff0e6;
+  background: #ffe8d6;
+  color: #d35400;
+  font-weight: 600;
+  border: none;
+  box-shadow: none;
 }
 
 /* Conteneur principal des tâches */
@@ -2549,37 +2562,40 @@ main.app-main-content {
 
 .segmented-toggle {
   display: flex;
-  background: #f1f3f5;
-  padding: 4px;
-  border-radius: 10px;
-  gap: 4px;
-  border: 1px solid #e9ecef;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  border: none;
 }
 
 .segmented-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  font-size: 0.88rem;
-  font-weight: 600;
+  gap: 0.5rem;
+  padding: 0.55rem 1.1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
   border: none;
   background: transparent;
-  color: #666;
-  border-radius: 7px;
+  color: #d35400;
+  border-radius: 10px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .segmented-btn:hover {
-  color: #111;
-  background: rgba(255, 255, 255, 0.5);
+  background: #fff0e6;
+  color: #d35400;
 }
 
 .segmented-btn.active {
-  background: white;
-  color: #e65100;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  background: #ffe8d6;
+  color: #d35400;
+  font-weight: 600;
+  border: none;
+  box-shadow: none;
 }
 
 /* --- VUE CALENDRIER DU PROJET --- */
