@@ -191,15 +191,15 @@ export default function Dashboard() {
                             <p className="task-desc">{task.description}</p>
                             
                             <div className="task-meta">
-                              <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                              <span className="meta-item-inline">
                                 <Folder size={14} /> {task.project?.name || "Sans projet"}
                               </span>
                               {task.dueDate && (
-                                <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                                <span className="meta-item-inline">
                                   <Calendar size={14} /> {new Date(task.dueDate).toLocaleDateString("fr-FR")}
                                 </span>
                               )}
-                              <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                              <span className="meta-item-inline">
                                 <MessageSquare size={14} /> {task.comments?.length || 0}
                               </span>
                             </div>
@@ -220,7 +220,7 @@ export default function Dashboard() {
                       );
                     })
                   ) : (
-                    <p style={{ textAlign: "center", color: "#888", padding: "2rem" }}>
+                    <p className="empty-search-msg">
                       {searchQuery.trim() 
                         ? `Aucune tâche ne correspond à la recherche "${searchQuery}".` 
                         : "Aucune tâche assignée pour le moment."}
@@ -249,15 +249,15 @@ export default function Dashboard() {
                           </div>
                           <p className="kanban-card-desc">{task.description}</p>
                           <div className="kanban-card-meta">
-                            <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                            <span className="meta-item-inline">
                               <Folder size={14} /> {task.project?.name || "Sans projet"}
                             </span>
                             {task.dueDate && (
-                              <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                              <span className="meta-item-inline">
                                 <Calendar size={14} /> {new Date(task.dueDate).toLocaleDateString("fr-FR")}
                               </span>
                             )}
-                            <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                            <span className="meta-item-inline">
                               <MessageSquare size={14} /> {task.comments?.length || 0}
                             </span>
                           </div>
@@ -297,15 +297,15 @@ export default function Dashboard() {
                           </div>
                           <p className="kanban-card-desc">{task.description}</p>
                           <div className="kanban-card-meta">
-                            <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                            <span className="meta-item-inline">
                               <Folder size={14} /> {task.project?.name || "Sans projet"}
                             </span>
                             {task.dueDate && (
-                              <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                              <span className="meta-item-inline">
                                 <Calendar size={14} /> {new Date(task.dueDate).toLocaleDateString("fr-FR")}
                               </span>
                             )}
-                            <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                            <span className="meta-item-inline">
                               <MessageSquare size={14} /> {task.comments?.length || 0}
                             </span>
                           </div>
@@ -345,15 +345,15 @@ export default function Dashboard() {
                           </div>
                           <p className="kanban-card-desc">{task.description}</p>
                           <div className="kanban-card-meta">
-                            <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                            <span className="meta-item-inline">
                               <Folder size={14} /> {task.project?.name || "Sans projet"}
                             </span>
                             {task.dueDate && (
-                              <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                              <span className="meta-item-inline">
                                 <Calendar size={14} /> {new Date(task.dueDate).toLocaleDateString("fr-FR")}
                               </span>
                             )}
-                            <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                            <span className="meta-item-inline">
                               <MessageSquare size={14} /> {task.comments?.length || 0}
                             </span>
                           </div>
