@@ -808,6 +808,37 @@ main.app-main-content {
   }
 }
 
+.project-card-link {
+  text-decoration: none !important;
+  color: inherit !important;
+  display: block;
+}
+
+.project-card-link h2,
+.project-card-link p,
+.project-card-link span {
+  text-decoration: none !important;
+}
+
+.project-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.project-icon-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.project-folder-icon {
+  color: #1a1a1a;
+  flex-shrink: 0;
+}
+
 .project-card {
   background: white;
   border: 1px solid #eee;
@@ -830,9 +861,9 @@ main.app-main-content {
 .project-card-title {
   font-size: 1.25rem;
   font-weight: 700;
-  margin: 0 0 0.75rem 0;
+  margin: 0;
   color: var(--text-color);
-  padding-right: 3.5rem; /* Place pour les actions rapides */
+  text-decoration: none !important;
 }
 
 .project-card-desc {

@@ -204,7 +204,7 @@ export default function Projects() {
                   {isAdmin && (
                     <div className="project-card-actions">
                       <button
-                        className="btn-icon-action"
+                        className="card-action-btn"
                         onClick={(e) => handleEditClick(e, project)}
                         title="Modifier le projet"
                         aria-label={`Modifier le projet ${project.name}`}
@@ -212,7 +212,7 @@ export default function Projects() {
                         <Edit2 size={16} aria-hidden="true" />
                       </button>
                       <button
-                        className="btn-icon-action delete"
+                        className="card-action-btn delete-btn"
                         onClick={(e) => handleDeleteProject(e, project.id, project.name)}
                         title="Supprimer le projet"
                         aria-label={`Supprimer le projet ${project.name}`}
@@ -228,26 +228,26 @@ export default function Projects() {
                 </p>
 
                 {/* Barre de progression visuelle (%) */}
-                <div className="project-progress-section">
-                  <div className="progress-bar-labels">
+                <div className="project-progress-container">
+                  <div className="project-progress-header">
                     <span>Avancement</span>
                     <span className="progress-percentage">{project.progress}%</span>
                   </div>
-                  <div className="progress-bar-track">
+                  <div className="project-progress-bar-bg">
                     <div
-                      className="progress-bar-fill"
+                      className="project-progress-bar-fill"
                       style={{ width: `${project.progress}%` }}
                     />
                   </div>
                 </div>
 
                 {/* Liste des contributeurs sous forme de capsules/avatars */}
-                <div className="project-card-footer">
-                  <span className="footer-label">Contributeurs</span>
-                  <div className="members-avatars-stack">
+                <div className="project-team-container">
+                  <div className="project-team-title">Contributeurs</div>
+                  <div className="project-team-members">
                     {project.owner && (
                       <div
-                        className="member-avatar-pill owner"
+                        className="project-member-avatar owner"
                         style={{ backgroundColor: getAvatarColor(project.owner.name || project.owner.email) }}
                         title={`Propriétaire : ${project.owner.name || project.owner.email}`}
                       >
@@ -258,7 +258,7 @@ export default function Projects() {
                     {otherMembers.map((member) => (
                       <div
                         key={member.user?.id || member.id}
-                        className="member-avatar-pill"
+                        className="project-member-avatar"
                         style={{ backgroundColor: getAvatarColor(member.user?.name || member.user?.email) }}
                         title={member.user?.name || member.user?.email}
                       >
