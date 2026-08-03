@@ -1,5 +1,18 @@
 "use client";
 
+/**
+ * =========================================================================================
+ * MODALE DE GÉNÉRATION DE TÂCHES PAR IA (RAG & GEMINI LLM)
+ * =========================================================================================
+ * Fichier : src/components/AiTaskGenerationModal.js
+ * Rôle : Composant d'assistance intelligente basé sur la RAG (Retrieval-Augmented Generation) :
+ *        1. Transmet l'intention utilisateur au serveur backend /api/ai/generate-tasks.
+ *        2. Le backend injecte les tâches existantes dans LlamaIndex.TS pour éviter les doublons.
+ *        3. Présente les cartes générées dans l'interface sous forme de prévisualisation modifiable (✏️) ou supprimable (🗑️).
+ *        4. Valide l'ajout global des tâches sélectionnées dans le projet.
+ * =========================================================================================
+ */
+
 import React, { useState, useEffect } from "react";
 import { X, Sparkles, Plus, Trash2, Edit3, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -11,11 +24,11 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
 
-  // Édition d'une tâche individuelle
+  // Édition d'une tâche individuelle dans la prévisualisation
   const [editTitle, setEditTitle] = useState("");
   const [editDesc, setEditDesc] = useState("");
 
-  // Verrouiller le défilement du fond + Gestion de la touche Échap (WCAG 2.1)
+  // Accessibilité WCAG 2.1 : Verrouillage du scroll arrière-plan & fermeture touche Échap
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
@@ -37,6 +50,9 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
 
   if (!isOpen || !project) return null;
 
+  /**
+   * SOUMISSION DU PROMPT DE GÉNÉRATION IA
+   */
   const handleGenerate = async (e) => {
     if (e) e.preventDefault();
     if (!prompt.trim()) {
@@ -51,6 +67,7 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
         .find((row) => row.startsWith("token="))
         ?.split("=")[1];
 
+      // Envoi de la requête au backend RAG + LLM Gemini
       const response = await fetch("/api/ai/generate-tasks", {
         method: "POST",
         headers: {
@@ -84,6 +101,9 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
     }
   };
 
+  /**
+   * Suppression d'une carte de la prévisualisation
+   */
   const handleDeleteCard = (index) => {
     setGeneratedTasks((prev) => prev.filter((_, i) => i !== index));
     if (editingIndex === index) {
@@ -91,12 +111,18 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
     }
   };
 
+  /**
+   * Démarrage du mode édition inline pour une carte générée
+   */
   const handleStartEdit = (index, task) => {
     setEditingIndex(index);
     setEditTitle(task.title);
     setEditDesc(task.description);
   };
 
+  /**
+   * Sauvegarde de l'édition inline
+   */
   const handleSaveEdit = (index) => {
     if (!editTitle.trim()) {
       toast.error("Le titre ne peut pas être vide.");
@@ -110,6 +136,9 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
     setEditingIndex(null);
   };
 
+  /**
+   * VALIDATION FINALE : CRÉATION DE TOUTES LES TÂCHES GÉNÉRÉES DANS LE PROJET
+   */
   const handleConfirmAddTasks = async () => {
     if (generatedTasks.length === 0) return;
 
@@ -131,6 +160,7 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
 
       let addedCount = 0;
 
+      // Création séquentielle de chaque tâche prévisualisée dans le projet
       for (const t of generatedTasks) {
         const res = await fetch(`/api/projects/${project.id}/tasks`, {
           method: "POST",
@@ -182,7 +212,7 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
           <X size={20} aria-hidden="true" />
         </button>
 
-        {/* En-tête conforme à la maquette : icône étincelle orange + titre */}
+        {/* En-tête conforme aux maquettes officielles : Icône orange + Titre dynamique */}
         <div className="ai-modal-header">
           <Sparkles size={24} className="ai-sparkle-icon" aria-hidden="true" />
           <h2 id="modal-title-ai" className="ai-title">
@@ -205,6 +235,7 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
                 return (
                   <div key={idx} className="ai-generated-task-card">
                     {isEditing ? (
+                      /* Formulaire d'édition inline */
                       <div className="ai-card-edit-mode">
                         <input
                           type="text"
@@ -232,6 +263,7 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
                         </button>
                       </div>
                     ) : (
+                      /* Carte de prévisualisation normale */
                       <>
                         <h3 className="ai-card-title">{t.title}</h3>
                         <p className="ai-card-desc">
@@ -262,6 +294,7 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
                 );
               })}
 
+              {/* Bouton d'action principal "+ Ajouter les tâches" */}
               <div className="ai-submit-tasks-wrapper">
                 <button
                   type="button"
@@ -284,7 +317,7 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
           ) : null}
         </div>
 
-        {/* Barre de saisie en bas (Pill shape) conforme à la maquette */}
+        {/* Barre de saisie du prompt (Champ Pill shape) */}
         <form onSubmit={handleGenerate} className="ai-prompt-bar-container">
           <div className="ai-prompt-bar">
             <input

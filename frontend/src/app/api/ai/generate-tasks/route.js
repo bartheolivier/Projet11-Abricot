@@ -1,3 +1,17 @@
+/**
+ * =========================================================================================
+ * ROUTE API BACKEND RAG (RETRIEVAL-AUGMENTED GENERATION) AVEC LLAMAINDEX.TS & GEMINI
+ * =========================================================================================
+ * Fichier : src/app/api/ai/generate-tasks/route.js
+ * Rôle : Route API serveur (Next.js Route Handler) qui orchestre l'IA générative :
+ *        1. Masque et protège la clé d'API Google Gemini côté serveur.
+ *        2. Charge les tâches existantes du projet (Phase 1 : Retrieval).
+ *        3. Crée un document d'indexation vectorielle via LlamaIndex.TS (Document & SummaryIndex).
+ *        4. Transmet le prompt ancré au QueryEngine LLM Gemini (Phase 2 : Augmented Generation).
+ *        5. Nettoie et valide la réponse au format JSON structuré.
+ * =========================================================================================
+ */
+
 import { NextResponse } from "next/server";
 import { Document, SummaryIndex, Settings } from "llamaindex";
 import { Gemini, GEMINI_MODEL, GeminiEmbedding, GEMINI_EMBEDDING_MODEL } from "@llamaindex/google";
@@ -8,6 +22,7 @@ export async function POST(request) {
     const body = await request.json();
     const { projectId, prompt } = body;
 
+    // Validation des données entrantes du client
     if (!projectId || !prompt || !prompt.trim()) {
       return NextResponse.json(
         { message: "Le projet et la description (prompt) sont requis." },
@@ -15,6 +30,7 @@ export async function POST(request) {
       );
     }
 
+    // Vérification de la configuration de la clé API Gemini
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey || apiKey.includes("votre_cle")) {
       return NextResponse.json(
@@ -26,10 +42,10 @@ export async function POST(request) {
       );
     }
 
-    // Sélection de la constante de modèle LLM officielle LlamaIndex.TS
+    // Sélection dynamique du modèle LLM Gemini officiel dans LlamaIndex.TS
     const modelEnum = GEMINI_MODEL.GEMINI_2_5_FLASH_LATEST || GEMINI_MODEL.GEMINI_PRO_1_5_FLASH_LATEST || GEMINI_MODEL.GEMINI_PRO;
 
-    // Configurer le modèle LLM et le modèle d'Embedding de LlamaIndex.TS
+    // Configuration de l'agent LLM Gemini et du modèle de Vector Embeddings
     const geminiLlm = new Gemini({
       apiKey: apiKey,
       model: modelEnum,
@@ -40,16 +56,19 @@ export async function POST(request) {
       model: GEMINI_EMBEDDING_MODEL.TEXT_EMBEDDING_004 || "text-embedding-004",
     });
 
-    // Correctif indispensable LlamaIndex.TS : GeminiEmbedding ne définit pas .metadata par défaut
+    // Patch d'optimisation LlamaIndex.TS pour définir les métadonnées de contexte Embedding
     geminiEmbed.metadata = {
       model: GEMINI_EMBEDDING_MODEL.TEXT_EMBEDDING_004 || "text-embedding-004",
       contextWindow: 2048,
     };
 
+    // Attribution globale dans les paramètres LlamaIndex.TS
     Settings.llm = geminiLlm;
     Settings.embedModel = geminiEmbed;
 
-    // 1. Récupération des données du projet et des tâches existantes (Retrieval)
+    // -------------------------------------------------------------------------------------
+    // ÉTAPE 1 : RETRIEVAL (RECUPÉRATION DU CONTEXTE DU PROJET ET DES TÂCHES EXISTANTES)
+    // -------------------------------------------------------------------------------------
     let existingTasks = [];
     let projectDetails = null;
 
@@ -73,7 +92,9 @@ export async function POST(request) {
       console.warn("Impossible de charger les données du projet:", err.message);
     }
 
-    // 2. Création du Document de contexte LlamaIndex.TS
+    // -------------------------------------------------------------------------------------
+    // ÉTAPE 2 : INDEXATION ET DOCUMENTATION CONTEXTUELLE LLAMAINDEX.TS
+    // -------------------------------------------------------------------------------------
     const projectInfoText = `Nom du Projet: ${projectDetails?.name || "Projet"}
 Description: ${projectDetails?.description || "Aucune description"}`;
 
@@ -81,19 +102,21 @@ Description: ${projectDetails?.description || "Aucune description"}`;
       ? existingTasks.map((t, idx) => `Tâche ${idx + 1}: ${t.title} | Description: ${t.description || "Sans description"}`).join("\n")
       : "Aucune tâche existante.";
 
-    // Instanciation de la classe Document officielle de LlamaIndex.TS
+    // Instanciation de la classe Document officielle LlamaIndex.TS
     const contextDocument = new Document({
       text: `INFORMATIONS DU PROJET:\n${projectInfoText}\n\nTÂCHES DÉJÀ EXISTANTES DANS CE PROJET (NE PAS DUPLIQUER):\n${tasksInfoText}`,
       metadata: { projectId, tasksCount: existingTasks.length },
     });
 
-    // 3. Indexation et Moteur de Recherche RAG via LlamaIndex.TS (SummaryIndex)
+    // -------------------------------------------------------------------------------------
+    // ÉTAPE 3 : CRÉATION DE L'INDEX SUMMARYINDEX ET DU QUERY ENGINE RAG
+    // -------------------------------------------------------------------------------------
     const index = await SummaryIndex.fromDocuments([contextDocument]);
     const queryEngine = index.asQueryEngine({
       llm: geminiLlm,
     });
 
-    // Prompt structuré envoyé au QueryEngine de LlamaIndex.TS
+    // Prompt fortement ancré transmis au QueryEngine
     const ragQuery = `Vous êtes un assistant expert en gestion de projet.
 Sur la base du contexte du projet et des tâches existantes fournies dans le document :
 Demande de l'utilisateur : "${prompt.trim()}"
@@ -109,11 +132,12 @@ Consignes :
   }
 ]`;
 
-    // 4. Exécution du RAG LlamaIndex.TS
+    // -------------------------------------------------------------------------------------
+    // ÉTAPE 4 : EXÉCUTION DE LA REQUÊTE ET PARSING JSON
+    // -------------------------------------------------------------------------------------
     const response = await queryEngine.query({ query: ragQuery });
     const textOutput = response.toString();
 
-    // 5. Nettoyage et Parsing du résultat JSON
     let generatedTasks = [];
     try {
       const cleanJson = textOutput.replace(/```json/g, "").replace(/```/g, "").trim();

@@ -1,5 +1,17 @@
 "use client";
 
+/**
+ * =========================================================================================
+ * PAGE LISTE DES PROJETS (PROJECTS OVERVIEW PAGE)
+ * =========================================================================================
+ * Fichier : src/app/projects/page.js
+ * Rôle : Affiche la grille complète des projets auxquels l'utilisateur participe :
+ *        1. Calcul dynamique du pourcentage de progression (% de tâches terminées).
+ *        2. Distinction entre le Propriétaire (Admin) et les Contributeurs.
+ *        3. Boutons d'édition et de suppression réservés exclusivement aux administrateurs.
+ * =========================================================================================
+ */
+
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -14,11 +26,14 @@ export default function Projects() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState(null);
 
-  // États pour les modales
+  // États locaux de gestion des modales
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [projectToEdit, setProjectToEdit] = useState(null);
 
+  /**
+   * RÉCUPÉRATION DU PROFIL ET DE LA LISTE DES PROJETS AVEC PROGRESSION
+   */
   const fetchProfileAndProjects = async () => {
     try {
       const token = document.cookie
@@ -31,7 +46,7 @@ export default function Projects() {
         return;
       }
 
-      // 1. Récupérer le profil pour avoir l'ID utilisateur
+      // 1. Récupération de l'identifiant de l'utilisateur connecté
       const profileRes = await fetch("/api/auth/profile", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -42,7 +57,7 @@ export default function Projects() {
         setCurrentUserId(userId);
       }
 
-      // 2. Récupérer les projets
+      // 2. Récupération des projets accessibles à l'utilisateur
       const projectsRes = await fetch("/api/projects", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -54,7 +69,7 @@ export default function Projects() {
       const responseJson = await projectsRes.json();
       const rawProjects = responseJson.data?.projects || [];
 
-      // 3. Récupérer les tâches de chaque projet en parallèle pour calculer la progression
+      // 3. Calcul parallèle du taux de complétion (% de tâches terminées) pour chaque projet
       const projectsWithProgress = await Promise.all(
         rawProjects.map(async (project) => {
           try {
@@ -65,29 +80,20 @@ export default function Projects() {
               const tasksJson = await tasksRes.json();
               const tasks = tasksJson.data?.tasks || [];
               const total = tasks.length;
-              const completed = tasks.filter((t) => t.status === "DONE").length;
-              return {
-                ...project,
-                totalTasks: total,
-                completedTasks: completed,
-                progress: total > 0 ? Math.round((completed / total) * 100) : 0,
-              };
+              const done = tasks.filter((t) => t.status === "DONE").length;
+              const progress = total > 0 ? Math.round((done / total) * 100) : 0;
+              return { ...project, progress, totalTasks: total, doneTasks: done };
             }
           } catch (err) {
-            console.error("Erreur tasks pour projet", project.id, err);
+            console.error("Erreur calcul progression projet:", err);
           }
-          return {
-            ...project,
-            totalTasks: 0,
-            completedTasks: 0,
-            progress: 0,
-          };
+          return { ...project, progress: 0, totalTasks: 0, doneTasks: 0 };
         })
       );
 
       setProjects(projectsWithProgress);
-    } catch (error) {
-      toast.error(error.message);
+    } catch (err) {
+      toast.error(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -97,18 +103,14 @@ export default function Projects() {
     fetchProfileAndProjects();
   }, []);
 
-  const handleEditProject = (e, project) => {
-    e.preventDefault(); // Empêcher le clic de naviguer vers les détails du projet
-    e.stopPropagation();
-    setProjectToEdit(project);
-    setIsEditModalOpen(true);
-  };
-
+  /**
+   * SUPPRESSION D'UN PROJET (RÉSERVÉ AUX ADMINISTRATEURS)
+   */
   const handleDeleteProject = async (e, projectId, projectName) => {
-    e.preventDefault(); // Empêcher le clic de naviguer vers les détails
+    e.preventDefault();
     e.stopPropagation();
 
-    if (!confirm(`Voulez-vous vraiment supprimer le projet "${projectName}" ? Cette action est irréversible.`)) {
+    if (!confirm(`Voulez-vous vraiment supprimer le projet "${projectName}" ?`)) {
       return;
     }
 
@@ -118,26 +120,31 @@ export default function Projects() {
         .find((row) => row.startsWith("token="))
         ?.split("=")[1];
 
-      if (!token) return;
-
-      const response = await fetch(`/api/projects/${projectId}`, {
+      const res = await fetch(`/api/projects/${projectId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!response.ok) {
-        const errorJson = await response.json();
-        throw new Error(errorJson.message || "Erreur de suppression du projet");
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.message || "Impossible de supprimer ce projet");
       }
 
-      toast.success("Projet supprimé avec succès !");
-      fetchProfileAndProjects(); // Rafraîchir la liste
+      toast.success("Projet supprimé avec succès.");
+      fetchProfileAndProjects();
     } catch (err) {
       toast.error(err.message);
     }
   };
 
-  // Génération stable de couleurs pastels pour les avatars
+  const handleEditClick = (e, project) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setProjectToEdit(project);
+    setIsEditModalOpen(true);
+  };
+
+  // Algorithme de génération de couleur d'avatar basée sur le nom
   const colors = ["#ffe8d6", "#e2ece9", "#f0efeb", "#ddbea9", "#a8dadc", "#f4a261"];
   const getAvatarColor = (name) => {
     if (!name) return colors[0];
@@ -157,140 +164,129 @@ export default function Projects() {
   if (isLoading) {
     return (
       <div className="projects-container">
-        <p>Chargement des projets...</p>
+        <p className="loading-text">Chargement des projets...</p>
       </div>
     );
   }
 
   return (
     <div className="projects-container">
+      {/* En-tête de la page projets */}
       <div className="projects-header">
         <div>
-          <h1 className="projects-title">Mes projets</h1>
-          <p className="projects-subtitle">Gerez vos projets</p>
+          <h1 className="projects-title">Tous les projets ({projects.length})</h1>
+          <p className="projects-subtitle">Consultez, gérez et créez vos espaces de travail collaboratifs</p>
         </div>
         <button className="btn-primary" onClick={() => setIsCreateModalOpen(true)}>
-          <Plus size={16} /> Créer un projet
+          <Plus size={18} aria-hidden="true" /> Nouveau Projet
         </button>
       </div>
 
-      {projects.length === 0 ? (
-        <div className="projects-empty-state">
-          <Folder size={48} className="empty-icon" />
-          <p className="empty-title">Aucun projet trouvé</p>
-          <p className="empty-subtitle">Vous n'êtes membre d'aucun projet pour le moment.</p>
-        </div>
-      ) : (
-        <div className="projects-grid">
-          {projects.map((project) => {
-            // Filtrer les autres membres pour ne pas afficher le propriétaire deux fois
-            const otherMembers = project.members.filter(
-              (m) => m.user.id !== project.ownerId
-            );
+      {/* Grille des cartes de projets */}
+      <div className="projects-grid">
+        {projects.map((project) => {
+          const isOwner = project.ownerId === currentUserId;
+          const isAdmin = project.userRole === "ADMIN" || isOwner;
+          const otherMembers = (project.members || []).filter(
+            (m) => (m.user?.id || m.id) !== project.ownerId
+          );
 
-            // Vérifier si l'utilisateur actuel est ADMIN ou le propriétaire du projet
-            const isAdmin = project.userRole === "ADMIN" || project.ownerId === currentUserId;
-
-            return (
-              <Link 
-                href={`/projects/${project.id}`} 
-                key={project.id} 
-                className="project-card"
-              >
-                {/* Actions rapides réservées aux administrateurs */}
-                {isAdmin && (
-                  <div className="project-card-actions">
-                    <button 
-                      onClick={(e) => handleEditProject(e, project)}
-                      className="card-action-btn edit-btn"
-                      title="Modifier le projet"
-                    >
-                      <Edit2 size={14} />
-                    </button>
-                    <button 
-                      onClick={(e) => handleDeleteProject(e, project.id, project.name)}
-                      className="card-action-btn delete-btn"
-                      title="Supprimer le projet"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+          return (
+            <Link href={`/projects/${project.id}`} key={project.id} className="project-card-link">
+              <div className="project-card">
+                <div className="project-card-top">
+                  <div className="project-icon-title">
+                    <Folder size={20} className="project-folder-icon" aria-hidden="true" />
+                    <h2 className="project-card-title">{project.name}</h2>
                   </div>
-                )}
 
-                <h2 className="project-card-title">{project.name}</h2>
+                  {/* Boutons d'édition/suppression réservés aux administrateurs (RBAC) */}
+                  {isAdmin && (
+                    <div className="project-card-actions">
+                      <button
+                        className="btn-icon-action"
+                        onClick={(e) => handleEditClick(e, project)}
+                        title="Modifier le projet"
+                        aria-label={`Modifier le projet ${project.name}`}
+                      >
+                        <Edit2 size={16} aria-hidden="true" />
+                      </button>
+                      <button
+                        className="btn-icon-action delete"
+                        onClick={(e) => handleDeleteProject(e, project.id, project.name)}
+                        title="Supprimer le projet"
+                        aria-label={`Supprimer le projet ${project.name}`}
+                      >
+                        <Trash2 size={16} aria-hidden="true" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <p className="project-card-desc">
-                  {project.description || "Aucune description fournie pour ce projet."}
+                  {project.description || "Aucune description fournie."}
                 </p>
 
-                {/* Section Progression */}
-                <div className="project-progress-container">
-                  <div className="project-progress-header">
-                    <span>Progression</span>
+                {/* Barre de progression visuelle (%) */}
+                <div className="project-progress-section">
+                  <div className="progress-bar-labels">
+                    <span>Avancement</span>
                     <span className="progress-percentage">{project.progress}%</span>
                   </div>
-                  <div className="project-progress-bar-bg">
-                    <div 
-                      className="project-progress-bar-fill" 
+                  <div className="progress-bar-track">
+                    <div
+                      className="progress-bar-fill"
                       style={{ width: `${project.progress}%` }}
                     />
                   </div>
-                  <p className="project-tasks-text">
-                    {project.completedTasks}/{project.totalTasks} tâches terminées
-                  </p>
                 </div>
 
-                {/* Section Équipe */}
-                <div className="project-team-container">
-                  <p className="project-team-title">
-                    Équipe ({1 + otherMembers.length})
-                  </p>
-                  <div className="project-team-members">
-                    {/* Propriétaire */}
-                    <div className="team-member-group">
-                      <div 
-                        className="project-member-avatar owner-avatar"
+                {/* Liste des contributeurs sous forme de capsules/avatars */}
+                <div className="project-card-footer">
+                  <span className="footer-label">Contributeurs</span>
+                  <div className="members-avatars-stack">
+                    {project.owner && (
+                      <div
+                        className="member-avatar-pill owner"
                         style={{ backgroundColor: getAvatarColor(project.owner.name || project.owner.email) }}
-                        title={`${project.owner.name || project.owner.email} (Propriétaire)`}
+                        title={`Propriétaire : ${project.owner.name || project.owner.email}`}
                       >
                         {getInitials(project.owner.name) || getInitials(project.owner.email)}
                       </div>
-                      <span className="project-owner-badge">Propriétaire</span>
-                    </div>
+                    )}
 
-                    {/* Autres Membres */}
                     {otherMembers.map((member) => (
-                      <div 
-                        key={member.user.id}
-                        className="project-member-avatar"
-                        style={{ backgroundColor: getAvatarColor(member.user.name || member.user.email) }}
-                        title={`${member.user.name || member.user.email} (Contributeur)`}
+                      <div
+                        key={member.user?.id || member.id}
+                        className="member-avatar-pill"
+                        style={{ backgroundColor: getAvatarColor(member.user?.name || member.user?.email) }}
+                        title={member.user?.name || member.user?.email}
                       >
-                        {getInitials(member.user.name) || getInitials(member.user.email)}
+                        {getInitials(member.user?.name) || getInitials(member.user?.email)}
                       </div>
                     ))}
                   </div>
                 </div>
-              </Link>
-            );
-          })}
-        </div>
-      )}
+              </div>
+            </Link>
+          );
+        })}
+      </div>
 
-      {/* Rendu des modales */}
-      <CreateProjectModal 
-        isOpen={isCreateModalOpen} 
-        onClose={() => setIsCreateModalOpen(false)} 
-        onProjectCreated={fetchProfileAndProjects} 
+      <CreateProjectModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onProjectCreated={fetchProfileAndProjects}
       />
 
-      <EditProjectModal 
-        isOpen={isEditModalOpen} 
-        project={projectToEdit} 
+      <EditProjectModal
+        isOpen={isEditModalOpen}
+        project={projectToEdit}
         onClose={() => {
           setIsEditModalOpen(false);
           setProjectToEdit(null);
-        }} 
-        onProjectUpdated={fetchProfileAndProjects} 
+        }}
+        onProjectUpdated={fetchProfileAndProjects}
       />
     </div>
   );

@@ -1,5 +1,17 @@
 "use client";
 
+/**
+ * =========================================================================================
+ * PAGE PROFIL UTILISATEUR & COMPTE (USER PROFILE PAGE)
+ * =========================================================================================
+ * Fichier : src/app/profile/page.js
+ * Rôle : Permet à l'utilisateur de consulter et mettre à jour ses informations personnelles :
+ *        1. Modification du nom, prénom et adresse e-mail.
+ *        2. Modification sécurisée du mot de passe (nécessite la confirmation du mot de passe actuel).
+ *        3. Déconnexion avec réinitialisation du cookie de session JWT.
+ * =========================================================================================
+ */
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -7,6 +19,7 @@ import { toast } from "sonner";
 export default function Profile() {
   const router = useRouter();
 
+  // États locaux de gestion du profil utilisateur
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -16,6 +29,9 @@ export default function Profile() {
   const [isLoading, setIsLoading] = useState(true);
   const [userFullName, setUserFullName] = useState("");
 
+  /**
+   * CHARGEMENT DU PROFIL UTILISATEUR DEPUIS L'API BACKEND
+   */
   const fetchProfile = async () => {
     try {
       const token = document.cookie
@@ -52,7 +68,7 @@ export default function Profile() {
         setUserFullName(fullName);
         setEmail(userData.email || "");
 
-        // Extraire prénom et nom
+        // Décomposition du nom complet en prénom et nom de famille
         const nameParts = fullName.trim().split(/\s+/);
         if (nameParts.length >= 2) {
           setFirstName(nameParts[0]);
@@ -76,6 +92,9 @@ export default function Profile() {
     fetchProfile();
   }, []);
 
+  /**
+   * SOUMISSION DES MODIFICATIONS DU PROFIL ET/OU MOT DE PASSE
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -93,7 +112,7 @@ export default function Profile() {
 
       const fullName = `${firstName} ${lastName}`.trim();
 
-      // 1. Mettre à jour le profil (nom et email)
+      // 1. Mise à jour du nom complet et de l'adresse e-mail via PUT /api/auth/profile
       const profileResponse = await fetch("/api/auth/profile", {
         method: "PUT",
         headers: {
@@ -109,10 +128,10 @@ export default function Profile() {
         throw new Error(profileData.message || "Erreur de mise à jour du profil");
       }
 
-      // 2. Si le mot de passe est modifié, mettre à jour le mot de passe
+      // 2. Si un nouveau mot de passe a été saisi, appel de l'API de modification du mot de passe
       if (password) {
         if (!currentPassword) {
-          throw new Error("Le mot de passe actuel est requis pour changer votre mot de passe");
+          throw new Error("Le mot de passe actuel est requis pour valider le changement");
         }
 
         const passwordResponse = await fetch("/api/auth/password", {
@@ -136,11 +155,8 @@ export default function Profile() {
       setCurrentPassword("");
       setIsChangingPassword(false);
       
-      // Re-fetch pour rafraîchir la navbar et les en-têtes
       await fetchProfile();
-      
-      // Forcer le rechargement de la page pour que la navbar se mette à jour
-      window.location.reload();
+      window.location.reload(); // Rafraîchissement de l'application pour mettre à jour la Navbar
 
     } catch (error) {
       toast.error(error.message);
@@ -149,6 +165,10 @@ export default function Profile() {
     }
   };
 
+  /**
+   * DÉCONNEXION DE L'UTILISATEUR (LOGOUT)
+   * Supprime le cookie "token" en fixant sa durée max-age=0 et redirige vers la page d'accueil.
+   */
   const handleLogout = () => {
     document.cookie = "token=; path=/; max-age=0; SameSite=Strict";
     router.push("/");
@@ -158,7 +178,7 @@ export default function Profile() {
     return (
       <div className="profile-container">
         <div className="profile-card">
-          <p>Chargement de vos informations...</p>
+          <p className="loading-text">Chargement de vos informations...</p>
         </div>
       </div>
     );
