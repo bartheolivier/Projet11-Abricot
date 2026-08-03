@@ -1,10 +1,24 @@
 "use client";
 
+/**
+ * =========================================================================================
+ * MODALE DE CRÉATION DE PROJET (CREATE PROJECT MODAL COMPONENT)
+ * =========================================================================================
+ * Fichier : src/components/CreateProjectModal.js
+ * Rôle : Modale interactive permettant de créer un nouveau projet :
+ *        1. Saisie du titre et de la description du projet.
+ *        2. Recherche d'utilisateurs avec auto-complétion déboguée (Debounce 300ms).
+ *        3. Sélection multiple de collaborateurs/contributeurs.
+ *        4. Accessibilité WCAG 2.1 (Verrouillage du scroll, Échap, ARIA, Focus Trap).
+ * =========================================================================================
+ */
+
 import React, { useState, useEffect, useRef } from "react";
 import { X, ChevronDown, ChevronUp, Search, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }) {
+  // États locaux du formulaire et de la recherche
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedUsers, setSelectedUsers] = useState([]);
@@ -16,7 +30,7 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
 
   const dropdownRef = useRef(null);
 
-  // Verrouiller le défilement du fond + Touche Échap (WCAG 2.1)
+  // Accessibilité WCAG 2.1 : Verrouiller le défilement du fond + Touche Échap
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
@@ -36,7 +50,7 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
     };
   }, [isOpen, onClose]);
 
-  // Fermer le dropdown si on clique en dehors
+  // Fermer la liste déroulante des utilisateurs si on clique en dehors du composant
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -47,7 +61,10 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Rechercher des utilisateurs via l'API
+  /**
+   * RECHERCHE D'UTILISATEURS DYNAMIQUE AVEC ANTI-REBONDS (DEBOUNCE 300ms)
+   * Évite de surcharger l'API backend à chaque touche pressée.
+   */
   useEffect(() => {
     if (searchQuery.trim().length < 2) {
       setSearchResults([]);
@@ -62,14 +79,12 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
           .find((row) => row.startsWith("token="))
           ?.split("=")[1];
 
-        if (!token) return;
-
-        const response = await fetch(`/api/users/search?query=${encodeURIComponent(searchQuery)}`, {
+        const res = await fetch(`/api/users/search?q=${encodeURIComponent(searchQuery.trim())}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (response.ok) {
-          const json = await response.json();
+        if (res.ok) {
+          const json = await res.json();
           setSearchResults(json.data?.users || []);
         }
       } catch (err) {
@@ -84,6 +99,9 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
 
   if (!isOpen) return null;
 
+  /**
+   * Bascule la sélection d'un collaborateur
+   */
   const handleToggleUser = (user) => {
     setSelectedUsers((prev) => {
       const isAlreadySelected = prev.some((u) => u.id === user.id);
@@ -95,6 +113,9 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
     });
   };
 
+  /**
+   * SOUMISSION ET CRÉATION DU PROJET
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim() || !description.trim()) {
@@ -109,17 +130,12 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
         .find((row) => row.startsWith("token="))
         ?.split("=")[1];
 
-      if (!token) {
-        toast.error("Session expirée. Veuillez vous reconnecter.");
-        return;
-      }
-
       const contributors = selectedUsers.map((u) => u.email);
 
-      const response = await fetch("/api/projects", {
+      const res = await fetch("/api/projects", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -129,19 +145,18 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
         }),
       });
 
-      const json = await response.json();
+      const json = await res.json();
 
-      if (!response.ok) {
-        throw new Error(json.message || "Erreur de création du projet");
+      if (!res.ok) {
+        throw new Error(json.message || "Erreur lors de la création du projet");
       }
 
       toast.success("Projet créé avec succès !");
-      onProjectCreated();
-      
       setName("");
       setDescription("");
       setSelectedUsers([]);
       setSearchQuery("");
+      if (onProjectCreated) onProjectCreated();
       onClose();
     } catch (err) {
       toast.error(err.message);
@@ -161,6 +176,7 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
         aria-modal="true"
         aria-labelledby="modal-title-create-project"
       >
+        {/* Bouton de fermeture de la modale */}
         <button
           className="modal-close-btn"
           onClick={onClose}
@@ -175,6 +191,7 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
         </h2>
 
         <form onSubmit={handleSubmit} className="modal-form">
+          {/* Champ Titre */}
           <div className="form-group">
             <label htmlFor="modal-title">Titre*</label>
             <input
@@ -188,6 +205,7 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
             />
           </div>
 
+          {/* Champ Description */}
           <div className="form-group">
             <label htmlFor="modal-description">Description*</label>
             <textarea
@@ -201,6 +219,7 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
             />
           </div>
 
+          {/* Champ Sélecteur de Contributeurs */}
           <div className="form-group" ref={dropdownRef}>
             <label id="contributors-label">Contributeurs</label>
             <div 
@@ -227,6 +246,7 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
               {isDropdownOpen ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
             </div>
 
+            {/* Menu déroulant de recherche des collaborateurs */}
             {isDropdownOpen && (
               <div className="contributors-dropdown-menu" role="listbox">
                 <div className="search-input-wrapper">
