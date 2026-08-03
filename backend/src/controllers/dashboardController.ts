@@ -56,13 +56,6 @@ export const getAssignedTasks = async (
         },
       },
       include: {
-        creator: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
         project: {
           select: {
             id: true,
@@ -197,13 +190,6 @@ export const getProjectsWithTasks = async (
             },
           },
           include: {
-            creator: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
             assignees: {
               include: {
                 user: {
