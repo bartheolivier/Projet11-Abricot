@@ -93,59 +93,59 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
       case "DONE":
         return "cal-badge-done";
       default:
-        return "cal-badge-default";
+        return "cal-badge-todo";
     }
   };
 
   return (
-    <div className="calendar-view-container">
+    <div className="project-calendar-container">
       {/* En-tête de la barre de navigation du calendrier */}
-      <div className="calendar-controls-header">
-        <div className="calendar-nav-buttons">
-          <button onClick={handlePrevYear} className="cal-btn" title="Année précédente" aria-label="Année précédente">
-            <ChevronsLeft size={16} aria-hidden="true" />
-          </button>
-          <button onClick={handlePrevMonth} className="cal-btn" title="Mois précédent" aria-label="Mois précédent">
-            <ChevronLeft size={16} aria-hidden="true" />
-          </button>
+      <div className="calendar-header-nav">
+        <div className="calendar-month-title">
+          <div className="calendar-select-group">
+            <select 
+              value={month} 
+              onChange={handleMonthChange}
+              className="cal-header-select"
+              aria-label="Sélectionner le mois"
+            >
+              {monthNames.map((name, index) => (
+                <option key={index} value={index}>
+                  {name}
+                </option>
+              ))}
+            </select>
+
+            <select 
+              value={year} 
+              onChange={handleYearChange}
+              className="cal-header-select year-select"
+              aria-label="Sélectionner l'année"
+            >
+              {yearsList.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        {/* Sélecteurs déroulants du Mois et de l'Année */}
-        <div className="calendar-selectors">
-          <select 
-            value={month} 
-            onChange={handleMonthChange}
-            className="cal-select month-select"
-            aria-label="Sélectionner le mois"
-          >
-            {monthNames.map((name, index) => (
-              <option key={index} value={index}>
-                {name}
-              </option>
-            ))}
-          </select>
-
-          <select 
-            value={year} 
-            onChange={handleYearChange}
-            className="cal-select year-select"
-            aria-label="Sélectionner l'année"
-          >
-            {yearsList.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="calendar-nav-buttons">
-          <button onClick={handleNextMonth} className="cal-btn" title="Mois suivant" aria-label="Mois suivant">
-            <ChevronRight size={16} aria-hidden="true" />
-          </button>
-          <button onClick={handleNextYear} className="cal-btn" title="Année suivante" aria-label="Année suivante">
-            <ChevronsRight size={16} aria-hidden="true" />
-          </button>
+        <div className="calendar-nav-actions">
+          <div className="btn-group-nav">
+            <button onClick={handlePrevYear} className="btn-cal-nav" title="Année précédente" aria-label="Année précédente">
+              <ChevronsLeft size={16} aria-hidden="true" />
+            </button>
+            <button onClick={handlePrevMonth} className="btn-cal-nav" title="Mois précédent" aria-label="Mois précédent">
+              <ChevronLeft size={16} aria-hidden="true" />
+            </button>
+            <button onClick={handleNextMonth} className="btn-cal-nav" title="Mois suivant" aria-label="Mois suivant">
+              <ChevronRight size={16} aria-hidden="true" />
+            </button>
+            <button onClick={handleNextYear} className="btn-cal-nav" title="Année suivante" aria-label="Année suivante">
+              <ChevronsRight size={16} aria-hidden="true" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -162,7 +162,7 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
         <div className="calendar-days-grid">
           {/* Cases vides pour combler le début de semaine */}
           {Array.from({ length: startingDay }).map((_, idx) => (
-            <div key={`empty-${idx}`} className="calendar-day-cell empty" />
+            <div key={`empty-${idx}`} className="calendar-day-cell other-month" />
           ))}
 
           {/* Cases réelles des jours du mois */}
@@ -174,22 +174,26 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
             return (
               <div 
                 key={dayNum} 
-                className={`calendar-day-cell ${isToday ? "today" : ""}`}
+                className={`calendar-day-cell ${isToday ? "today-cell" : ""}`}
               >
-                <div className="day-number-header">
-                  <span className="day-number">{dayNum}</span>
+                <div className="cell-day-header">
+                  <span className={`day-number ${isToday ? "today-badge" : ""}`}>{dayNum}</span>
+                  {dayTasks.length > 0 && (
+                    <span className="tasks-count-pill">{dayTasks.length}</span>
+                  )}
                 </div>
 
-                <div className="day-tasks-list">
+                <div className="cell-tasks-list">
                   {dayTasks.map((t) => (
                     <button
                       key={t.id}
-                      className={`cal-task-pill ${getBadgeClass(t.status)}`}
+                      className={`calendar-task-chip ${getBadgeClass(t.status)}`}
                       onClick={() => onSelectTask(t)}
                       title={t.title}
                       aria-label={`Tâche : ${t.title}`}
                     >
-                      <span className="cal-task-title">{t.title}</span>
+                      <span className="chip-status-dot" aria-hidden="true" />
+                      <span className="chip-task-title">{t.title}</span>
                     </button>
                   ))}
                 </div>
