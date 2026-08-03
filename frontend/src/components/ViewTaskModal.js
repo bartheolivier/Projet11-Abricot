@@ -96,12 +96,14 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
         </button>
 
         <div className="view-modal-header">
-          <span className={`status-badge ${statusInfo.className}`}>
-            {statusInfo.label}
-          </span>
           <h2 id="modal-title-view-task" className="modal-title">
             {task.title}
           </h2>
+          <div className="view-modal-badge-wrapper">
+            <span className={`status-badge ${statusInfo.className}`}>
+              {statusInfo.label}
+            </span>
+          </div>
         </div>
 
         <div className="view-modal-body">

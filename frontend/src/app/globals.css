@@ -2280,9 +2280,15 @@ main.app-main-content {
 
 .view-modal-header {
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
   margin-bottom: 1.5rem;
+  padding-right: 2.5rem;
+}
+
+.view-modal-badge-wrapper {
+  margin-top: 0.25rem;
 }
 
 .view-modal-body {
