@@ -197,7 +197,10 @@ main.app-main-content {
 .task-list {
   display: flex;
   flex-direction: column;
-  /* Panneau conteneur de la liste de tâches (Maquette Dashboard) */
+  gap: 1rem;
+}
+
+/* Panneau conteneur de la liste de tâches (Maquette Dashboard) */
 .task-list-container {
   background: white;
   border: 1px solid #eeeeee;
@@ -335,9 +338,6 @@ main.app-main-content {
 .btn-voir-mockup:hover {
   background: #333333;
   transform: translateY(-1px);
-}
-  align-items: flex-end;
-  gap: 1rem;
 }
 
 /* Badges de statut */
