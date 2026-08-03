@@ -69,7 +69,7 @@ export default function Navbar() {
       <div className="navbar-user">
         <Link 
           href="/profile" 
-          style={{ textDecoration: "none", display: "flex" }}
+          className="navbar-brand-link"
           aria-current={isProfileActive ? "page" : undefined}
           aria-label="Profil utilisateur"
         >

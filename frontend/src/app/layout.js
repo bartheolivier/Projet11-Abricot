@@ -12,13 +12,13 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="fr">
-      <body style={{ backgroundColor: "#fafafa", margin: 0, display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+      <body>
         <QueryProvider>
           <Toaster position="bottom-right" richColors />
           
           <Navbar />
           
-          <main style={{ padding: '2rem', flex: 1 }}>
+          <main className="app-main-content">
             {children}
           </main>
 
