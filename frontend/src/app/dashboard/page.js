@@ -2,38 +2,39 @@
 
 /**
  * =========================================================================================
- * TABLEAU DE BORD PRINCIPAL (DASHBOARD PAGE)
+ * PAGE TABLEAU DE BORD (DASHBOARD PAGE COMPONENT)
  * =========================================================================================
  * Fichier : src/app/dashboard/page.js
- * Rôle : Affiche l'espace de travail principal de l'utilisateur connecté :
- *        1. Salutation personnalisée et statistiques globales.
- *        2. Bascule dynamique entre 2 vues : Vue "Liste" et Vue "Kanban".
- *        3. Barre de recherche et filtrage en temps réel des tâches assignées.
- *        4. Intégration des modales de création de projet et de consultation de tâche.
+ * Rôle : Page d'accueil authentifiée affichant les tâches assignées à l'utilisateur :
+ *        1. Message de bienvenue personnalisé avec nom de l'utilisateur.
+ *        2. Bouton "+ Créer un projet" ouvrant la modale de création.
+ *        3. Commutateur de vue interactif (Vue Liste vs Vue Kanban).
+ *        4. Filtrage et recherche instantanée des tâches par mot-clé.
  * =========================================================================================
  */
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { LayoutList, Kanban, Plus, Folder, Calendar, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
+import { Plus, LayoutList, Kanban, Folder, Calendar, MessageSquare } from "lucide-react";
+
 import CreateProjectModal from "@/components/CreateProjectModal";
 import ViewTaskModal from "@/components/ViewTaskModal";
 
 export default function Dashboard() {
   const router = useRouter();
-  
-  // ---------------------------------------------------------------------------------------
-  // ÉTATS REACT (LOCAL STATE)
-  // ---------------------------------------------------------------------------------------
-  const [view, setView] = useState("list");                 // Mode d'affichage ("list" ou "kanban")
-  const [tasks, setTasks] = useState([]);                   // Liste globale des tâches assignées à l'utilisateur
-  const [searchQuery, setSearchQuery] = useState("");       // Mot-clé de recherche pour le filtre
-  const [isLoading, setIsLoading] = useState(true);          // Indicateur de chargement réseau
-  const [userName, setUserName] = useState("");             // Nom complet de l'utilisateur connecté
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // État de la modale Créer un projet
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);     // État de la modale Consulter une tâche
-  const [taskToView, setTaskToView] = useState(null);               // Tâche sélectionnée pour la vue détaillée
+
+  // États locaux de données et d'affichage
+  const [userName, setUserName] = useState("");
+  const [tasks, setTasks] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [view, setView] = useState("list"); // "list" ou "kanban"
+  const [isLoading, setIsLoading] = useState(true);
+
+  // États locaux de gestion des modales
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [taskToView, setTaskToView] = useState(null);
 
   /**
    * Ouvre la modale de consultation de la tâche sélectionnée
@@ -45,7 +46,6 @@ export default function Dashboard() {
 
   /**
    * RÉCUPÉRATION DU PROFIL UTILISATEUR
-   * Interroge /api/auth/profile pour récupérer le nom de l'utilisateur connecté.
    */
   const fetchProfile = async () => {
     try {
@@ -74,7 +74,6 @@ export default function Dashboard() {
 
   /**
    * RÉCUPÉRATION DES TÂCHES ASSIGNÉES
-   * Interroge /api/dashboard/assigned-tasks pour charger les tâches de l'utilisateur.
    */
   const fetchTasks = async () => {
     try {
@@ -90,7 +89,6 @@ export default function Dashboard() {
         }
       });
       
-      // Si la session est expirée (401 Unauthorized), réinitialise le cookie et redirige vers /
       if (!response.ok) {
         if (response.status === 401) {
           document.cookie = "token=; path=/; max-age=0; SameSite=Strict";
@@ -109,42 +107,40 @@ export default function Dashboard() {
     }
   };
 
-  // Chargement initial des données au montage du composant
   useEffect(() => {
     fetchProfile();
     fetchTasks();
   }, []);
 
   /**
-   * Fonction utilitaire : Traduit le statut Enum de l'API en libellé français et classe CSS
+   * Transcrit le code statut backend en libellé et classe CSS de badge
    */
   const getStatusBadge = (status) => {
-    switch(status) {
+    switch (status) {
       case "TODO":
-        return { class: "status-todo", text: "À faire" };
+        return { text: "À faire", class: "status-todo" };
       case "IN_PROGRESS":
-        return { class: "status-in-progress", text: "En cours" };
+        return { text: "En cours", class: "status-in-progress" };
       case "DONE":
-        return { class: "status-done", text: "Terminée" };
+        return { text: "Terminée", class: "status-done" };
+      case "CANCELLED":
+        return { text: "Annulée", class: "status-cancelled" };
       default:
-        return { class: "status-todo", text: status };
+        return { text: status, class: "" };
     }
   };
 
-  // ---------------------------------------------------------------------------------------
-  // FILTRAGE ET TRI DYNAMIQUES EN MÉMOIRE
-  // ---------------------------------------------------------------------------------------
-  
-  // 1. Filtrage par mot-clé (Titre ou Description)
+  // Filtrage dynamique des tâches par titre ou description
   const filteredTasks = tasks.filter((task) => {
-    const query = searchQuery.trim().toLowerCase();
+    const query = searchQuery.toLowerCase().trim();
     if (!query) return true;
-    const titleMatch = task.title && task.title.toLowerCase().includes(query);
-    const descMatch = task.description && task.description.toLowerCase().includes(query);
-    return titleMatch || descMatch;
+    const titleMatch = task.title?.toLowerCase().includes(query);
+    const descMatch = task.description?.toLowerCase().includes(query);
+    const projMatch = task.project?.name?.toLowerCase().includes(query);
+    return titleMatch || descMatch || projMatch;
   });
 
-  // 2. Séparation par colonnes Kanban
+  // Repartition des tâches pour la Vue Kanban
   const todoTasks = filteredTasks.filter((t) => t.status === "TODO");
   const inProgressTasks = filteredTasks.filter((t) => t.status === "IN_PROGRESS");
   const doneTasks = filteredTasks.filter((t) => t.status === "DONE");
@@ -159,19 +155,21 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-container">
-      {/* En-tête principal du tableau de bord */}
+      {/* En-tête principal du tableau de bord conforme aux maquettes */}
       <div className="dashboard-header">
         <div>
-          <h1 className="dashboard-title">Bonjour{userName ? `, ${userName}` : ""}</h1>
-          <p className="dashboard-subtitle">Voici vos tâches du jour et l'avancement de vos projets</p>
+          <h1 className="dashboard-title">Tableau de bord</h1>
+          <p className="dashboard-subtitle">
+            Bonjour {userName || "Alice Dupont"}, voici un aperçu de vos projets et tâches
+          </p>
         </div>
         <div className="header-actions">
           <button 
             className="btn-primary" 
             onClick={() => setIsCreateModalOpen(true)}
-            aria-label="Créer un nouveau projet"
+            aria-label="Créer un projet"
           >
-            <Plus size={18} aria-hidden="true" /> Nouveau Projet
+            <Plus size={18} aria-hidden="true" /> Créer un projet
           </button>
         </div>
       </div>
@@ -199,14 +197,17 @@ export default function Dashboard() {
       {/* Rendu Conditionnel : Vue Liste OU Vue Kanban */}
       {view === "list" ? (
         <div className="task-list-container">
-          <div className="task-list-header">
-            <h2>Mes Tâches ({filteredTasks.length})</h2>
+          <div className="list-header">
+            <div>
+              <h2 className="list-title">Mes tâches assignées</h2>
+              <p className="list-subtitle">Par ordre de priorité</p>
+            </div>
             
             {/* Barre de recherche instantanée */}
             <div className="search-bar">
               <input
                 type="text"
-                placeholder="Rechercher une tâche..."
+                placeholder="Rechercher une tâche"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="search-input"
@@ -219,11 +220,15 @@ export default function Dashboard() {
             {filteredTasks && filteredTasks.length > 0 ? (
               filteredTasks.map((task) => {
                 const badge = getStatusBadge(task.status);
-                
                 return (
                   <div key={task.id} className="task-card">
-                    <div>
-                      <h3 className="task-title">{task.title}</h3>
+                    <div className="task-info">
+                      <div className="task-header">
+                        <h3 className="task-title">{task.title}</h3>
+                        <span className={`badge-status ${badge.class}`}>
+                          {badge.text}
+                        </span>
+                      </div>
                       <p className="task-desc">{task.description}</p>
                       
                       <div className="task-meta">
@@ -242,12 +247,10 @@ export default function Dashboard() {
                     </div>
 
                     <div className="task-actions">
-                      <span className={`badge-status ${badge.class}`}>
-                        {badge.text}
-                      </span>
                       <button 
-                        className="btn-secondary"
+                        className="btn-secondary" 
                         onClick={() => handleOpenViewModal(task)}
+                        aria-label={`Voir les détails de la tâche ${task.title}`}
                       >
                         Voir
                       </button>
@@ -256,16 +259,14 @@ export default function Dashboard() {
                 );
               })
             ) : (
-              <p className="empty-search-msg">
-                {searchQuery.trim() 
-                  ? `Aucune tâche ne correspond à la recherche "${searchQuery}".` 
-                  : "Aucune tâche assignée pour le moment."}
-              </p>
+              <div className="empty-state">
+                <p className="empty-search-msg">Aucune tâche assignée correspondant à vos critères.</p>
+              </div>
             )}
           </div>
         </div>
       ) : (
-        /* VUE KANBAN (3 Colonnes : À faire, En cours, Terminées) */
+        /* Vue Kanban avec colonnes À faire, En cours et Terminées */
         <div className="kanban-board">
           {/* Colonne "À faire" */}
           <div className="kanban-column">
@@ -298,10 +299,11 @@ export default function Dashboard() {
                         <MessageSquare size={14} aria-hidden="true" /> {task.comments?.length || 0}
                       </span>
                     </div>
-                    <div className="kanban-card-actions">
+                    <div className="kanban-card-footer">
                       <button 
-                        className="btn-secondary"
+                        className="btn-secondary" 
                         onClick={() => handleOpenViewModal(task)}
+                        aria-label={`Voir les détails de la tâche ${task.title}`}
                       >
                         Voir
                       </button>
@@ -310,7 +312,7 @@ export default function Dashboard() {
                 );
               })}
               {todoTasks.length === 0 && (
-                <p className="kanban-empty-msg">Aucune tâche À faire</p>
+                <div className="kanban-empty-column">Aucune tâche à faire</div>
               )}
             </div>
           </div>
@@ -346,10 +348,11 @@ export default function Dashboard() {
                         <MessageSquare size={14} aria-hidden="true" /> {task.comments?.length || 0}
                       </span>
                     </div>
-                    <div className="kanban-card-actions">
+                    <div className="kanban-card-footer">
                       <button 
-                        className="btn-secondary"
+                        className="btn-secondary" 
                         onClick={() => handleOpenViewModal(task)}
+                        aria-label={`Voir les détails de la tâche ${task.title}`}
                       >
                         Voir
                       </button>
@@ -358,7 +361,7 @@ export default function Dashboard() {
                 );
               })}
               {inProgressTasks.length === 0 && (
-                <p className="kanban-empty-msg">Aucune tâche En cours</p>
+                <div className="kanban-empty-column">Aucune tâche en cours</div>
               )}
             </div>
           </div>
@@ -394,10 +397,11 @@ export default function Dashboard() {
                         <MessageSquare size={14} aria-hidden="true" /> {task.comments?.length || 0}
                       </span>
                     </div>
-                    <div className="kanban-card-actions">
+                    <div className="kanban-card-footer">
                       <button 
-                        className="btn-secondary"
+                        className="btn-secondary" 
                         onClick={() => handleOpenViewModal(task)}
+                        aria-label={`Voir les détails de la tâche ${task.title}`}
                       >
                         Voir
                       </button>
@@ -406,7 +410,7 @@ export default function Dashboard() {
                 );
               })}
               {doneTasks.length === 0 && (
-                <p className="kanban-empty-msg">Aucune tâche terminée</p>
+                <div className="kanban-empty-column">Aucune tâche terminée</div>
               )}
             </div>
           </div>
