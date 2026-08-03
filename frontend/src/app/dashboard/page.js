@@ -6,17 +6,18 @@
  * =========================================================================================
  * Fichier : src/app/dashboard/page.js
  * Rôle : Page d'accueil authentifiée affichant les tâches assignées à l'utilisateur :
- *        1. Message de bienvenue personnalisé avec nom de l'utilisateur.
+ *        1. En-tête principal et message de bienvenue personnalisés.
  *        2. Bouton "+ Créer un projet" ouvrant la modale de création.
  *        3. Commutateur de vue interactif (Vue Liste vs Vue Kanban).
- *        4. Filtrage et recherche instantanée des tâches par mot-clé.
+ *        4. Panneau conteneur blanc avec barre de recherche (icône loupe) et tâches sous forme de cartes.
+ *        5. Alignement exact à la maquette officielle (Badge en haut à droite, bouton Voir en bas à droite).
  * =========================================================================================
  */
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, LayoutList, Kanban, Folder, Calendar, MessageSquare } from "lucide-react";
+import { Plus, LayoutList, Kanban, Folder, Calendar, MessageSquare, Search } from "lucide-react";
 
 import CreateProjectModal from "@/components/CreateProjectModal";
 import ViewTaskModal from "@/components/ViewTaskModal";
@@ -203,16 +204,17 @@ export default function Dashboard() {
               <p className="list-subtitle">Par ordre de priorité</p>
             </div>
             
-            {/* Barre de recherche instantanée */}
-            <div className="search-bar">
+            {/* Barre de recherche instantanée avec loupe à droite */}
+            <div className="search-bar-wrapper">
               <input
                 type="text"
                 placeholder="Rechercher une tâche"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="search-input"
+                className="search-input-mockup"
                 aria-label="Rechercher une tâche"
               />
+              <Search size={16} className="search-input-icon" aria-hidden="true" />
             </div>
           </div>
 
@@ -221,34 +223,42 @@ export default function Dashboard() {
               filteredTasks.map((task) => {
                 const badge = getStatusBadge(task.status);
                 return (
-                  <div key={task.id} className="task-card">
-                    <div className="task-info">
-                      <div className="task-header">
-                        <h3 className="task-title">{task.title}</h3>
-                        <span className={`badge-status ${badge.class}`}>
-                          {badge.text}
-                        </span>
-                      </div>
-                      <p className="task-desc">{task.description}</p>
-                      
-                      <div className="task-meta">
+                  <div key={task.id} className="task-card-mockup">
+                    {/* Ligne supérieure : Titre à gauche, pastille de statut en haut à droite */}
+                    <div className="task-card-top-row">
+                      <h3 className="task-card-title-text">{task.title}</h3>
+                      <span className={`badge-status ${badge.class}`}>
+                        {badge.text}
+                      </span>
+                    </div>
+
+                    {/* Ligne médiane : Description */}
+                    <p className="task-card-desc-text">
+                      {task.description || "Aucune description fournie."}
+                    </p>
+                    
+                    {/* Ligne inférieure : Métadonnées à gauche, bouton "Voir" noir en bas à droite */}
+                    <div className="task-card-bottom-row">
+                      <div className="task-card-meta-items">
                         <span className="meta-item-inline">
                           <Folder size={14} aria-hidden="true" /> {task.project?.name || "Sans projet"}
                         </span>
+                        <span className="meta-separator">|</span>
                         {task.dueDate && (
-                          <span className="meta-item-inline">
-                            <Calendar size={14} aria-hidden="true" /> {new Date(task.dueDate).toLocaleDateString("fr-FR")}
-                          </span>
+                          <>
+                            <span className="meta-item-inline">
+                              <Calendar size={14} aria-hidden="true" /> {new Date(task.dueDate).toLocaleDateString("fr-FR")}
+                            </span>
+                            <span className="meta-separator">|</span>
+                          </>
                         )}
                         <span className="meta-item-inline">
                           <MessageSquare size={14} aria-hidden="true" /> {task.comments?.length || 0}
                         </span>
                       </div>
-                    </div>
 
-                    <div className="task-actions">
                       <button 
-                        className="btn-secondary" 
+                        className="btn-voir-mockup" 
                         onClick={() => handleOpenViewModal(task)}
                         aria-label={`Voir les détails de la tâche ${task.title}`}
                       >
