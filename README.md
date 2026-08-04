@@ -44,6 +44,14 @@ npm run dev
 
 ---
 
+## 📖 Documentation de l'API REST (Swagger UI)
+
+Une interface interactive **Swagger UI** est intégrée au serveur Backend. Elle permet de consulter, inspecter et tester directement toutes les routes REST de l'application (authentification, projets, tâches, commentaires) :
+
+* **URL d'accès Swagger UI :** [http://localhost:8000/api-docs](http://localhost:8000/api-docs) *(lorsque le serveur backend est démarré)*.
+
+---
+
 ### 2️⃣ Installation & Lancement du Frontend (Application Next.js)
 
 ```bash
