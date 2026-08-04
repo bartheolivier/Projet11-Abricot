@@ -5,9 +5,10 @@ export function proxy(request) {
   const token = request.cookies.get('token')?.value;
   const path = request.nextUrl.pathname;
 
-  const isProtectedRoute = path.startsWith('/dashboard') || 
-                           path.startsWith('/profile') || 
-                           path.startsWith('/projects');
+  const isProtectedRoute =
+    path.startsWith('/dashboard') ||
+    path.startsWith('/profile') ||
+    path.startsWith('/projects');
 
   if (isProtectedRoute && !token) {
     return NextResponse.redirect(new URL('/', request.url));

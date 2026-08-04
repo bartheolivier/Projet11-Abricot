@@ -1,36 +1,42 @@
-"use client";
+'use client';
 
-import React, { use, useState, useEffect } from "react";
-import Link from "next/link";
-import { 
-  ArrowLeft, 
+import React, { use, useState, useEffect } from 'react';
+import Link from 'next/link';
+import {
+  ArrowLeft,
   Calendar,
   LayoutList,
-  ChevronDown, 
-  ChevronUp, 
-  Plus, 
-  Sparkles, 
+  ChevronDown,
+  ChevronUp,
+  Plus,
+  Sparkles,
   MoreHorizontal,
   Send,
-  Loader2
-} from "lucide-react";
-import EditProjectModal from "@/components/EditProjectModal";
-import CreateTaskModal from "@/components/CreateTaskModal";
-import EditTaskModal from "@/components/EditTaskModal";
-import AiTaskGenerationModal from "@/components/AiTaskGenerationModal";
-import ViewTaskModal from "@/components/ViewTaskModal";
-import ProjectCalendarView from "@/components/ProjectCalendarView";
-import { useProjectDetailsQuery } from "@/hooks/useProjectsQuery";
-import { useProjectTasksQuery, useDeleteTaskMutation, useAddCommentMutation } from "@/hooks/useTasksQuery";
-import { useProfileQuery } from "@/hooks/useProfileQuery";
+  Loader2,
+} from 'lucide-react';
+import EditProjectModal from '@/components/EditProjectModal';
+import CreateTaskModal from '@/components/CreateTaskModal';
+import EditTaskModal from '@/components/EditTaskModal';
+import AiTaskGenerationModal from '@/components/AiTaskGenerationModal';
+import ViewTaskModal from '@/components/ViewTaskModal';
+import ProjectCalendarView from '@/components/ProjectCalendarView';
+import { useProjectDetailsQuery } from '@/hooks/useProjectsQuery';
+import {
+  useProjectTasksQuery,
+  useDeleteTaskMutation,
+  useAddCommentMutation,
+} from '@/hooks/useTasksQuery';
+import { useProfileQuery } from '@/hooks/useProfileQuery';
 
 export default function ProjectDetails({ params }) {
   const { id: projectId } = use(params);
 
   // Custom Hooks React Query
   const { data: userProfile } = useProfileQuery();
-  const { data: project, isLoading: isProjectLoading } = useProjectDetailsQuery(projectId);
-  const { data: tasks = [], isLoading: isTasksLoading } = useProjectTasksQuery(projectId);
+  const { data: project, isLoading: isProjectLoading } =
+    useProjectDetailsQuery(projectId);
+  const { data: tasks = [], isLoading: isTasksLoading } =
+    useProjectTasksQuery(projectId);
 
   const deleteTaskMutation = useDeleteTaskMutation();
   const addCommentMutation = useAddCommentMutation();
@@ -43,13 +49,13 @@ export default function ProjectDetails({ params }) {
   const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState(null);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-  const [activeView, setActiveView] = useState("list");
+  const [activeView, setActiveView] = useState('list');
   const [isViewTaskModalOpen, setIsViewTaskModalOpen] = useState(false);
   const [taskToView, setTaskToView] = useState(null);
 
   // États pour filtre et recherche
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [activeTaskMenu, setActiveTaskMenu] = useState(null);
 
   // États pour les commentaires
@@ -58,12 +64,15 @@ export default function ProjectDetails({ params }) {
 
   useEffect(() => {
     const handleDocumentClick = (e) => {
-      if (!e.target.closest(".task-menu-btn") && !e.target.closest(".task-action-dropdown-menu")) {
+      if (
+        !e.target.closest('.task-menu-btn') &&
+        !e.target.closest('.task-action-dropdown-menu')
+      ) {
         setActiveTaskMenu(null);
       }
     };
-    document.addEventListener("click", handleDocumentClick);
-    return () => document.removeEventListener("click", handleDocumentClick);
+    document.addEventListener('click', handleDocumentClick);
+    return () => document.removeEventListener('click', handleDocumentClick);
   }, []);
 
   const handleToggleMenu = (e, taskId) => {
@@ -113,7 +122,7 @@ export default function ProjectDetails({ params }) {
       { projectId, taskId, content: commentContent },
       {
         onSuccess: () => {
-          setNewComments((prev) => ({ ...prev, [taskId]: "" }));
+          setNewComments((prev) => ({ ...prev, [taskId]: '' }));
         },
       }
     );
@@ -121,39 +130,48 @@ export default function ProjectDetails({ params }) {
 
   const getStatusDetails = (status) => {
     switch (status) {
-      case "TODO":
-        return { label: "À faire", className: "badge-todo" };
-      case "IN_PROGRESS":
-        return { label: "En cours", className: "badge-progress" };
-      case "DONE":
-        return { label: "Terminée", className: "badge-done" };
-      case "CANCELLED":
-        return { label: "Annulée", className: "badge-cancelled" };
+      case 'TODO':
+        return { label: 'À faire', className: 'badge-todo' };
+      case 'IN_PROGRESS':
+        return { label: 'En cours', className: 'badge-progress' };
+      case 'DONE':
+        return { label: 'Terminée', className: 'badge-done' };
+      case 'CANCELLED':
+        return { label: 'Annulée', className: 'badge-cancelled' };
       default:
-        return { label: status, className: "" };
+        return { label: status, className: '' };
     }
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return "Aucune";
+    if (!dateString) return 'Aucune';
     const date = new Date(dateString);
-    return date.toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
+    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
   };
 
-  const colors = ["#ffe8d6", "#e2ece9", "#f0efeb", "#ddbea9", "#a8dadc", "#f4a261"];
+  const colors = [
+    '#ffe8d6',
+    '#e2ece9',
+    '#f0efeb',
+    '#ddbea9',
+    '#a8dadc',
+    '#f4a261',
+  ];
   const getAvatarColor = (name) => {
     if (!name) return colors[0];
-    const charCodeSum = name.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    const charCodeSum = name
+      .split('')
+      .reduce((sum, char) => sum + char.charCodeAt(0), 0);
     return colors[charCodeSum % colors.length];
   };
 
   const getInitials = (name) => {
-    if (!name) return "";
+    if (!name) return '';
     const parts = name.trim().split(/\s+/);
     if (parts.length >= 2) {
       return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
     }
-    return parts[0] ? parts[0].substring(0, 2).toUpperCase() : "";
+    return parts[0] ? parts[0].substring(0, 2).toUpperCase() : '';
   };
 
   const isLoading = isProjectLoading || isTasksLoading;
@@ -170,28 +188,37 @@ export default function ProjectDetails({ params }) {
     return (
       <div className="project-details-container">
         <p>Projet introuvable.</p>
-        <Link href="/projects" className="btn-secondary">Retour aux projets</Link>
+        <Link href="/projects" className="btn-secondary">
+          Retour aux projets
+        </Link>
       </div>
     );
   }
 
-  const otherMembers = (project.members || []).filter((m) => (m.user?.id || m.id) !== project.ownerId);
-  const isAdmin = project.userRole === "ADMIN" || project.ownerId === currentUserId;
+  const otherMembers = (project.members || []).filter(
+    (m) => (m.user?.id || m.id) !== project.ownerId
+  );
+  const isAdmin =
+    project.userRole === 'ADMIN' || project.ownerId === currentUserId;
 
   return (
     <div className="project-details-container">
       {/* Ligne d'en-tête principale */}
       <div className="project-details-header">
         <div className="title-section-wrapper">
-          <Link href="/projects" className="btn-back" title="Retour aux projets">
+          <Link
+            href="/projects"
+            className="btn-back"
+            title="Retour aux projets"
+          >
             <ArrowLeft size={18} />
           </Link>
           <div className="project-details-info">
             <div className="project-title-row">
               <h1 className="project-details-title">{project.name}</h1>
               {isAdmin && (
-                <button 
-                  onClick={() => setIsEditModalOpen(true)} 
+                <button
+                  onClick={() => setIsEditModalOpen(true)}
                   className="project-edit-link"
                 >
                   Modifier
@@ -199,13 +226,16 @@ export default function ProjectDetails({ params }) {
               )}
             </div>
             <p className="project-details-desc">
-              {project.description || "Aucune description fournie."}
+              {project.description || 'Aucune description fournie.'}
             </p>
           </div>
         </div>
 
         <div className="header-actions">
-          <button className="btn-primary" onClick={() => setIsCreateTaskModalOpen(true)}>
+          <button
+            className="btn-primary"
+            onClick={() => setIsCreateTaskModalOpen(true)}
+          >
             <Plus size={16} /> Créer une tâche
           </button>
           <button className="btn-orange" onClick={() => setIsAiModalOpen(true)}>
@@ -217,28 +247,44 @@ export default function ProjectDetails({ params }) {
       {/* Barre des Contributeurs */}
       <div className="contributors-bar">
         <span className="contributors-count-label">
-          Contributeurs <span className="light-text">{1 + otherMembers.length} personnes</span>
+          Contributeurs{' '}
+          <span className="light-text">
+            {1 + otherMembers.length} personnes
+          </span>
         </span>
         <div className="contributors-list">
           {project.owner && (
             <div className="contributor-capsule">
-              <div 
+              <div
                 className="capsule-avatar"
-                style={{ backgroundColor: getAvatarColor(project.owner.name || project.owner.email) }}
+                style={{
+                  backgroundColor: getAvatarColor(
+                    project.owner.name || project.owner.email
+                  ),
+                }}
               >
-                {getInitials(project.owner.name) || getInitials(project.owner.email)}
+                {getInitials(project.owner.name) ||
+                  getInitials(project.owner.email)}
               </div>
               <span className="capsule-name owner-badge">Propriétaire</span>
             </div>
           )}
 
           {otherMembers.map((member) => (
-            <div className="contributor-capsule" key={member.user?.id || member.id}>
-              <div 
+            <div
+              className="contributor-capsule"
+              key={member.user?.id || member.id}
+            >
+              <div
                 className="capsule-avatar"
-                style={{ backgroundColor: getAvatarColor(member.user?.name || member.user?.email) }}
+                style={{
+                  backgroundColor: getAvatarColor(
+                    member.user?.name || member.user?.email
+                  ),
+                }}
               >
-                {getInitials(member.user?.name) || getInitials(member.user?.email)}
+                {getInitials(member.user?.name) ||
+                  getInitials(member.user?.email)}
               </div>
               <span className="capsule-name">
                 {member.user?.name || member.user?.email}
@@ -259,14 +305,14 @@ export default function ProjectDetails({ params }) {
           <div className="tasks-section-controls">
             <div className="segmented-toggle">
               <button
-                className={`segmented-btn ${activeView === "list" ? "active" : ""}`}
-                onClick={() => setActiveView("list")}
+                className={`segmented-btn ${activeView === 'list' ? 'active' : ''}`}
+                onClick={() => setActiveView('list')}
               >
                 <LayoutList size={16} /> Liste
               </button>
               <button
-                className={`segmented-btn ${activeView === "calendar" ? "active" : ""}`}
-                onClick={() => setActiveView("calendar")}
+                className={`segmented-btn ${activeView === 'calendar' ? 'active' : ''}`}
+                onClick={() => setActiveView('calendar')}
               >
                 <Calendar size={16} /> Calendrier
               </button>
@@ -300,17 +346,18 @@ export default function ProjectDetails({ params }) {
         {/* Vue Liste ou Vue Calendrier */}
         {(() => {
           const filteredTasks = tasks.filter((t) => {
-            if (statusFilter !== "ALL" && t.status !== statusFilter) {
+            if (statusFilter !== 'ALL' && t.status !== statusFilter) {
               return false;
             }
             const query = searchQuery.trim().toLowerCase();
             if (!query) return true;
             const titleMatch = t.title && t.title.toLowerCase().includes(query);
-            const descMatch = t.description && t.description.toLowerCase().includes(query);
+            const descMatch =
+              t.description && t.description.toLowerCase().includes(query);
             return titleMatch || descMatch;
           });
 
-          if (activeView === "calendar") {
+          if (activeView === 'calendar') {
             return (
               <ProjectCalendarView
                 tasks={filteredTasks}
@@ -326,12 +373,12 @@ export default function ProjectDetails({ params }) {
             return (
               <div className="tasks-empty-state">
                 <p className="empty-title">
-                  {tasks.length === 0 ? "Aucune tâche" : "Aucun résultat"}
+                  {tasks.length === 0 ? 'Aucune tâche' : 'Aucun résultat'}
                 </p>
                 <p className="empty-subtitle">
                   {tasks.length === 0
                     ? "Il n'y a pas encore de tâche dans ce projet."
-                    : "Aucune tâche ne correspond au filtre et au mot-clé sélectionnés."}
+                    : 'Aucune tâche ne correspond au filtre et au mot-clé sélectionnés.'}
                 </p>
               </div>
             );
@@ -342,7 +389,9 @@ export default function ProjectDetails({ params }) {
               {filteredTasks.map((task) => {
                 const status = getStatusDetails(task.status);
                 const isCommentsOpen = !!expandedComments[task.id];
-                const isTaskCreator = task.creatorId === currentUserId || task.creator?.id === currentUserId;
+                const isTaskCreator =
+                  task.creatorId === currentUserId ||
+                  task.creator?.id === currentUserId;
                 const canManageTask = isAdmin || isTaskCreator;
 
                 return (
@@ -375,7 +424,9 @@ export default function ProjectDetails({ params }) {
                                 Modifier
                               </button>
                               <button
-                                onClick={(e) => handleDeleteTask(e, task.id, task.title)}
+                                onClick={(e) =>
+                                  handleDeleteTask(e, task.id, task.title)
+                                }
                                 className="dropdown-menu-item delete"
                               >
                                 Supprimer
@@ -387,14 +438,16 @@ export default function ProjectDetails({ params }) {
                     </div>
 
                     <p className="task-card-desc">
-                      {task.description || "Aucune description fournie."}
+                      {task.description || 'Aucune description fournie.'}
                     </p>
 
                     <div className="task-card-meta">
                       <div className="meta-item">
                         <span className="meta-label">Échéance :</span>
                         <Calendar size={14} className="meta-icon" />
-                        <span className="meta-value">{formatDate(task.dueDate)}</span>
+                        <span className="meta-value">
+                          {formatDate(task.dueDate)}
+                        </span>
                       </div>
 
                       {task.assignees && task.assignees.length > 0 && (
@@ -404,12 +457,20 @@ export default function ProjectDetails({ params }) {
                             {task.assignees.map((assignee) => {
                               const userObj = assignee.user || assignee;
                               return (
-                                <div className="assignee-capsule" key={userObj.id || userObj.email}>
+                                <div
+                                  className="assignee-capsule"
+                                  key={userObj.id || userObj.email}
+                                >
                                   <div
                                     className="assignee-capsule-avatar"
-                                    style={{ backgroundColor: getAvatarColor(userObj.name || userObj.email) }}
+                                    style={{
+                                      backgroundColor: getAvatarColor(
+                                        userObj.name || userObj.email
+                                      ),
+                                    }}
                                   >
-                                    {getInitials(userObj.name) || getInitials(userObj.email)}
+                                    {getInitials(userObj.name) ||
+                                      getInitials(userObj.email)}
                                   </div>
                                   <span className="assignee-capsule-name">
                                     {userObj.name || userObj.email}
@@ -429,7 +490,11 @@ export default function ProjectDetails({ params }) {
                         className="comments-toggle-btn"
                       >
                         <span>Commentaires ({task.comments?.length || 0})</span>
-                        {isCommentsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        {isCommentsOpen ? (
+                          <ChevronUp size={16} />
+                        ) : (
+                          <ChevronDown size={16} />
+                        )}
                       </button>
 
                       {isCommentsOpen && (
@@ -438,31 +503,47 @@ export default function ProjectDetails({ params }) {
                           {task.comments && task.comments.length > 0 ? (
                             <div className="comments-list">
                               {task.comments.map((comment) => {
-                                const authorObj = comment.author || comment.user || {};
-                                const authorName = authorObj.name || authorObj.email || "Utilisateur";
+                                const authorObj =
+                                  comment.author || comment.user || {};
+                                const authorName =
+                                  authorObj.name ||
+                                  authorObj.email ||
+                                  'Utilisateur';
                                 return (
-                                  <div className="comment-item" key={comment.id}>
+                                  <div
+                                    className="comment-item"
+                                    key={comment.id}
+                                  >
                                     <div className="comment-header">
                                       <div className="comment-author-info">
                                         <div
                                           className="comment-author-avatar"
-                                          style={{ backgroundColor: getAvatarColor(authorName) }}
+                                          style={{
+                                            backgroundColor:
+                                              getAvatarColor(authorName),
+                                          }}
                                         >
                                           {getInitials(authorName)}
                                         </div>
-                                        <span className="comment-author-name">{authorName}</span>
+                                        <span className="comment-author-name">
+                                          {authorName}
+                                        </span>
                                       </div>
                                       <span className="comment-date">
                                         Le {formatDate(comment.createdAt)}
                                       </span>
                                     </div>
-                                    <p className="comment-content">{comment.content}</p>
+                                    <p className="comment-content">
+                                      {comment.content}
+                                    </p>
                                   </div>
                                 );
                               })}
                             </div>
                           ) : (
-                            <p className="no-comments-text">Aucun commentaire pour le moment.</p>
+                            <p className="no-comments-text">
+                              Aucun commentaire pour le moment.
+                            </p>
                           )}
 
                           {/* Formulaire d'ajout de commentaire */}
@@ -473,8 +554,10 @@ export default function ProjectDetails({ params }) {
                             <input
                               type="text"
                               placeholder="Écrivez un commentaire..."
-                              value={newComments[task.id] || ""}
-                              onChange={(e) => handleCommentChange(task.id, e.target.value)}
+                              value={newComments[task.id] || ''}
+                              onChange={(e) =>
+                                handleCommentChange(task.id, e.target.value)
+                              }
                               className="comment-input"
                               required
                             />

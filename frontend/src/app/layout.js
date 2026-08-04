@@ -15,12 +15,10 @@ export default function RootLayout({ children }) {
       <body>
         <QueryProvider>
           <Toaster position="bottom-right" richColors />
-          
+
           <Navbar />
-          
-          <main className="app-main-content">
-            {children}
-          </main>
+
+          <main className="app-main-content">{children}</main>
 
           <Footer />
         </QueryProvider>

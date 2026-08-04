@@ -1,39 +1,44 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { X, Sparkles, Plus, Trash2, Edit3, Check, Loader2 } from "lucide-react";
-import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import React, { useState, useEffect } from 'react';
+import { X, Sparkles, Plus, Trash2, Edit3, Check, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 
-export default function AiTaskGenerationModal({ isOpen, project, onClose, onTasksAdded }) {
-  const [prompt, setPrompt] = useState("");
+export default function AiTaskGenerationModal({
+  isOpen,
+  project,
+  onClose,
+  onTasksAdded,
+}) {
+  const [prompt, setPrompt] = useState('');
   const [generatedTasks, setGeneratedTasks] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
 
-  const [editTitle, setEditTitle] = useState("");
-  const [editDesc, setEditDesc] = useState("");
+  const [editTitle, setEditTitle] = useState('');
+  const [editDesc, setEditDesc] = useState('');
 
   const queryClient = useQueryClient();
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "Escape" && onClose) {
+      if (e.key === 'Escape' && onClose) {
         onClose();
       }
     };
 
     if (isOpen) {
-      document.body.style.overflow = "hidden";
-      window.addEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
     } else {
-      document.body.style.overflow = "";
+      document.body.style.overflow = '';
     }
     return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen]);
 
@@ -42,22 +47,22 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
   const handleGenerate = async (e) => {
     if (e) e.preventDefault();
     if (!prompt.trim()) {
-      toast.error("Veuillez saisir une description de la tâche à générer.");
+      toast.error('Veuillez saisir une description de la tâche à générer.');
       return;
     }
 
     setIsLoading(true);
     try {
       const token = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("token="))
-        ?.split("=")[1];
+        .split('; ')
+        .find((row) => row.startsWith('token='))
+        ?.split('=')[1];
 
-      const response = await fetch("/api/ai/generate-tasks", {
-        method: "POST",
+      const response = await fetch('/api/ai/generate-tasks', {
+        method: 'POST',
         headers: {
-          "Authorization": token ? `Bearer ${token}` : "",
-          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           projectId: project.id,
@@ -68,13 +73,13 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
       const json = await response.json();
 
       if (!response.ok) {
-        throw new Error(json.message || "Erreur lors de la génération IA.");
+        throw new Error(json.message || 'Erreur lors de la génération IA.');
       }
 
       if (json.tasks && Array.isArray(json.tasks)) {
         setGeneratedTasks((prev) => [...prev, ...json.tasks]);
         toast.success(`${json.tasks.length} tâche(s) générée(s) par l'IA !`);
-        setPrompt("");
+        setPrompt('');
       } else {
         toast.error("Aucune tâche n'a été renvoyée par l'IA.");
       }
@@ -101,12 +106,14 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
 
   const handleSaveEdit = (index) => {
     if (!editTitle.trim()) {
-      toast.error("Le titre ne peut pas être vide.");
+      toast.error('Le titre ne peut pas être vide.');
       return;
     }
     setGeneratedTasks((prev) =>
       prev.map((t, i) =>
-        i === index ? { ...t, title: editTitle.trim(), description: editDesc.trim() } : t
+        i === index
+          ? { ...t, title: editTitle.trim(), description: editDesc.trim() }
+          : t
       )
     );
     setEditingIndex(null);
@@ -119,7 +126,7 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
     try {
       const defaultDueDate = new Date();
       defaultDueDate.setDate(defaultDueDate.getDate() + 7);
-      const formattedDueDate = defaultDueDate.toISOString().split("T")[0];
+      const formattedDueDate = defaultDueDate.toISOString().split('T')[0];
 
       let addedCount = 0;
 
@@ -128,24 +135,26 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
           await api.createTask({
             projectId: project.id,
             title: t.title,
-            description: t.description || "",
+            description: t.description || '',
             dueDate: formattedDueDate,
-            priority: "MEDIUM",
+            priority: 'MEDIUM',
           });
           addedCount++;
         } catch (e) {
-          console.error("Erreur création tâche IA", e);
+          console.error('Erreur création tâche IA', e);
         }
       }
 
-      toast.success(`${addedCount} tâche(s) ajoutée(s) au projet avec succès !`);
-      
+      toast.success(
+        `${addedCount} tâche(s) ajoutée(s) au projet avec succès !`
+      );
+
       // Invalidation automatique des requêtes React Query pour synchroniser instantanément l'UI
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
 
       setGeneratedTasks([]);
-      setPrompt("");
+      setPrompt('');
       if (onTasksAdded) onTasksAdded();
       onClose();
     } catch (err) {
@@ -177,7 +186,7 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
         <div className="ai-modal-header">
           <Sparkles size={24} className="ai-sparkle-icon" aria-hidden="true" />
           <h2 id="modal-title-ai" className="ai-title">
-            {generatedTasks.length > 0 ? "Vos tâches..." : "Créer une tâche"}
+            {generatedTasks.length > 0 ? 'Vos tâches...' : 'Créer une tâche'}
           </h2>
         </div>
 
@@ -185,8 +194,14 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
         <div className="ai-modal-body">
           {isLoading ? (
             <div className="ai-loading-state">
-              <Loader2 size={32} className="animate-spin ai-spinner" aria-hidden="true" />
-              <p className="ai-loading-text">Génération des tâches par l'IA en cours...</p>
+              <Loader2
+                size={32}
+                className="animate-spin ai-spinner"
+                aria-hidden="true"
+              />
+              <p className="ai-loading-text">
+                Génération des tâches par l'IA en cours...
+              </p>
             </div>
           ) : generatedTasks.length > 0 ? (
             <div className="ai-tasks-cards-list">
@@ -226,7 +241,7 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
                       <>
                         <h3 className="ai-card-title">{t.title}</h3>
                         <p className="ai-card-desc">
-                          {t.description || "Aucune description fournie."}
+                          {t.description || 'Aucune description fournie.'}
                         </p>
                         <div className="ai-card-actions">
                           <button
@@ -262,7 +277,12 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 size={16} className="animate-spin" aria-hidden="true" /> Ajout au projet...
+                      <Loader2
+                        size={16}
+                        className="animate-spin"
+                        aria-hidden="true"
+                      />{' '}
+                      Ajout au projet...
                     </>
                   ) : (
                     <>
@@ -289,12 +309,16 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
             />
             <button
               type="submit"
-              className={`ai-prompt-send-btn ${prompt.trim() && !isLoading && !isSubmitting ? "active" : ""}`}
+              className={`ai-prompt-send-btn ${prompt.trim() && !isLoading && !isSubmitting ? 'active' : ''}`}
               disabled={!prompt.trim() || isLoading || isSubmitting}
               aria-label="Envoyer"
             >
               {isLoading ? (
-                <Loader2 size={18} className="animate-spin" aria-hidden="true" />
+                <Loader2
+                  size={18}
+                  className="animate-spin"
+                  aria-hidden="true"
+                />
               ) : (
                 <Plus size={20} aria-hidden="true" />
               )}

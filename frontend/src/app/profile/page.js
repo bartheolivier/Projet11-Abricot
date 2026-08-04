@@ -1,68 +1,68 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 export default function Profile() {
   const router = useRouter();
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [currentPassword, setCurrentPassword] = useState("");
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [userFullName, setUserFullName] = useState("");
+  const [userFullName, setUserFullName] = useState('');
 
   const fetchProfile = async () => {
     try {
       const token = document.cookie
         .split('; ')
-        .find(row => row.startsWith('token='))
+        .find((row) => row.startsWith('token='))
         ?.split('=')[1];
 
       if (!token) {
-        router.push("/");
+        router.push('/');
         return;
       }
 
-      const response = await fetch("/api/auth/profile", {
+      const response = await fetch('/api/auth/profile', {
         headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       if (!response.ok) {
         if (response.status === 401) {
-          document.cookie = "token=; path=/; max-age=0; SameSite=Strict";
-          router.push("/");
+          document.cookie = 'token=; path=/; max-age=0; SameSite=Strict';
+          router.push('/');
           return;
         }
-        throw new Error("Erreur lors de la récupération du profil");
+        throw new Error('Erreur lors de la récupération du profil');
       }
 
       const responseJson = await response.json();
       const userData = responseJson.data;
 
       if (userData) {
-        const fullName = userData.name || "";
+        const fullName = userData.name || '';
         setUserFullName(fullName);
-        setEmail(userData.email || "");
+        setEmail(userData.email || '');
 
         // Extraire prénom et nom
         const nameParts = fullName.trim().split(/\s+/);
         if (nameParts.length >= 2) {
           setFirstName(nameParts[0]);
-          setLastName(nameParts.slice(1).join(" "));
+          setLastName(nameParts.slice(1).join(' '));
         } else if (nameParts.length === 1) {
           setFirstName(nameParts[0]);
-          setLastName("");
+          setLastName('');
         } else {
-          setFirstName("");
-          setLastName("");
+          setFirstName('');
+          setLastName('');
         }
       }
     } catch (error) {
@@ -83,65 +83,70 @@ export default function Profile() {
     try {
       const token = document.cookie
         .split('; ')
-        .find(row => row.startsWith('token='))
+        .find((row) => row.startsWith('token='))
         ?.split('=')[1];
 
       if (!token) {
-        router.push("/");
+        router.push('/');
         return;
       }
 
       const fullName = `${firstName} ${lastName}`.trim();
 
       // 1. Mettre à jour le profil (nom et email)
-      const profileResponse = await fetch("/api/auth/profile", {
-        method: "PUT",
+      const profileResponse = await fetch('/api/auth/profile', {
+        method: 'PUT',
         headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name: fullName, email })
+        body: JSON.stringify({ name: fullName, email }),
       });
 
       const profileData = await profileResponse.json();
 
       if (!profileResponse.ok) {
-        throw new Error(profileData.message || "Erreur de mise à jour du profil");
+        throw new Error(
+          profileData.message || 'Erreur de mise à jour du profil'
+        );
       }
 
       // 2. Si le mot de passe est modifié, mettre à jour le mot de passe
       if (password) {
         if (!currentPassword) {
-          throw new Error("Le mot de passe actuel est requis pour changer votre mot de passe");
+          throw new Error(
+            'Le mot de passe actuel est requis pour changer votre mot de passe'
+          );
         }
 
-        const passwordResponse = await fetch("/api/auth/password", {
-          method: "PUT",
+        const passwordResponse = await fetch('/api/auth/password', {
+          method: 'PUT',
           headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ currentPassword, newPassword: password })
+          body: JSON.stringify({ currentPassword, newPassword: password }),
         });
 
         const passwordData = await passwordResponse.json();
 
         if (!passwordResponse.ok) {
-          throw new Error(passwordData.message || "Erreur de mise à jour du mot de passe");
+          throw new Error(
+            passwordData.message || 'Erreur de mise à jour du mot de passe'
+          );
         }
       }
 
-      toast.success("Informations mises à jour avec succès !");
-      setPassword("");
-      setCurrentPassword("");
+      toast.success('Informations mises à jour avec succès !');
+      setPassword('');
+      setCurrentPassword('');
       setIsChangingPassword(false);
-      
+
       // Re-fetch pour rafraîchir la navbar et les en-têtes
       await fetchProfile();
-      
+
       // Forcer le rechargement de la page pour que la navbar se mette à jour
       window.location.reload();
-
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -150,8 +155,8 @@ export default function Profile() {
   };
 
   const handleLogout = () => {
-    document.cookie = "token=; path=/; max-age=0; SameSite=Strict";
-    router.push("/");
+    document.cookie = 'token=; path=/; max-age=0; SameSite=Strict';
+    router.push('/');
   };
 
   if (isLoading && !email) {
@@ -168,7 +173,7 @@ export default function Profile() {
     <div className="profile-container">
       <div className="profile-card">
         <h1 className="profile-title">Mon compte</h1>
-        <p className="profile-subtitle">{userFullName || "Utilisateur"}</p>
+        <p className="profile-subtitle">{userFullName || 'Utilisateur'}</p>
 
         <form onSubmit={handleSubmit} className="profile-form">
           <div className="form-group">
@@ -182,7 +187,7 @@ export default function Profile() {
               placeholder="Ex: Dupont"
             />
           </div>
-          
+
           <div className="form-group">
             <label htmlFor="firstName">Prénom</label>
             <input
@@ -213,11 +218,13 @@ export default function Profile() {
               <input
                 type="password"
                 id="password"
-                value={isChangingPassword ? password : "••••••••••••"}
+                value={isChangingPassword ? password : '••••••••••••'}
                 disabled={!isChangingPassword}
                 onChange={(e) => setPassword(e.target.value)}
                 className="form-input password-input"
-                placeholder={isChangingPassword ? "Saisissez un nouveau mot de passe" : ""}
+                placeholder={
+                  isChangingPassword ? 'Saisissez un nouveau mot de passe' : ''
+                }
                 required={isChangingPassword}
               />
               {!isChangingPassword ? (
@@ -233,8 +240,8 @@ export default function Profile() {
                   type="button"
                   onClick={() => {
                     setIsChangingPassword(false);
-                    setPassword("");
-                    setCurrentPassword("");
+                    setPassword('');
+                    setCurrentPassword('');
                   }}
                   className="btn-password-cancel"
                 >
@@ -263,7 +270,11 @@ export default function Profile() {
             <button type="submit" className="profile-btn-submit">
               Modifier les informations
             </button>
-            <button type="button" onClick={handleLogout} className="btn-danger profile-btn-logout">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="btn-danger profile-btn-logout"
+            >
               Se déconnecter
             </button>
           </div>

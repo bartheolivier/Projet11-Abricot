@@ -1,26 +1,26 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function Register() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
   const router = useRouter();
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); 
-    setError(""); 
+    e.preventDefault();
+    setError('');
 
     try {
       // Appel à l'API pour l'inscription (grâce à notre proxy, /api remplace http://localhost:8000)
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
       });
@@ -30,16 +30,15 @@ export default function Register() {
       if (!response.ok) {
         throw new Error(data.message || "Erreur lors de l'inscription");
       }
-      
+
       const token = data.data?.token;
 
       if (token) {
         document.cookie = `token=${token}; path=/; max-age=86400; SameSite=Strict`;
-        router.push("/dashboard");
+        router.push('/dashboard');
       } else {
-        router.push("/");
+        router.push('/');
       }
-
     } catch (err) {
       setError(err.message);
     }
@@ -51,11 +50,15 @@ export default function Register() {
       <div className="auth-left-pane">
         <div className="auth-form-container">
           <div className="auth-logo-container">
-            <img src="/images/Logo_orange.png" alt="Abricot Logo" className="auth-logo" />
+            <img
+              src="/images/Logo_orange.png"
+              alt="Abricot Logo"
+              className="auth-logo"
+            />
           </div>
 
           <h1 className="auth-title">Inscription</h1>
-          
+
           {error && <p className="auth-error-msg">{error}</p>}
 
           <form onSubmit={handleSubmit} className="auth-form">

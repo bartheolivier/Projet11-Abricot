@@ -1,30 +1,43 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect, useRef } from "react";
-import { X, ChevronDown, ChevronUp, Search, Check, Loader2, Calendar } from "lucide-react";
-import { toast } from "sonner";
-import { useCreateTaskMutation } from "@/hooks/useTasksQuery";
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  X,
+  ChevronDown,
+  ChevronUp,
+  Search,
+  Check,
+  Loader2,
+  Calendar,
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { useCreateTaskMutation } from '@/hooks/useTasksQuery';
 
-export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreated }) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [dueDate, setDueDate] = useState("");
+export default function CreateTaskModal({
+  isOpen,
+  project,
+  onClose,
+  onTaskCreated,
+}) {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [dueDate, setDueDate] = useState('');
   const [selectedAssignees, setSelectedAssignees] = useState([]);
-  const [status, setStatus] = useState("TODO");
-  
-  const [searchQuery, setSearchQuery] = useState("");
+  const [status, setStatus] = useState('TODO');
+
+  const [searchQuery, setSearchQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const dropdownRef = useRef(null);
 
   const createTaskMutation = useCreateTaskMutation({
     onSuccess: () => {
-      setTitle("");
-      setDescription("");
-      setDueDate("");
+      setTitle('');
+      setDescription('');
+      setDueDate('');
       setSelectedAssignees([]);
-      setStatus("TODO");
-      setSearchQuery("");
+      setStatus('TODO');
+      setSearchQuery('');
       if (onTaskCreated) onTaskCreated();
       onClose();
     },
@@ -33,20 +46,20 @@ export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreate
   // Verrouiller le défilement du fond + Touche Échap (WCAG 2.1)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         onClose();
       }
     };
 
     if (isOpen) {
-      document.body.style.overflow = "hidden";
-      window.addEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
     } else {
-      document.body.style.overflow = "";
+      document.body.style.overflow = '';
     }
     return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, onClose]);
 
@@ -57,8 +70,8 @@ export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreate
         setIsDropdownOpen(false);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   if (!isOpen || !project) return null;
@@ -115,7 +128,10 @@ export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreate
     });
   };
 
-  const isFormValid = title.trim().length > 0 && description.trim().length > 0 && dueDate.length > 0;
+  const isFormValid =
+    title.trim().length > 0 &&
+    description.trim().length > 0 &&
+    dueDate.length > 0;
   const isSubmitting = createTaskMutation.isPending;
 
   return (
@@ -199,7 +215,7 @@ export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreate
               className="contributors-select-input"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
+                if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
                   setIsDropdownOpen(!isDropdownOpen);
                 }
@@ -210,18 +226,32 @@ export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreate
               aria-expanded={isDropdownOpen}
               aria-labelledby="assignees-label"
             >
-              <span className={selectedAssignees.length === 0 ? "placeholder-text" : "selected-count-text"}>
+              <span
+                className={
+                  selectedAssignees.length === 0
+                    ? 'placeholder-text'
+                    : 'selected-count-text'
+                }
+              >
                 {selectedAssignees.length === 0
-                  ? "Sélectionner un ou plusieurs membres"
-                  : `${selectedAssignees.length} membre${selectedAssignees.length > 1 ? "s" : ""} assigné(s)`}
+                  ? 'Sélectionner un ou plusieurs membres'
+                  : `${selectedAssignees.length} membre${selectedAssignees.length > 1 ? 's' : ''} assigné(s)`}
               </span>
-              {isDropdownOpen ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
+              {isDropdownOpen ? (
+                <ChevronUp size={16} aria-hidden="true" />
+              ) : (
+                <ChevronDown size={16} aria-hidden="true" />
+              )}
             </div>
 
             {isDropdownOpen && (
               <div className="contributors-dropdown-menu" role="listbox">
                 <div className="search-input-wrapper">
-                  <Search size={14} className="search-icon" aria-hidden="true" />
+                  <Search
+                    size={14}
+                    className="search-icon"
+                    aria-hidden="true"
+                  />
                   <input
                     type="text"
                     placeholder="Filtrer les membres..."
@@ -236,15 +266,17 @@ export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreate
 
                 <div className="dropdown-options-list">
                   {filteredMembers.map((user) => {
-                    const isSelected = selectedAssignees.some((u) => u.id === user.id);
+                    const isSelected = selectedAssignees.some(
+                      (u) => u.id === user.id
+                    );
 
                     return (
                       <div
                         key={user.id}
-                        className={`contributor-option-item ${isSelected ? "selected" : ""}`}
+                        className={`contributor-option-item ${isSelected ? 'selected' : ''}`}
                         onClick={() => handleToggleAssignee(user)}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
+                          if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
                             handleToggleAssignee(user);
                           }
@@ -253,18 +285,30 @@ export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreate
                         role="option"
                         aria-selected={isSelected}
                       >
-                        <div className={`option-checkbox ${isSelected ? "checked" : ""}`}>
-                          {isSelected && <Check size={12} strokeWidth={3} aria-hidden="true" />}
+                        <div
+                          className={`option-checkbox ${isSelected ? 'checked' : ''}`}
+                        >
+                          {isSelected && (
+                            <Check
+                              size={12}
+                              strokeWidth={3}
+                              aria-hidden="true"
+                            />
+                          )}
                         </div>
                         <div className="option-details">
-                          <span className="option-name">{user.name || user.email}</span>
+                          <span className="option-name">
+                            {user.name || user.email}
+                          </span>
                           <span className="option-email">{user.email}</span>
                         </div>
                       </div>
                     );
                   })}
                   {filteredMembers.length === 0 && (
-                    <div className="dropdown-status-item">Aucun membre trouvé</div>
+                    <div className="dropdown-status-item">
+                      Aucun membre trouvé
+                    </div>
                   )}
                 </div>
               </div>
@@ -273,15 +317,20 @@ export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreate
 
           <button
             type="submit"
-            className={`modal-btn-submit ${isFormValid ? "active" : "disabled"}`}
+            className={`modal-btn-submit ${isFormValid ? 'active' : 'disabled'}`}
             disabled={!isFormValid || isSubmitting}
           >
             {isSubmitting ? (
               <>
-                <Loader2 size={16} className="animate-spin" aria-hidden="true" /> Création...
+                <Loader2
+                  size={16}
+                  className="animate-spin"
+                  aria-hidden="true"
+                />{' '}
+                Création...
               </>
             ) : (
-              "Créer la tâche"
+              'Créer la tâche'
             )}
           </button>
         </form>

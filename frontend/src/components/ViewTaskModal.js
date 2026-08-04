@@ -1,26 +1,34 @@
-"use client";
+'use client';
 
-import React, { useEffect } from "react";
-import { X, Calendar, Folder, MessageSquare, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import React, { useEffect } from 'react';
+import {
+  X,
+  Calendar,
+  Folder,
+  MessageSquare,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+} from 'lucide-react';
 
 export default function ViewTaskModal({ isOpen, task, onClose }) {
   // Verrouiller le défilement du fond + Gestion de la touche Échap (WCAG 2.1)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         onClose();
       }
     };
 
     if (isOpen) {
-      document.body.style.overflow = "hidden";
-      window.addEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
     } else {
-      document.body.style.overflow = "";
+      document.body.style.overflow = '';
     }
     return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, onClose]);
 
@@ -28,8 +36,8 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
 
   // Calcul des couleurs et initiales pour les avatars des collaborateurs
   const getInitials = (name) => {
-    if (!name) return "?";
-    const parts = name.trim().split(" ");
+    if (!name) return '?';
+    const parts = name.trim().split(' ');
     if (parts.length >= 2) {
       return (parts[0][0] + parts[1][0]).toUpperCase();
     }
@@ -37,25 +45,42 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
   };
 
   const getAvatarColor = (identifier) => {
-    if (!identifier) return "#e0e0e0";
+    if (!identifier) return '#e0e0e0';
     let hash = 0;
     for (let i = 0; i < identifier.length; i++) {
       hash = identifier.charCodeAt(i) + ((hash << 5) - hash);
     }
-    const colors = ["#ffeaa7", "#fab1a0", "#ff7675", "#fd79a8", "#a29bfe", "#74b9ff", "#81ecec", "#55efc4"];
+    const colors = [
+      '#ffeaa7',
+      '#fab1a0',
+      '#ff7675',
+      '#fd79a8',
+      '#a29bfe',
+      '#74b9ff',
+      '#81ecec',
+      '#55efc4',
+    ];
     return colors[Math.abs(hash) % colors.length];
   };
 
   const getStatusBadge = (status) => {
     switch (status) {
-      case "TODO":
-        return { label: "À faire", className: "badge-todo", icon: Clock };
-      case "IN_PROGRESS":
-        return { label: "En cours", className: "badge-progress", icon: AlertCircle };
-      case "DONE":
-        return { label: "Terminée", className: "badge-done", icon: CheckCircle };
+      case 'TODO':
+        return { label: 'À faire', className: 'badge-todo', icon: Clock };
+      case 'IN_PROGRESS':
+        return {
+          label: 'En cours',
+          className: 'badge-progress',
+          icon: AlertCircle,
+        };
+      case 'DONE':
+        return {
+          label: 'Terminée',
+          className: 'badge-done',
+          icon: CheckCircle,
+        };
       default:
-        return { label: status, className: "badge-todo", icon: Clock };
+        return { label: status, className: 'badge-todo', icon: Clock };
     }
   };
 
@@ -67,12 +92,12 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
 
   // Formater la date d'échéance
   const formatDate = (dateString) => {
-    if (!dateString) return "Non définie";
+    if (!dateString) return 'Non définie';
     const d = new Date(dateString);
-    return d.toLocaleDateString("fr-FR", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
+    return d.toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
     });
   };
 
@@ -112,7 +137,7 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
           <div className="view-field-group">
             <label className="view-field-label">Description</label>
             <div className="view-field-value desc-value">
-              {task.description || "Aucune description fournie."}
+              {task.description || 'Aucune description fournie.'}
             </div>
           </div>
 
@@ -122,7 +147,7 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
               <label className="view-field-label">Projet associé</label>
               <div className="view-field-value inline-flex">
                 <Folder size={16} className="field-icon" aria-hidden="true" />
-                <span>{task.project?.name || "Sans projet"}</span>
+                <span>{task.project?.name || 'Sans projet'}</span>
               </div>
             </div>
 
@@ -146,7 +171,11 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
                   <div key={user.id || user.email} className="assignee-capsule">
                     <div
                       className="assignee-capsule-avatar"
-                      style={{ backgroundColor: getAvatarColor(user.name || user.email) }}
+                      style={{
+                        backgroundColor: getAvatarColor(
+                          user.name || user.email
+                        ),
+                      }}
                       aria-hidden="true"
                     >
                       {getInitials(user.name || user.email)}
@@ -167,7 +196,11 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
             <label className="view-field-label">Statut</label>
             <div>
               <span className={`status-badge ${statusDetails.className}`}>
-                <StatusIcon size={14} className="status-icon" aria-hidden="true" />
+                <StatusIcon
+                  size={14}
+                  className="status-icon"
+                  aria-hidden="true"
+                />
                 {statusDetails.label}
               </span>
             </div>
@@ -181,7 +214,12 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
             {(task.comments || []).length > 0 ? (
               <div className="view-comments-list">
                 {(task.comments || []).map((c, index) => {
-                  const authorName = c.user?.name || c.user?.email || c.author?.name || c.author?.email || "Utilisateur";
+                  const authorName =
+                    c.user?.name ||
+                    c.user?.email ||
+                    c.author?.name ||
+                    c.author?.email ||
+                    'Utilisateur';
                   return (
                     <div key={c.id || index} className="view-comment-item">
                       <div
@@ -193,10 +231,14 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
                       </div>
                       <div className="view-comment-content-box">
                         <div className="view-comment-meta">
-                          <span className="view-comment-author">{authorName}</span>
+                          <span className="view-comment-author">
+                            {authorName}
+                          </span>
                           {c.createdAt && (
                             <span className="view-comment-date">
-                              {new Date(c.createdAt).toLocaleDateString("fr-FR")}
+                              {new Date(c.createdAt).toLocaleDateString(
+                                'fr-FR'
+                              )}
                             </span>
                           )}
                         </div>
@@ -207,14 +249,20 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
                 })}
               </div>
             ) : (
-              <p className="no-assignees-text">Aucun commentaire pour le moment.</p>
+              <p className="no-assignees-text">
+                Aucun commentaire pour le moment.
+              </p>
             )}
           </div>
         </div>
 
         {/* Pied de modale */}
         <div className="view-modal-footer">
-          <button type="button" className="modal-btn-close-only" onClick={onClose}>
+          <button
+            type="button"
+            className="modal-btn-close-only"
+            onClick={onClose}
+          >
             Fermer
           </button>
         </div>

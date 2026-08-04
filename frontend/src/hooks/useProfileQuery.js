@@ -1,7 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
-import { api } from "../lib/api";
-import { useUserStore } from "../lib/useUserStore";
-import { useEffect } from "react";
+import { useQuery } from '@tanstack/react-query';
+import { api } from '../lib/api';
+import { useUserStore } from '../lib/useUserStore';
+import { useEffect } from 'react';
 
 export function useProfileQuery(options = {}) {
   const setUser = useUserStore((state) => state.setUser);
@@ -10,7 +10,7 @@ export function useProfileQuery(options = {}) {
   const token = getToken();
 
   const query = useQuery({
-    queryKey: ["profile"],
+    queryKey: ['profile'],
     queryFn: async () => {
       const res = await api.getProfile();
       return res.data;

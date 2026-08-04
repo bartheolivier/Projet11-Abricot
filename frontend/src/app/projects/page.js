@@ -1,12 +1,15 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { Plus, Edit2, Trash2, Folder } from "lucide-react";
-import CreateProjectModal from "@/components/CreateProjectModal";
-import EditProjectModal from "@/components/EditProjectModal";
-import { useProjectsQuery, useDeleteProjectMutation } from "@/hooks/useProjectsQuery";
-import { useProfileQuery } from "@/hooks/useProfileQuery";
+import { useState } from 'react';
+import Link from 'next/link';
+import { Plus, Edit2, Trash2, Folder } from 'lucide-react';
+import CreateProjectModal from '@/components/CreateProjectModal';
+import EditProjectModal from '@/components/EditProjectModal';
+import {
+  useProjectsQuery,
+  useDeleteProjectMutation,
+} from '@/hooks/useProjectsQuery';
+import { useProfileQuery } from '@/hooks/useProfileQuery';
 
 export default function Projects() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -31,25 +34,38 @@ export default function Projects() {
     e.preventDefault();
     e.stopPropagation();
 
-    if (confirm(`Voulez-vous vraiment supprimer le projet "${projectName}" ? Cette action est irréversible.`)) {
+    if (
+      confirm(
+        `Voulez-vous vraiment supprimer le projet "${projectName}" ? Cette action est irréversible.`
+      )
+    ) {
       deleteProjectMutation.mutate(projectId);
     }
   };
 
-  const colors = ["#ffe8d6", "#e2ece9", "#f0efeb", "#ddbea9", "#a8dadc", "#f4a261"];
+  const colors = [
+    '#ffe8d6',
+    '#e2ece9',
+    '#f0efeb',
+    '#ddbea9',
+    '#a8dadc',
+    '#f4a261',
+  ];
   const getAvatarColor = (name) => {
     if (!name) return colors[0];
-    const charCodeSum = name.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    const charCodeSum = name
+      .split('')
+      .reduce((sum, char) => sum + char.charCodeAt(0), 0);
     return colors[charCodeSum % colors.length];
   };
 
   const getInitials = (name) => {
-    if (!name) return "";
+    if (!name) return '';
     const parts = name.trim().split(/\s+/);
     if (parts.length >= 2) {
       return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
     }
-    return parts[0] ? parts[0].substring(0, 2).toUpperCase() : "";
+    return parts[0] ? parts[0].substring(0, 2).toUpperCase() : '';
   };
 
   if (isLoading) {
@@ -67,7 +83,10 @@ export default function Projects() {
           <h1 className="projects-title">Mes projets</h1>
           <p className="projects-subtitle">Gérez vos projets</p>
         </div>
-        <button className="btn-primary" onClick={() => setIsCreateModalOpen(true)}>
+        <button
+          className="btn-primary"
+          onClick={() => setIsCreateModalOpen(true)}
+        >
           <Plus size={16} /> Créer un projet
         </button>
       </div>
@@ -76,7 +95,9 @@ export default function Projects() {
         <div className="projects-empty-state">
           <Folder size={48} className="empty-icon" />
           <p className="empty-title">Aucun projet trouvé</p>
-          <p className="empty-subtitle">Vous n'êtes membre d'aucun projet pour le moment.</p>
+          <p className="empty-subtitle">
+            Vous n'êtes membre d'aucun projet pour le moment.
+          </p>
         </div>
       ) : (
         <div className="projects-grid">
@@ -85,31 +106,39 @@ export default function Projects() {
               (m) => m.user?.id !== project.ownerId
             );
 
-            const isAdmin = project.userRole === "ADMIN" || project.ownerId === currentUserId;
+            const isAdmin =
+              project.userRole === 'ADMIN' || project.ownerId === currentUserId;
 
             // Calcul de la progression
             const tasksList = project.tasks || [];
             const totalTasks = tasksList.length;
-            const completedTasks = tasksList.filter((t) => t.status === "DONE").length;
-            const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+            const completedTasks = tasksList.filter(
+              (t) => t.status === 'DONE'
+            ).length;
+            const progress =
+              totalTasks > 0
+                ? Math.round((completedTasks / totalTasks) * 100)
+                : 0;
 
             return (
-              <Link 
-                href={`/projects/${project.id}`} 
-                key={project.id} 
+              <Link
+                href={`/projects/${project.id}`}
+                key={project.id}
                 className="project-card"
               >
                 {isAdmin && (
                   <div className="project-card-actions">
-                    <button 
+                    <button
                       onClick={(e) => handleEditProject(e, project)}
                       className="card-action-btn edit-btn"
                       title="Modifier le projet"
                     >
                       <Edit2 size={14} />
                     </button>
-                    <button 
-                      onClick={(e) => handleDeleteProject(e, project.id, project.name)}
+                    <button
+                      onClick={(e) =>
+                        handleDeleteProject(e, project.id, project.name)
+                      }
                       className="card-action-btn delete-btn"
                       title="Supprimer le projet"
                     >
@@ -120,7 +149,8 @@ export default function Projects() {
 
                 <h2 className="project-card-title">{project.name}</h2>
                 <p className="project-card-desc">
-                  {project.description || "Aucune description fournie pour ce projet."}
+                  {project.description ||
+                    'Aucune description fournie pour ce projet.'}
                 </p>
 
                 <div className="project-progress-container">
@@ -129,8 +159,8 @@ export default function Projects() {
                     <span className="progress-percentage">{progress}%</span>
                   </div>
                   <div className="project-progress-bar-bg">
-                    <div 
-                      className="project-progress-bar-fill" 
+                    <div
+                      className="project-progress-bar-fill"
                       style={{ width: `${progress}%` }}
                     />
                   </div>
@@ -146,25 +176,37 @@ export default function Projects() {
                   <div className="project-team-members">
                     {project.owner && (
                       <div className="team-member-group">
-                        <div 
+                        <div
                           className="project-member-avatar owner-avatar"
-                          style={{ backgroundColor: getAvatarColor(project.owner.name || project.owner.email) }}
+                          style={{
+                            backgroundColor: getAvatarColor(
+                              project.owner.name || project.owner.email
+                            ),
+                          }}
                           title={`${project.owner.name || project.owner.email} (Propriétaire)`}
                         >
-                          {getInitials(project.owner.name) || getInitials(project.owner.email)}
+                          {getInitials(project.owner.name) ||
+                            getInitials(project.owner.email)}
                         </div>
-                        <span className="project-owner-badge">Propriétaire</span>
+                        <span className="project-owner-badge">
+                          Propriétaire
+                        </span>
                       </div>
                     )}
 
                     {otherMembers.map((member) => (
-                      <div 
+                      <div
                         key={member.user?.id || member.id}
                         className="project-member-avatar"
-                        style={{ backgroundColor: getAvatarColor(member.user?.name || member.user?.email) }}
+                        style={{
+                          backgroundColor: getAvatarColor(
+                            member.user?.name || member.user?.email
+                          ),
+                        }}
                         title={`${member.user?.name || member.user?.email} (Contributeur)`}
                       >
-                        {getInitials(member.user?.name) || getInitials(member.user?.email)}
+                        {getInitials(member.user?.name) ||
+                          getInitials(member.user?.email)}
                       </div>
                     ))}
                   </div>
@@ -175,18 +217,18 @@ export default function Projects() {
         </div>
       )}
 
-      <CreateProjectModal 
-        isOpen={isCreateModalOpen} 
-        onClose={() => setIsCreateModalOpen(false)} 
+      <CreateProjectModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
       />
 
-      <EditProjectModal 
-        isOpen={isEditModalOpen} 
-        project={projectToEdit} 
+      <EditProjectModal
+        isOpen={isEditModalOpen}
+        project={projectToEdit}
         onClose={() => {
           setIsEditModalOpen(false);
           setProjectToEdit(null);
-        }} 
+        }}
       />
     </div>
   );

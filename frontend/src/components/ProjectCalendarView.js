@@ -1,7 +1,13 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Calendar as CalendarIcon } from "lucide-react";
+import React, { useState } from 'react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Calendar as CalendarIcon,
+} from 'lucide-react';
 
 export default function ProjectCalendarView({ tasks, onSelectTask }) {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -10,11 +16,21 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
   const month = currentDate.getMonth();
 
   const monthNames = [
-    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    'Janvier',
+    'Février',
+    'Mars',
+    'Avril',
+    'Mai',
+    'Juin',
+    'Juillet',
+    'Août',
+    'Septembre',
+    'Octobre',
+    'Novembre',
+    'Décembre',
   ];
 
-  const dayNames = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+  const dayNames = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
   // Génération de la liste des années (-5 ans à +5 ans par rapport à l'année en cours)
   const currentYearNow = new Date().getFullYear();
@@ -66,7 +82,7 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
   const daysInPrevMonth = new Date(year, month, 0).getDate();
 
   const today = new Date();
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
   const calendarDays = [];
 
@@ -74,7 +90,7 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
   for (let i = startingDayOfWeek - 1; i >= 0; i--) {
     const dayNum = daysInPrevMonth - i;
     const prevDate = new Date(year, month - 1, dayNum);
-    const dateStr = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}-${String(prevDate.getDate()).padStart(2, "0")}`;
+    const dateStr = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}-${String(prevDate.getDate()).padStart(2, '0')}`;
     calendarDays.push({
       dayNumber: dayNum,
       dateStr,
@@ -85,7 +101,7 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
 
   // Jours du mois en cours
   for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     calendarDays.push({
       dayNumber: d,
       dateStr,
@@ -98,7 +114,7 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
   const remainingCells = (7 - (calendarDays.length % 7)) % 7;
   for (let j = 1; j <= remainingCells; j++) {
     const nextDate = new Date(year, month + 1, j);
-    const dateStr = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, "0")}-${String(nextDate.getDate()).padStart(2, "0")}`;
+    const dateStr = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;
     calendarDays.push({
       dayNumber: j,
       dateStr,
@@ -112,7 +128,7 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
   (tasks || []).forEach((t) => {
     if (!t.dueDate) return;
     const d = new Date(t.dueDate);
-    const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     if (!tasksByDate[dateKey]) {
       tasksByDate[dateKey] = [];
     }
@@ -121,23 +137,31 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
 
   const getStatusClass = (status) => {
     switch (status) {
-      case "TODO":
-        return "cal-badge-todo";
-      case "IN_PROGRESS":
-        return "cal-badge-progress";
-      case "DONE":
-        return "cal-badge-done";
+      case 'TODO':
+        return 'cal-badge-todo';
+      case 'IN_PROGRESS':
+        return 'cal-badge-progress';
+      case 'DONE':
+        return 'cal-badge-done';
       default:
-        return "cal-badge-todo";
+        return 'cal-badge-todo';
     }
   };
 
   return (
-    <div className="project-calendar-container" role="region" aria-label="Calendrier du projet">
+    <div
+      className="project-calendar-container"
+      role="region"
+      aria-label="Calendrier du projet"
+    >
       {/* En-tête de navigation du calendrier */}
       <div className="calendar-header-nav">
         <div className="calendar-month-title">
-          <CalendarIcon size={20} className="cal-header-icon" aria-hidden="true" />
+          <CalendarIcon
+            size={20}
+            className="cal-header-icon"
+            aria-hidden="true"
+          />
           <div className="calendar-select-group">
             {/* Sélecteur de mois avec aria-label */}
             <select
@@ -170,11 +194,19 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
         </div>
 
         <div className="calendar-nav-actions">
-          <button className="btn-cal-today" onClick={handleToday} aria-label="Revenir à la date d'aujourd'hui">
+          <button
+            className="btn-cal-today"
+            onClick={handleToday}
+            aria-label="Revenir à la date d'aujourd'hui"
+          >
             Aujourd'hui
           </button>
-          
-          <div className="btn-group-nav" role="group" aria-label="Navigation dans le temps">
+
+          <div
+            className="btn-group-nav"
+            role="group"
+            aria-label="Navigation dans le temps"
+          >
             <button
               className="btn-cal-nav"
               onClick={handlePrevYear}
@@ -230,15 +262,18 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
             return (
               <div
                 key={idx}
-                className={`calendar-day-cell ${!day.isCurrentMonth ? "other-month" : ""} ${day.isToday ? "today-cell" : ""}`}
+                className={`calendar-day-cell ${!day.isCurrentMonth ? 'other-month' : ''} ${day.isToday ? 'today-cell' : ''}`}
               >
                 <div className="cell-day-header">
-                  <span className={`day-number ${day.isToday ? "today-badge" : ""}`}>
+                  <span
+                    className={`day-number ${day.isToday ? 'today-badge' : ''}`}
+                  >
                     {day.dayNumber}
                   </span>
                   {dayTasks.length > 0 && (
                     <span className="tasks-count-pill">
-                      {dayTasks.length} {dayTasks.length > 1 ? "tâches" : "tâche"}
+                      {dayTasks.length}{' '}
+                      {dayTasks.length > 1 ? 'tâches' : 'tâche'}
                     </span>
                   )}
                 </div>
@@ -251,7 +286,7 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
                       className={`calendar-task-chip ${getStatusClass(task.status)}`}
                       onClick={() => onSelectTask && onSelectTask(task)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
+                        if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
                           onSelectTask && onSelectTask(task);
                         }
