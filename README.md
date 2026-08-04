@@ -68,8 +68,8 @@ npm run dev
 ## 👤 Identifiants de Test (Seeding)
 
 Pour vous connecter immédiatement à l'application sans créer de compte :
-* **Email :** `alice.martin@example.com`
-* **Mot de passe :** `password123`
+* **Email :** `alice@example.com`
+* **Mot de passe :** `P@ssword123`
 
 ---
 
