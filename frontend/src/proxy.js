@@ -21,9 +21,10 @@ export function proxy(request) {
   const path = request.nextUrl.pathname;
 
   // 2. Définition des routes privées nécessitant une authentification
-  const isProtectedRoute = path.startsWith('/dashboard') || 
-                           path.startsWith('/profile') || 
-                           path.startsWith('/projects');
+  const isProtectedRoute =
+    path.startsWith('/dashboard') ||
+    path.startsWith('/profile') ||
+    path.startsWith('/projects');
 
   // 3. Si l'utilisateur tente d'accéder à une route protégée sans token valide, redirection vers la page de login
   if (isProtectedRoute && !token) {

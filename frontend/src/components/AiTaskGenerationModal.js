@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * =========================================================================================
@@ -13,38 +13,43 @@
  * =========================================================================================
  */
 
-import React, { useState, useEffect } from "react";
-import { X, Sparkles, Plus, Trash2, Edit3, Check, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import React, { useState, useEffect } from 'react';
+import { X, Sparkles, Plus, Trash2, Edit3, Check, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
-export default function AiTaskGenerationModal({ isOpen, project, onClose, onTasksAdded }) {
-  const [prompt, setPrompt] = useState("");
+export default function AiTaskGenerationModal({
+  isOpen,
+  project,
+  onClose,
+  onTasksAdded,
+}) {
+  const [prompt, setPrompt] = useState('');
   const [generatedTasks, setGeneratedTasks] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
 
   // Édition d'une tâche individuelle dans la prévisualisation
-  const [editTitle, setEditTitle] = useState("");
-  const [editDesc, setEditDesc] = useState("");
+  const [editTitle, setEditTitle] = useState('');
+  const [editDesc, setEditDesc] = useState('');
 
   // Accessibilité WCAG 2.1 : Verrouillage du scroll arrière-plan & fermeture touche Échap
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         onClose();
       }
     };
 
     if (isOpen) {
-      document.body.style.overflow = "hidden";
-      window.addEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
     } else {
-      document.body.style.overflow = "";
+      document.body.style.overflow = '';
     }
     return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, onClose]);
 
@@ -56,23 +61,23 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
   const handleGenerate = async (e) => {
     if (e) e.preventDefault();
     if (!prompt.trim()) {
-      toast.error("Veuillez saisir une description de la tâche à générer.");
+      toast.error('Veuillez saisir une description de la tâche à générer.');
       return;
     }
 
     setIsLoading(true);
     try {
       const token = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("token="))
-        ?.split("=")[1];
+        .split('; ')
+        .find((row) => row.startsWith('token='))
+        ?.split('=')[1];
 
       // Envoi de la requête au backend RAG + LLM Gemini
-      const response = await fetch("/api/ai/generate-tasks", {
-        method: "POST",
+      const response = await fetch('/api/ai/generate-tasks', {
+        method: 'POST',
         headers: {
-          "Authorization": token ? `Bearer ${token}` : "",
-          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           projectId: project.id,
@@ -83,13 +88,13 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
       const json = await response.json();
 
       if (!response.ok) {
-        throw new Error(json.message || "Erreur lors de la génération IA.");
+        throw new Error(json.message || 'Erreur lors de la génération IA.');
       }
 
       if (json.tasks && Array.isArray(json.tasks)) {
         setGeneratedTasks((prev) => [...prev, ...json.tasks]);
         toast.success(`${json.tasks.length} tâche(s) générée(s) par l'IA !`);
-        setPrompt("");
+        setPrompt('');
       } else {
         toast.error("Aucune tâche n'a été renvoyée par l'IA.");
       }
@@ -125,12 +130,14 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
    */
   const handleSaveEdit = (index) => {
     if (!editTitle.trim()) {
-      toast.error("Le titre ne peut pas être vide.");
+      toast.error('Le titre ne peut pas être vide.');
       return;
     }
     setGeneratedTasks((prev) =>
       prev.map((t, i) =>
-        i === index ? { ...t, title: editTitle.trim(), description: editDesc.trim() } : t
+        i === index
+          ? { ...t, title: editTitle.trim(), description: editDesc.trim() }
+          : t
       )
     );
     setEditingIndex(null);
@@ -145,34 +152,34 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
     setIsSubmitting(true);
     try {
       const token = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("token="))
-        ?.split("=")[1];
+        .split('; ')
+        .find((row) => row.startsWith('token='))
+        ?.split('=')[1];
 
       if (!token) {
-        toast.error("Session expirée. Veuillez vous reconnecter.");
+        toast.error('Session expirée. Veuillez vous reconnecter.');
         return;
       }
 
       const defaultDueDate = new Date();
       defaultDueDate.setDate(defaultDueDate.getDate() + 7);
-      const formattedDueDate = defaultDueDate.toISOString().split("T")[0];
+      const formattedDueDate = defaultDueDate.toISOString().split('T')[0];
 
       let addedCount = 0;
 
       // Création séquentielle de chaque tâche prévisualisée dans le projet
       for (const t of generatedTasks) {
         const res = await fetch(`/api/projects/${project.id}/tasks`, {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             title: t.title,
-            description: t.description || "",
+            description: t.description || '',
             dueDate: formattedDueDate,
-            priority: "MEDIUM",
+            priority: 'MEDIUM',
           }),
         });
 
@@ -181,10 +188,12 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
         }
       }
 
-      toast.success(`${addedCount} tâche(s) ajoutée(s) au projet avec succès !`);
-      
+      toast.success(
+        `${addedCount} tâche(s) ajoutée(s) au projet avec succès !`
+      );
+
       setGeneratedTasks([]);
-      setPrompt("");
+      setPrompt('');
       if (onTasksAdded) onTasksAdded();
       onClose();
     } catch (err) {
@@ -216,7 +225,7 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
         <div className="ai-modal-header">
           <Sparkles size={24} className="ai-sparkle-icon" aria-hidden="true" />
           <h2 id="modal-title-ai" className="ai-title">
-            {generatedTasks.length > 0 ? "Vos tâches..." : "Créer une tâche"}
+            {generatedTasks.length > 0 ? 'Vos tâches...' : 'Créer une tâche'}
           </h2>
         </div>
 
@@ -224,8 +233,14 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
         <div className="ai-modal-body">
           {isLoading ? (
             <div className="ai-loading-state">
-              <Loader2 size={32} className="animate-spin ai-spinner" aria-hidden="true" />
-              <p className="ai-loading-text">Génération des tâches par l'IA en cours...</p>
+              <Loader2
+                size={32}
+                className="animate-spin ai-spinner"
+                aria-hidden="true"
+              />
+              <p className="ai-loading-text">
+                Génération des tâches par l'IA en cours...
+              </p>
             </div>
           ) : generatedTasks.length > 0 ? (
             <div className="ai-tasks-cards-list">
@@ -267,7 +282,7 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
                       <>
                         <h3 className="ai-card-title">{t.title}</h3>
                         <p className="ai-card-desc">
-                          {t.description || "Aucune description fournie."}
+                          {t.description || 'Aucune description fournie.'}
                         </p>
                         <div className="ai-card-actions">
                           <button
@@ -304,7 +319,12 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 size={16} className="animate-spin" aria-hidden="true" /> Ajout au projet...
+                      <Loader2
+                        size={16}
+                        className="animate-spin"
+                        aria-hidden="true"
+                      />{' '}
+                      Ajout au projet...
                     </>
                   ) : (
                     <>
@@ -331,12 +351,16 @@ export default function AiTaskGenerationModal({ isOpen, project, onClose, onTask
             />
             <button
               type="submit"
-              className={`ai-prompt-send-btn ${prompt.trim() && !isLoading && !isSubmitting ? "active" : ""}`}
+              className={`ai-prompt-send-btn ${prompt.trim() && !isLoading && !isSubmitting ? 'active' : ''}`}
               disabled={!prompt.trim() || isLoading || isSubmitting}
               aria-label="Envoyer"
             >
               {isLoading ? (
-                <Loader2 size={18} className="animate-spin" aria-hidden="true" />
+                <Loader2
+                  size={18}
+                  className="animate-spin"
+                  aria-hidden="true"
+                />
               ) : (
                 <Plus size={20} aria-hidden="true" />
               )}

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * =========================================================================================
@@ -13,19 +13,32 @@
  * =========================================================================================
  */
 
-import React, { useState, useEffect, useRef } from "react";
-import { X, ChevronDown, ChevronUp, Search, Check, Loader2, Calendar } from "lucide-react";
-import { toast } from "sonner";
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  X,
+  ChevronDown,
+  ChevronUp,
+  Search,
+  Check,
+  Loader2,
+  Calendar,
+} from 'lucide-react';
+import { toast } from 'sonner';
 
-export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreated }) {
+export default function CreateTaskModal({
+  isOpen,
+  project,
+  onClose,
+  onTaskCreated,
+}) {
   // États locaux de la tâche
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [dueDate, setDueDate] = useState("");
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [dueDate, setDueDate] = useState('');
   const [selectedAssignees, setSelectedAssignees] = useState([]);
-  const [status, setStatus] = useState("TODO");
-  
-  const [searchQuery, setSearchQuery] = useState("");
+  const [status, setStatus] = useState('TODO');
+
+  const [searchQuery, setSearchQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -34,20 +47,20 @@ export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreate
   // Accessibilité WCAG 2.1 : Verrouillage du scroll arrière-plan & fermeture touche Échap
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         onClose();
       }
     };
 
     if (isOpen) {
-      document.body.style.overflow = "hidden";
-      window.addEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
     } else {
-      document.body.style.overflow = "";
+      document.body.style.overflow = '';
     }
     return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, onClose]);
 
@@ -58,8 +71,8 @@ export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreate
         setIsDropdownOpen(false);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   if (!isOpen || !project) return null;
@@ -72,7 +85,10 @@ export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreate
   if (project.members) {
     project.members.forEach((m) => {
       const userObj = m.user || m;
-      if (userObj && !allMembers.some((existing) => existing.id === userObj.id)) {
+      if (
+        userObj &&
+        !allMembers.some((existing) => existing.id === userObj.id)
+      ) {
         allMembers.push(userObj);
       }
     });
@@ -104,24 +120,24 @@ export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreate
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title.trim() || !description.trim()) {
-      toast.error("Veuillez remplir le titre et la description.");
+      toast.error('Veuillez remplir le titre et la description.');
       return;
     }
 
     setIsSubmitting(true);
     try {
       const token = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("token="))
-        ?.split("=")[1];
+        .split('; ')
+        .find((row) => row.startsWith('token='))
+        ?.split('=')[1];
 
       const assigneeIds = selectedAssignees.map((u) => u.id);
 
       const res = await fetch(`/api/projects/${project.id}/tasks`, {
-        method: "POST",
+        method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           title: title.trim(),
@@ -135,15 +151,17 @@ export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreate
       const json = await res.json();
 
       if (!res.ok) {
-        throw new Error(json.message || "Erreur lors de la création de la tâche");
+        throw new Error(
+          json.message || 'Erreur lors de la création de la tâche'
+        );
       }
 
-      toast.success("Tâche créée avec succès !");
-      setTitle("");
-      setDescription("");
-      setDueDate("");
+      toast.success('Tâche créée avec succès !');
+      setTitle('');
+      setDescription('');
+      setDueDate('');
       setSelectedAssignees([]);
-      setStatus("TODO");
+      setStatus('TODO');
       if (onTaskCreated) onTaskCreated();
       onClose();
     } catch (err) {
@@ -218,11 +236,11 @@ export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreate
           {/* Assignation aux membres du projet */}
           <div className="form-group" ref={dropdownRef}>
             <label id="assignees-label">Assigner à</label>
-            <div 
-              className="contributors-select-input" 
+            <div
+              className="contributors-select-input"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
+                if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
                   setIsDropdownOpen(!isDropdownOpen);
                 }
@@ -233,19 +251,32 @@ export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreate
               aria-expanded={isDropdownOpen}
               aria-labelledby="assignees-label"
             >
-              <span className={selectedAssignees.length === 0 ? "placeholder-text" : "selected-count-text"}>
-                {selectedAssignees.length === 0 
-                  ? "Choisir un ou plusieurs membres" 
-                  : `${selectedAssignees.length} membre${selectedAssignees.length > 1 ? "s" : ""}`
+              <span
+                className={
+                  selectedAssignees.length === 0
+                    ? 'placeholder-text'
+                    : 'selected-count-text'
                 }
+              >
+                {selectedAssignees.length === 0
+                  ? 'Choisir un ou plusieurs membres'
+                  : `${selectedAssignees.length} membre${selectedAssignees.length > 1 ? 's' : ''}`}
               </span>
-              {isDropdownOpen ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
+              {isDropdownOpen ? (
+                <ChevronUp size={16} aria-hidden="true" />
+              ) : (
+                <ChevronDown size={16} aria-hidden="true" />
+              )}
             </div>
 
             {isDropdownOpen && (
               <div className="contributors-dropdown-menu" role="listbox">
                 <div className="search-input-wrapper">
-                  <Search size={14} className="search-icon" aria-hidden="true" />
+                  <Search
+                    size={14}
+                    className="search-icon"
+                    aria-hidden="true"
+                  />
                   <input
                     type="text"
                     placeholder="Rechercher un membre..."
@@ -260,14 +291,16 @@ export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreate
 
                 <div className="dropdown-options-list">
                   {filteredMembers.map((user) => {
-                    const isSelected = selectedAssignees.some((u) => u.id === user.id);
+                    const isSelected = selectedAssignees.some(
+                      (u) => u.id === user.id
+                    );
                     return (
-                      <div 
+                      <div
                         key={user.id}
-                        className={`contributor-option-item ${isSelected ? "selected" : ""}`}
+                        className={`contributor-option-item ${isSelected ? 'selected' : ''}`}
                         onClick={() => handleToggleAssignee(user)}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
+                          if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
                             handleToggleAssignee(user);
                           }
@@ -276,11 +309,21 @@ export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreate
                         role="option"
                         aria-selected={isSelected}
                       >
-                        <div className={`option-checkbox ${isSelected ? "checked" : ""}`}>
-                          {isSelected && <Check size={12} strokeWidth={3} aria-hidden="true" />}
+                        <div
+                          className={`option-checkbox ${isSelected ? 'checked' : ''}`}
+                        >
+                          {isSelected && (
+                            <Check
+                              size={12}
+                              strokeWidth={3}
+                              aria-hidden="true"
+                            />
+                          )}
                         </div>
                         <div className="option-details">
-                          <span className="option-name">{user.name || "Utilisateur sans nom"}</span>
+                          <span className="option-name">
+                            {user.name || 'Utilisateur sans nom'}
+                          </span>
                           <span className="option-email">{user.email}</span>
                         </div>
                       </div>
@@ -291,17 +334,22 @@ export default function CreateTaskModal({ isOpen, project, onClose, onTaskCreate
             )}
           </div>
 
-          <button 
-            type="submit" 
-            className={`modal-btn-submit ${isFormValid ? "active" : "disabled"}`}
+          <button
+            type="submit"
+            className={`modal-btn-submit ${isFormValid ? 'active' : 'disabled'}`}
             disabled={!isFormValid || isSubmitting}
           >
             {isSubmitting ? (
               <>
-                <Loader2 size={16} className="animate-spin" aria-hidden="true" /> Création...
+                <Loader2
+                  size={16}
+                  className="animate-spin"
+                  aria-hidden="true"
+                />{' '}
+                Création...
               </>
             ) : (
-              "Ajouter la tâche"
+              'Ajouter la tâche'
             )}
           </button>
         </form>

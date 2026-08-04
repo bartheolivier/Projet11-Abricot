@@ -5,7 +5,7 @@
  * Fichier : src/app/not-found.js
  * Rôle : S'affiche automatiquement lorsque l'utilisateur tente d'accéder à une URL
  *        inexistante, supprimée ou erronée dans l'application Abricot.co.
- * 
+ *
  * Exigence Grille d'Auto-Évaluation :
  * "L'ensemble des pages ainsi que leur navigation sont conformes aux maquettes : Page 404."
  * =========================================================================================
@@ -23,9 +23,7 @@ export default function NotFound() {
       </div>
 
       {/* Titre principal H1 de la page de redirection 404 */}
-      <h1 className="not-found-title">
-        Page 404 - Page introuvable
-      </h1>
+      <h1 className="not-found-title">Page 404 - Page introuvable</h1>
 
       {/* Explication utilisateur polie et claire */}
       <p className="not-found-desc">
@@ -33,10 +31,7 @@ export default function NotFound() {
       </p>
 
       {/* Bouton d'action direct permettant de revenir en toute sécurité au tableau de bord */}
-      <Link 
-        href="/dashboard"
-        className="btn-primary not-found-btn"
-      >
+      <Link href="/dashboard" className="btn-primary not-found-btn">
         <ArrowLeft size={18} aria-hidden="true" /> Retour au tableau de bord
       </Link>
     </div>

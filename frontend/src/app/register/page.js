@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * =========================================================================================
@@ -10,16 +10,16 @@
  * =========================================================================================
  */
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function Register() {
   // États locaux React pour la saisie des identifiants et l'affichage des erreurs
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
   const router = useRouter();
 
   /**
@@ -27,14 +27,14 @@ export default function Register() {
    */
   const handleSubmit = async (e) => {
     e.preventDefault(); // Annule le rechargement par défaut du navigateur
-    setError(""); 
+    setError('');
 
     try {
       // Appel vers le routeur API backend Express /api/auth/register
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
       });
@@ -42,19 +42,21 @@ export default function Register() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Erreur lors de l'inscription. Veuillez vérifier les informations saisies.");
+        throw new Error(
+          data.message ||
+            "Erreur lors de l'inscription. Veuillez vérifier les informations saisies."
+        );
       }
-      
+
       const token = data.data?.token;
 
       // Si le backend renvoie directement le jeton JWT lors de l'inscription, on le stocke dans le cookie
       if (token) {
         document.cookie = `token=${token}; path=/; max-age=86400; SameSite=Strict`;
-        router.push("/dashboard");
+        router.push('/dashboard');
       } else {
-        router.push("/"); // Sinon redirection vers la page de connexion
+        router.push('/'); // Sinon redirection vers la page de connexion
       }
-
     } catch (err) {
       setError(err.message);
     }
@@ -66,12 +68,20 @@ export default function Register() {
       <div className="auth-left-pane">
         <div className="auth-form-container">
           <div className="auth-logo-container">
-            <img src="/images/Logo_orange.png" alt="Logo Abricot SaaS" className="auth-logo" />
+            <img
+              src="/images/Logo_orange.png"
+              alt="Logo Abricot SaaS"
+              className="auth-logo"
+            />
           </div>
 
           <h1 className="auth-title">Inscription</h1>
-          
-          {error && <p className="auth-error-msg" role="alert">{error}</p>}
+
+          {error && (
+            <p className="auth-error-msg" role="alert">
+              {error}
+            </p>
+          )}
 
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
@@ -113,7 +123,11 @@ export default function Register() {
 
       {/* Partie Droite : Image de fond d'inscription */}
       <div className="auth-right-pane">
-        <div className="auth-bg-image auth-bg-register" role="img" aria-label="Visuel de bienvenue Abricot" />
+        <div
+          className="auth-bg-image auth-bg-register"
+          role="img"
+          aria-label="Visuel de bienvenue Abricot"
+        />
       </div>
     </div>
   );

@@ -183,7 +183,9 @@ main.app-main-content {
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .btn-toggle:hover {
@@ -260,7 +262,9 @@ main.app-main-content {
   outline: none;
   background: white;
   color: #333333;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .search-input-mockup:focus {
@@ -285,7 +289,9 @@ main.app-main-content {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .task-card-mockup:hover {
@@ -345,7 +351,9 @@ main.app-main-content {
   font-weight: 700;
   font-size: 0.88rem;
   cursor: pointer;
-  transition: background-color 0.2s, transform 0.1s;
+  transition:
+    background-color 0.2s,
+    transform 0.1s;
 }
 
 .btn-voir-mockup:hover {
@@ -387,14 +395,14 @@ main.app-main-content {
   display: flex;
   align-items: center; /* Maintient les éléments centrés verticalement */
   justify-content: space-between;
-  
+
   /* Hauteur fixe demandée */
-  height: 94px; 
-  
+  height: 94px;
+
   /* Padding vertical à 0 pour respecter la hauteur, 
      padding horizontal conservé pour l'espacement gauche/droite */
-  padding: 0 2rem; 
-  
+  padding: 0 2rem;
+
   background-color: white;
   border-bottom: 1px solid #eee;
 }
@@ -425,7 +433,7 @@ main.app-main-content {
   padding: 0.6rem 1.2rem;
   border-radius: 12px; /* Un peu plus arrondi pour correspondre à la forme de la maquette */
   text-decoration: none;
-  color: #d35400; 
+  color: #d35400;
   font-weight: 600;
   transition: background-color 0.2s ease;
 }
@@ -439,15 +447,16 @@ main.app-main-content {
   display: flex;
   align-items: center;
   justify-content: center;
-  
+
   /* --- Spécifications de la maquette --- */
-  font-family: 'Inter', sans-serif; /* Assurez-vous d'importer Inter dans votre layout ou globals.css */
-  font-weight: 400;                 /* Regular */
+  font-family:
+    'Inter', sans-serif; /* Assurez-vous d'importer Inter dans votre layout ou globals.css */
+  font-weight: 400; /* Regular */
   font-size: 14px;
-  line-height: 100%;                /* line-height: 100% */
-  letter-spacing: 0.02em;           /* 2% de letter-spacing */
+  line-height: 100%; /* line-height: 100% */
+  letter-spacing: 0.02em; /* 2% de letter-spacing */
   text-align: center;
-  text-transform: uppercase;        /* Mettre en majuscules */
+  text-transform: uppercase; /* Mettre en majuscules */
 }
 
 /* --- PIED DE PAGE (FOOTER) --- */
@@ -529,7 +538,9 @@ main.app-main-content {
   flex-direction: column;
   gap: 0.75rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .kanban-card:hover {
@@ -805,7 +816,8 @@ main.app-main-content {
   padding-right: 6rem !important; /* Place pour le bouton */
 }
 
-.btn-password-change, .btn-password-cancel {
+.btn-password-change,
+.btn-password-cancel {
   position: absolute;
   right: 15px;
   background: none;
@@ -949,7 +961,9 @@ main.app-main-content {
   text-decoration: none;
   color: inherit;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .project-card:hover {
@@ -1006,7 +1020,9 @@ main.app-main-content {
   justify-content: center;
   cursor: pointer;
   color: #555;
-  transition: background-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
 }
 
 .card-action-btn:hover {
@@ -1187,7 +1203,9 @@ main.app-main-content {
   justify-content: center;
   color: #333;
   cursor: pointer;
-  transition: background-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
   flex-shrink: 0;
 }
 
@@ -1383,7 +1401,9 @@ main.app-main-content {
   appearance: none;
   font-weight: 500;
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .status-filter-select:focus {
@@ -1409,7 +1429,9 @@ main.app-main-content {
   cursor: text;
   opacity: 1;
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .control-search input:focus {
@@ -1431,7 +1453,9 @@ main.app-main-content {
   padding: 2rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.01);
   position: relative;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -1474,7 +1498,10 @@ main.app-main-content {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    color 0.2s;
 }
 
 .task-menu-btn:hover {
@@ -1799,7 +1826,9 @@ main.app-main-content {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
 }
 
 .modal-close-btn:hover {
@@ -1925,7 +1954,9 @@ main.app-main-content {
   align-items: center;
   justify-content: center;
   background: white;
-  transition: background-color 0.2s, border-color 0.2s;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
   flex-shrink: 0;
 }
 
@@ -1979,7 +2010,9 @@ main.app-main-content {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  transition: background-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
   margin-top: 1rem;
 }
 
@@ -2089,7 +2122,9 @@ main.app-main-content {
   font-weight: 600;
   color: #555;
   cursor: pointer;
-  transition: background-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
   display: block;
 }
 
@@ -2313,7 +2348,9 @@ main.app-main-content {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  transition: background-color 0.2s, transform 0.1s;
+  transition:
+    background-color 0.2s,
+    transform 0.1s;
 }
 
 .ai-btn-add-all:hover:not(:disabled) {
@@ -2338,7 +2375,9 @@ main.app-main-content {
   align-items: center;
   gap: 0.75rem;
   border: 1px solid #eaebec;
-  transition: border-color 0.2s, background-color 0.2s;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s;
 }
 
 .ai-prompt-bar:focus-within {
@@ -2367,7 +2406,9 @@ main.app-main-content {
   align-items: center;
   justify-content: center;
   cursor: not-allowed;
-  transition: background-color 0.2s, transform 0.1s;
+  transition:
+    background-color 0.2s,
+    transform 0.1s;
 }
 
 .ai-prompt-send-btn.active {
@@ -2582,7 +2623,9 @@ main.app-main-content {
   color: #d35400;
   border-radius: 10px;
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .segmented-btn:hover {
@@ -2636,7 +2679,9 @@ main.app-main-content {
   color: #1a1a1a;
   cursor: pointer;
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .cal-header-select:hover,
@@ -2809,7 +2854,9 @@ main.app-main-content {
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.15s;
+  transition:
+    transform 0.1s,
+    box-shadow 0.15s;
   white-space: normal;
   word-break: break-word;
   overflow-wrap: anywhere;

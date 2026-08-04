@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * =========================================================================================
@@ -14,22 +14,30 @@
  * =========================================================================================
  */
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { Plus, LayoutList, Kanban, Folder, Calendar, MessageSquare, Search } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import {
+  Plus,
+  LayoutList,
+  Kanban,
+  Folder,
+  Calendar,
+  MessageSquare,
+  Search,
+} from 'lucide-react';
 
-import CreateProjectModal from "@/components/CreateProjectModal";
-import ViewTaskModal from "@/components/ViewTaskModal";
+import CreateProjectModal from '@/components/CreateProjectModal';
+import ViewTaskModal from '@/components/ViewTaskModal';
 
 export default function Dashboard() {
   const router = useRouter();
 
   // États locaux de données et d'affichage
-  const [userName, setUserName] = useState("");
+  const [userName, setUserName] = useState('');
   const [tasks, setTasks] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [view, setView] = useState("list"); // "list" ou "kanban"
+  const [searchQuery, setSearchQuery] = useState('');
+  const [view, setView] = useState('list'); // "list" ou "kanban"
   const [isLoading, setIsLoading] = useState(true);
 
   // États locaux de gestion des modales
@@ -52,24 +60,24 @@ export default function Dashboard() {
     try {
       const token = document.cookie
         .split('; ')
-        .find(row => row.startsWith('token='))
+        .find((row) => row.startsWith('token='))
         ?.split('=')[1];
 
       if (!token) return;
 
-      const response = await fetch("/api/auth/profile", {
+      const response = await fetch('/api/auth/profile', {
         headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       if (response.ok) {
         const responseJson = await response.json();
-        setUserName(responseJson.data?.name || "");
+        setUserName(responseJson.data?.name || '');
       }
     } catch (error) {
-      console.error("Erreur lors de la récupération du profil", error);
+      console.error('Erreur lors de la récupération du profil', error);
     }
   };
 
@@ -80,23 +88,23 @@ export default function Dashboard() {
     try {
       const token = document.cookie
         .split('; ')
-        .find(row => row.startsWith('token='))
+        .find((row) => row.startsWith('token='))
         ?.split('=')[1];
 
-      const response = await fetch("/api/dashboard/assigned-tasks", {
+      const response = await fetch('/api/dashboard/assigned-tasks', {
         headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
-      
+
       if (!response.ok) {
         if (response.status === 401) {
-          document.cookie = "token=; path=/; max-age=0; SameSite=Strict";
-          router.push("/"); 
+          document.cookie = 'token=; path=/; max-age=0; SameSite=Strict';
+          router.push('/');
           return;
         }
-        throw new Error("Erreur lors de la récupération des tâches");
+        throw new Error('Erreur lors de la récupération des tâches');
       }
 
       const responseJson = await response.json();
@@ -118,16 +126,16 @@ export default function Dashboard() {
    */
   const getStatusBadge = (status) => {
     switch (status) {
-      case "TODO":
-        return { text: "À faire", class: "status-todo" };
-      case "IN_PROGRESS":
-        return { text: "En cours", class: "status-in-progress" };
-      case "DONE":
-        return { text: "Terminée", class: "status-done" };
-      case "CANCELLED":
-        return { text: "Annulée", class: "status-cancelled" };
+      case 'TODO':
+        return { text: 'À faire', class: 'status-todo' };
+      case 'IN_PROGRESS':
+        return { text: 'En cours', class: 'status-in-progress' };
+      case 'DONE':
+        return { text: 'Terminée', class: 'status-done' };
+      case 'CANCELLED':
+        return { text: 'Annulée', class: 'status-cancelled' };
       default:
-        return { text: status, class: "" };
+        return { text: status, class: '' };
     }
   };
 
@@ -142,9 +150,11 @@ export default function Dashboard() {
   });
 
   // Repartition des tâches pour la Vue Kanban
-  const todoTasks = filteredTasks.filter((t) => t.status === "TODO");
-  const inProgressTasks = filteredTasks.filter((t) => t.status === "IN_PROGRESS");
-  const doneTasks = filteredTasks.filter((t) => t.status === "DONE");
+  const todoTasks = filteredTasks.filter((t) => t.status === 'TODO');
+  const inProgressTasks = filteredTasks.filter(
+    (t) => t.status === 'IN_PROGRESS'
+  );
+  const doneTasks = filteredTasks.filter((t) => t.status === 'DONE');
 
   if (isLoading) {
     return (
@@ -161,12 +171,13 @@ export default function Dashboard() {
         <div>
           <h1 className="dashboard-title">Tableau de bord</h1>
           <p className="dashboard-subtitle">
-            Bonjour {userName || "Alice Dupont"}, voici un aperçu de vos projets et tâches
+            Bonjour {userName || 'Alice Dupont'}, voici un aperçu de vos projets
+            et tâches
           </p>
         </div>
         <div className="header-actions">
-          <button 
-            className="btn-primary" 
+          <button
+            className="btn-primary"
             onClick={() => setIsCreateModalOpen(true)}
             aria-label="Créer un projet"
           >
@@ -176,8 +187,12 @@ export default function Dashboard() {
       </div>
 
       {/* Barre d'outils : Commutation de vue Liste / Kanban */}
-      <div className="view-toggles" role="tablist" aria-label="Affichage des tâches">
-        <button 
+      <div
+        className="view-toggles"
+        role="tablist"
+        aria-label="Affichage des tâches"
+      >
+        <button
           className={`btn-toggle ${view === 'list' ? 'active' : ''}`}
           onClick={() => setView('list')}
           role="tab"
@@ -185,7 +200,7 @@ export default function Dashboard() {
         >
           <LayoutList size={18} aria-hidden="true" /> Liste
         </button>
-        <button 
+        <button
           className={`btn-toggle ${view === 'kanban' ? 'active' : ''}`}
           onClick={() => setView('kanban')}
           role="tab"
@@ -196,14 +211,14 @@ export default function Dashboard() {
       </div>
 
       {/* Rendu Conditionnel : Vue Liste OU Vue Kanban */}
-      {view === "list" ? (
+      {view === 'list' ? (
         <div className="task-list-container">
           <div className="list-header">
             <div>
               <h2 className="list-title">Mes tâches assignées</h2>
               <p className="list-subtitle">Par ordre de priorité</p>
             </div>
-            
+
             {/* Barre de recherche instantanée avec loupe à droite */}
             <div className="search-bar-wrapper">
               <input
@@ -214,7 +229,11 @@ export default function Dashboard() {
                 className="search-input-mockup"
                 aria-label="Rechercher une tâche"
               />
-              <Search size={16} className="search-input-icon" aria-hidden="true" />
+              <Search
+                size={16}
+                className="search-input-icon"
+                aria-hidden="true"
+              />
             </div>
           </div>
 
@@ -234,31 +253,36 @@ export default function Dashboard() {
 
                     {/* Ligne médiane : Description */}
                     <p className="task-card-desc-text">
-                      {task.description || "Aucune description fournie."}
+                      {task.description || 'Aucune description fournie.'}
                     </p>
-                    
+
                     {/* Ligne inférieure : Métadonnées à gauche, bouton "Voir" noir en bas à droite */}
                     <div className="task-card-bottom-row">
                       <div className="task-card-meta-items">
                         <span className="meta-item-inline">
-                          <Folder size={14} aria-hidden="true" /> {task.project?.name || "Sans projet"}
+                          <Folder size={14} aria-hidden="true" />{' '}
+                          {task.project?.name || 'Sans projet'}
                         </span>
                         <span className="meta-separator">|</span>
                         {task.dueDate && (
                           <>
                             <span className="meta-item-inline">
-                              <Calendar size={14} aria-hidden="true" /> {new Date(task.dueDate).toLocaleDateString("fr-FR")}
+                              <Calendar size={14} aria-hidden="true" />{' '}
+                              {new Date(task.dueDate).toLocaleDateString(
+                                'fr-FR'
+                              )}
                             </span>
                             <span className="meta-separator">|</span>
                           </>
                         )}
                         <span className="meta-item-inline">
-                          <MessageSquare size={14} aria-hidden="true" /> {task.comments?.length || 0}
+                          <MessageSquare size={14} aria-hidden="true" />{' '}
+                          {task.comments?.length || 0}
                         </span>
                       </div>
 
-                      <button 
-                        className="btn-voir-mockup" 
+                      <button
+                        className="btn-voir-mockup"
                         onClick={() => handleOpenViewModal(task)}
                         aria-label={`Voir les détails de la tâche ${task.title}`}
                       >
@@ -270,7 +294,9 @@ export default function Dashboard() {
               })
             ) : (
               <div className="empty-state">
-                <p className="empty-search-msg">Aucune tâche assignée correspondant à vos critères.</p>
+                <p className="empty-search-msg">
+                  Aucune tâche assignée correspondant à vos critères.
+                </p>
               </div>
             )}
           </div>
@@ -298,20 +324,23 @@ export default function Dashboard() {
                     <p className="kanban-card-desc">{task.description}</p>
                     <div className="kanban-card-meta">
                       <span className="meta-item-inline">
-                        <Folder size={14} aria-hidden="true" /> {task.project?.name || "Sans projet"}
+                        <Folder size={14} aria-hidden="true" />{' '}
+                        {task.project?.name || 'Sans projet'}
                       </span>
                       {task.dueDate && (
                         <span className="meta-item-inline">
-                          <Calendar size={14} aria-hidden="true" /> {new Date(task.dueDate).toLocaleDateString("fr-FR")}
+                          <Calendar size={14} aria-hidden="true" />{' '}
+                          {new Date(task.dueDate).toLocaleDateString('fr-FR')}
                         </span>
                       )}
                       <span className="meta-item-inline">
-                        <MessageSquare size={14} aria-hidden="true" /> {task.comments?.length || 0}
+                        <MessageSquare size={14} aria-hidden="true" />{' '}
+                        {task.comments?.length || 0}
                       </span>
                     </div>
                     <div className="kanban-card-footer">
-                      <button 
-                        className="btn-secondary" 
+                      <button
+                        className="btn-secondary"
                         onClick={() => handleOpenViewModal(task)}
                         aria-label={`Voir les détails de la tâche ${task.title}`}
                       >
@@ -331,7 +360,9 @@ export default function Dashboard() {
           <div className="kanban-column">
             <div className="kanban-column-header">
               <h2>En cours</h2>
-              <span className="kanban-column-count">{inProgressTasks.length}</span>
+              <span className="kanban-column-count">
+                {inProgressTasks.length}
+              </span>
             </div>
             <div className="kanban-column-tasks">
               {inProgressTasks.map((task) => {
@@ -347,20 +378,23 @@ export default function Dashboard() {
                     <p className="kanban-card-desc">{task.description}</p>
                     <div className="kanban-card-meta">
                       <span className="meta-item-inline">
-                        <Folder size={14} aria-hidden="true" /> {task.project?.name || "Sans projet"}
+                        <Folder size={14} aria-hidden="true" />{' '}
+                        {task.project?.name || 'Sans projet'}
                       </span>
                       {task.dueDate && (
                         <span className="meta-item-inline">
-                          <Calendar size={14} aria-hidden="true" /> {new Date(task.dueDate).toLocaleDateString("fr-FR")}
+                          <Calendar size={14} aria-hidden="true" />{' '}
+                          {new Date(task.dueDate).toLocaleDateString('fr-FR')}
                         </span>
                       )}
                       <span className="meta-item-inline">
-                        <MessageSquare size={14} aria-hidden="true" /> {task.comments?.length || 0}
+                        <MessageSquare size={14} aria-hidden="true" />{' '}
+                        {task.comments?.length || 0}
                       </span>
                     </div>
                     <div className="kanban-card-footer">
-                      <button 
-                        className="btn-secondary" 
+                      <button
+                        className="btn-secondary"
                         onClick={() => handleOpenViewModal(task)}
                         aria-label={`Voir les détails de la tâche ${task.title}`}
                       >
@@ -396,20 +430,23 @@ export default function Dashboard() {
                     <p className="kanban-card-desc">{task.description}</p>
                     <div className="kanban-card-meta">
                       <span className="meta-item-inline">
-                        <Folder size={14} aria-hidden="true" /> {task.project?.name || "Sans projet"}
+                        <Folder size={14} aria-hidden="true" />{' '}
+                        {task.project?.name || 'Sans projet'}
                       </span>
                       {task.dueDate && (
                         <span className="meta-item-inline">
-                          <Calendar size={14} aria-hidden="true" /> {new Date(task.dueDate).toLocaleDateString("fr-FR")}
+                          <Calendar size={14} aria-hidden="true" />{' '}
+                          {new Date(task.dueDate).toLocaleDateString('fr-FR')}
                         </span>
                       )}
                       <span className="meta-item-inline">
-                        <MessageSquare size={14} aria-hidden="true" /> {task.comments?.length || 0}
+                        <MessageSquare size={14} aria-hidden="true" />{' '}
+                        {task.comments?.length || 0}
                       </span>
                     </div>
                     <div className="kanban-card-footer">
-                      <button 
-                        className="btn-secondary" 
+                      <button
+                        className="btn-secondary"
                         onClick={() => handleOpenViewModal(task)}
                         aria-label={`Voir les détails de la tâche ${task.title}`}
                       >
@@ -428,11 +465,11 @@ export default function Dashboard() {
       )}
 
       {/* Modale de création de projet */}
-      <CreateProjectModal 
+      <CreateProjectModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onProjectCreated={() => {
-          fetchTasks(); 
+          fetchTasks();
         }}
       />
 

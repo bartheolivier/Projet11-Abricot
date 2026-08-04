@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * =========================================================================================
@@ -13,8 +13,13 @@
  * =========================================================================================
  */
 
-import React, { useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import React, { useState } from 'react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from 'lucide-react';
 
 export default function ProjectCalendarView({ tasks, onSelectTask }) {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -23,11 +28,21 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
   const month = currentDate.getMonth();
 
   const monthNames = [
-    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    'Janvier',
+    'Février',
+    'Mars',
+    'Avril',
+    'Mai',
+    'Juin',
+    'Juillet',
+    'Août',
+    'Septembre',
+    'Octobre',
+    'Novembre',
+    'Décembre',
   ];
 
-  const dayNames = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+  const dayNames = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
   // Génération de la liste déroulante des années (-5 ans à +5 ans)
   const currentYearNow = new Date().getFullYear();
@@ -66,7 +81,8 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
   if (startingDay === -1) startingDay = 6;
 
   const today = new Date();
-  const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+  const isCurrentMonth =
+    today.getFullYear() === year && today.getMonth() === month;
   const todayDate = today.getDate();
 
   /**
@@ -86,14 +102,14 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
 
   const getBadgeClass = (status) => {
     switch (status) {
-      case "TODO":
-        return "cal-badge-todo";
-      case "IN_PROGRESS":
-        return "cal-badge-progress";
-      case "DONE":
-        return "cal-badge-done";
+      case 'TODO':
+        return 'cal-badge-todo';
+      case 'IN_PROGRESS':
+        return 'cal-badge-progress';
+      case 'DONE':
+        return 'cal-badge-done';
       default:
-        return "cal-badge-todo";
+        return 'cal-badge-todo';
     }
   };
 
@@ -103,8 +119,8 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
       <div className="calendar-header-nav">
         <div className="calendar-month-title">
           <div className="calendar-select-group">
-            <select 
-              value={month} 
+            <select
+              value={month}
               onChange={handleMonthChange}
               className="cal-header-select"
               aria-label="Sélectionner le mois"
@@ -116,8 +132,8 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
               ))}
             </select>
 
-            <select 
-              value={year} 
+            <select
+              value={year}
               onChange={handleYearChange}
               className="cal-header-select year-select"
               aria-label="Sélectionner l'année"
@@ -133,16 +149,36 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
 
         <div className="calendar-nav-actions">
           <div className="btn-group-nav">
-            <button onClick={handlePrevYear} className="btn-cal-nav" title="Année précédente" aria-label="Année précédente">
+            <button
+              onClick={handlePrevYear}
+              className="btn-cal-nav"
+              title="Année précédente"
+              aria-label="Année précédente"
+            >
               <ChevronsLeft size={16} aria-hidden="true" />
             </button>
-            <button onClick={handlePrevMonth} className="btn-cal-nav" title="Mois précédent" aria-label="Mois précédent">
+            <button
+              onClick={handlePrevMonth}
+              className="btn-cal-nav"
+              title="Mois précédent"
+              aria-label="Mois précédent"
+            >
               <ChevronLeft size={16} aria-hidden="true" />
             </button>
-            <button onClick={handleNextMonth} className="btn-cal-nav" title="Mois suivant" aria-label="Mois suivant">
+            <button
+              onClick={handleNextMonth}
+              className="btn-cal-nav"
+              title="Mois suivant"
+              aria-label="Mois suivant"
+            >
               <ChevronRight size={16} aria-hidden="true" />
             </button>
-            <button onClick={handleNextYear} className="btn-cal-nav" title="Année suivante" aria-label="Année suivante">
+            <button
+              onClick={handleNextYear}
+              className="btn-cal-nav"
+              title="Année suivante"
+              aria-label="Année suivante"
+            >
               <ChevronsRight size={16} aria-hidden="true" />
             </button>
           </div>
@@ -154,7 +190,9 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
         {/* Noms des jours de la semaine */}
         <div className="calendar-weekdays-header">
           {dayNames.map((d) => (
-            <div key={d} className="weekday-name">{d}</div>
+            <div key={d} className="weekday-name">
+              {d}
+            </div>
           ))}
         </div>
 
@@ -162,7 +200,10 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
         <div className="calendar-days-grid">
           {/* Cases vides pour combler le début de semaine */}
           {Array.from({ length: startingDay }).map((_, idx) => (
-            <div key={`empty-${idx}`} className="calendar-day-cell other-month" />
+            <div
+              key={`empty-${idx}`}
+              className="calendar-day-cell other-month"
+            />
           ))}
 
           {/* Cases réelles des jours du mois */}
@@ -172,12 +213,16 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
             const isToday = isCurrentMonth && todayDate === dayNum;
 
             return (
-              <div 
-                key={dayNum} 
-                className={`calendar-day-cell ${isToday ? "today-cell" : ""}`}
+              <div
+                key={dayNum}
+                className={`calendar-day-cell ${isToday ? 'today-cell' : ''}`}
               >
                 <div className="cell-day-header">
-                  <span className={`day-number ${isToday ? "today-badge" : ""}`}>{dayNum}</span>
+                  <span
+                    className={`day-number ${isToday ? 'today-badge' : ''}`}
+                  >
+                    {dayNum}
+                  </span>
                   {dayTasks.length > 0 && (
                     <span className="tasks-count-pill">{dayTasks.length}</span>
                   )}

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * =========================================================================================
@@ -14,27 +14,27 @@
  * =========================================================================================
  */
 
-import React, { useEffect } from "react";
-import { X, Calendar, Folder, User } from "lucide-react";
+import React, { useEffect } from 'react';
+import { X, Calendar, Folder, User } from 'lucide-react';
 
 export default function ViewTaskModal({ isOpen, task, onClose }) {
   // Accessibilité WCAG 2.1 : Touche Échap et verrouillage du scroll arrière-plan
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         onClose();
       }
     };
 
     if (isOpen) {
-      document.body.style.overflow = "hidden";
-      window.addEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
     } else {
-      document.body.style.overflow = "";
+      document.body.style.overflow = '';
     }
     return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, onClose]);
 
@@ -45,16 +45,16 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
    */
   const getStatusDetails = (status) => {
     switch (status) {
-      case "TODO":
-        return { label: "À faire", className: "badge-todo" };
-      case "IN_PROGRESS":
-        return { label: "En cours", className: "badge-progress" };
-      case "DONE":
-        return { label: "Terminée", className: "badge-done" };
-      case "CANCELLED":
-        return { label: "Annulée", className: "badge-cancelled" };
+      case 'TODO':
+        return { label: 'À faire', className: 'badge-todo' };
+      case 'IN_PROGRESS':
+        return { label: 'En cours', className: 'badge-progress' };
+      case 'DONE':
+        return { label: 'Terminée', className: 'badge-done' };
+      case 'CANCELLED':
+        return { label: 'Annulée', className: 'badge-cancelled' };
       default:
-        return { label: status, className: "" };
+        return { label: status, className: '' };
     }
   };
 
@@ -62,26 +62,39 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
    * Formate une chaîne de date ISO en français (ex: "5 août 2026")
    */
   const formatDate = (dateString) => {
-    if (!dateString) return "Aucune échéance";
+    if (!dateString) return 'Aucune échéance';
     const date = new Date(dateString);
-    return date.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+    return date.toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
   };
 
   // Palette de couleurs et calcul des initiales pour les avatars
-  const colors = ["#ffe8d6", "#e2ece9", "#f0efeb", "#ddbea9", "#a8dadc", "#f4a261"];
+  const colors = [
+    '#ffe8d6',
+    '#e2ece9',
+    '#f0efeb',
+    '#ddbea9',
+    '#a8dadc',
+    '#f4a261',
+  ];
   const getAvatarColor = (name) => {
     if (!name) return colors[0];
-    const charCodeSum = name.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    const charCodeSum = name
+      .split('')
+      .reduce((sum, char) => sum + char.charCodeAt(0), 0);
     return colors[charCodeSum % colors.length];
   };
 
   const getInitials = (name) => {
-    if (!name) return "";
+    if (!name) return '';
     const parts = name.trim().split(/\s+/);
     if (parts.length >= 2) {
       return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
     }
-    return parts[0] ? parts[0].substring(0, 2).toUpperCase() : "";
+    return parts[0] ? parts[0].substring(0, 2).toUpperCase() : '';
   };
 
   /**
@@ -139,7 +152,7 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
       if (author?.name) return author.name;
     }
 
-    return "Non précisé";
+    return 'Non précisé';
   };
 
   const statusInfo = getStatusDetails(task.status);
@@ -182,7 +195,9 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
               <span className="detail-label">
                 <Folder size={16} aria-hidden="true" /> Projet :
               </span>
-              <span className="detail-value">{task.project?.name || "Sans projet"}</span>
+              <span className="detail-value">
+                {task.project?.name || 'Sans projet'}
+              </span>
             </div>
 
             <div className="detail-row">
@@ -197,9 +212,7 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
               <span className="detail-label">
                 <User size={16} aria-hidden="true" /> Créateur :
               </span>
-              <span className="detail-value">
-                {getCreatorName()}
-              </span>
+              <span className="detail-value">{getCreatorName()}</span>
             </div>
           </div>
 
@@ -207,20 +220,27 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
           <div className="task-detail-section">
             <h3 className="section-subtitle">Description</h3>
             <p className="task-full-desc">
-              {task.description || "Aucune description fournie pour cette tâche."}
+              {task.description ||
+                'Aucune description fournie pour cette tâche.'}
             </p>
           </div>
 
           {/* Membres assignés avec pastilles et avatars */}
           {task.assignees && task.assignees.length > 0 && (
             <div className="task-detail-section">
-              <h3 className="section-subtitle">Membres assignés ({task.assignees.length})</h3>
+              <h3 className="section-subtitle">
+                Membres assignés ({task.assignees.length})
+              </h3>
               <div className="assignees-capsules-list">
                 {task.assignees.map((assignee) => {
                   const userObj = assignee.user || assignee;
-                  const nameStr = userObj.name || userObj.email || "Utilisateur";
+                  const nameStr =
+                    userObj.name || userObj.email || 'Utilisateur';
                   return (
-                    <div className="assignee-capsule" key={userObj.id || userObj.email}>
+                    <div
+                      className="assignee-capsule"
+                      key={userObj.id || userObj.email}
+                    >
                       <div
                         className="assignee-capsule-avatar"
                         style={{ backgroundColor: getAvatarColor(nameStr) }}
@@ -237,25 +257,34 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
 
           {/* Section Historique des commentaires */}
           <div className="task-detail-section">
-            <h3 className="section-subtitle">Commentaires ({task.comments?.length || 0})</h3>
+            <h3 className="section-subtitle">
+              Commentaires ({task.comments?.length || 0})
+            </h3>
             {task.comments && task.comments.length > 0 ? (
               <div className="comments-list">
                 {task.comments.map((comment) => {
                   const authorObj = comment.author || comment.user || {};
-                  const authorName = authorObj.name || authorObj.email || "Utilisateur";
+                  const authorName =
+                    authorObj.name || authorObj.email || 'Utilisateur';
                   return (
                     <div className="comment-item" key={comment.id}>
                       <div className="comment-header">
                         <div className="comment-author-info">
                           <div
                             className="comment-author-avatar"
-                            style={{ backgroundColor: getAvatarColor(authorName) }}
+                            style={{
+                              backgroundColor: getAvatarColor(authorName),
+                            }}
                           >
                             {getInitials(authorName)}
                           </div>
-                          <span className="comment-author-name">{authorName}</span>
+                          <span className="comment-author-name">
+                            {authorName}
+                          </span>
                         </div>
-                        <span className="comment-date">{formatDate(comment.createdAt)}</span>
+                        <span className="comment-date">
+                          {formatDate(comment.createdAt)}
+                        </span>
                       </div>
                       <p className="comment-content">{comment.content}</p>
                     </div>
@@ -263,7 +292,9 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
                 })}
               </div>
             ) : (
-              <p className="no-comments-text">Aucun commentaire sur cette tâche.</p>
+              <p className="no-comments-text">
+                Aucun commentaire sur cette tâche.
+              </p>
             )}
           </div>
         </div>

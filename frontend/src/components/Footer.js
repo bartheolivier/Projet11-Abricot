@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * =========================================================================================
@@ -11,23 +11,29 @@
  * =========================================================================================
  */
 
-import { usePathname } from "next/navigation";
+import { usePathname } from 'next/navigation';
 
 export default function Footer() {
   const pathname = usePathname();
   const currentYear = new Date().getFullYear(); // Année courante dynamique
 
   // Masquage conditionnel du footer sur les écrans d'authentification
-  if (pathname === "/" || pathname === "/register") return null;
+  if (pathname === '/' || pathname === '/register') return null;
 
   return (
-    <footer className="main-footer" role="contentinfo" aria-label="Pied de page">
+    <footer
+      className="main-footer"
+      role="contentinfo"
+      aria-label="Pied de page"
+    >
       <div>
-        <img src="/images/Logo_noir.png" alt="Logo Abricot SaaS" height="12.86" />
+        <img
+          src="/images/Logo_noir.png"
+          alt="Logo Abricot SaaS"
+          height="12.86"
+        />
       </div>
-      <div className="footer-text">
-        Abricot {currentYear}
-      </div>
+      <div className="footer-text">Abricot {currentYear}</div>
     </footer>
   );
 }

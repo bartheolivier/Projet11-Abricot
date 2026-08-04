@@ -12,38 +12,47 @@
  * =========================================================================================
  */
 
-import { NextResponse } from "next/server";
-import { Document, SummaryIndex, Settings } from "llamaindex";
-import { Gemini, GEMINI_MODEL, GeminiEmbedding, GEMINI_EMBEDDING_MODEL } from "@llamaindex/google";
+import { NextResponse } from 'next/server';
+import { Document, SummaryIndex, Settings } from 'llamaindex';
+import {
+  Gemini,
+  GEMINI_MODEL,
+  GeminiEmbedding,
+  GEMINI_EMBEDDING_MODEL,
+} from '@llamaindex/google';
 
 export async function POST(request) {
   try {
-    const authHeader = request.headers.get("authorization");
+    const authHeader = request.headers.get('authorization');
     const body = await request.json();
     const { projectId, prompt } = body;
 
     // Validation des données entrantes du client
     if (!projectId || !prompt || !prompt.trim()) {
       return NextResponse.json(
-        { message: "Le projet et la description (prompt) sont requis." },
+        { message: 'Le projet et la description (prompt) sont requis.' },
         { status: 400 }
       );
     }
 
     // Vérification de la configuration de la clé API Gemini
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey || apiKey.includes("votre_cle")) {
+    if (!apiKey || apiKey.includes('votre_cle')) {
       return NextResponse.json(
-        { 
-          message: "Clé API Gemini non configurée. Veuillez définir GEMINI_API_KEY dans frontend/.env.local",
-          requiresKey: true 
+        {
+          message:
+            'Clé API Gemini non configurée. Veuillez définir GEMINI_API_KEY dans frontend/.env.local',
+          requiresKey: true,
         },
         { status: 400 }
       );
     }
 
     // Sélection dynamique du modèle LLM Gemini officiel dans LlamaIndex.TS
-    const modelEnum = GEMINI_MODEL.GEMINI_2_5_FLASH_LATEST || GEMINI_MODEL.GEMINI_PRO_1_5_FLASH_LATEST || GEMINI_MODEL.GEMINI_PRO;
+    const modelEnum =
+      GEMINI_MODEL.GEMINI_2_5_FLASH_LATEST ||
+      GEMINI_MODEL.GEMINI_PRO_1_5_FLASH_LATEST ||
+      GEMINI_MODEL.GEMINI_PRO;
 
     // Configuration de l'agent LLM Gemini et du modèle de Vector Embeddings
     const geminiLlm = new Gemini({
@@ -53,12 +62,12 @@ export async function POST(request) {
 
     const geminiEmbed = new GeminiEmbedding({
       apiKey: apiKey,
-      model: GEMINI_EMBEDDING_MODEL.TEXT_EMBEDDING_004 || "text-embedding-004",
+      model: GEMINI_EMBEDDING_MODEL.TEXT_EMBEDDING_004 || 'text-embedding-004',
     });
 
     // Patch d'optimisation LlamaIndex.TS pour définir les métadonnées de contexte Embedding
     geminiEmbed.metadata = {
-      model: GEMINI_EMBEDDING_MODEL.TEXT_EMBEDDING_004 || "text-embedding-004",
+      model: GEMINI_EMBEDDING_MODEL.TEXT_EMBEDDING_004 || 'text-embedding-004',
       contextWindow: 2048,
     };
 
@@ -73,34 +82,46 @@ export async function POST(request) {
     let projectDetails = null;
 
     try {
-      const tasksRes = await fetch(`http://localhost:3000/api/projects/${projectId}/tasks`, {
-        headers: { Authorization: authHeader || "" },
-      });
+      const tasksRes = await fetch(
+        `http://localhost:3000/api/projects/${projectId}/tasks`,
+        {
+          headers: { Authorization: authHeader || '' },
+        }
+      );
       if (tasksRes.ok) {
         const tasksData = await tasksRes.json();
         existingTasks = tasksData.data?.tasks || [];
       }
 
-      const projRes = await fetch(`http://localhost:3000/api/projects/${projectId}`, {
-        headers: { Authorization: authHeader || "" },
-      });
+      const projRes = await fetch(
+        `http://localhost:3000/api/projects/${projectId}`,
+        {
+          headers: { Authorization: authHeader || '' },
+        }
+      );
       if (projRes.ok) {
         const projData = await projRes.json();
         projectDetails = projData.data?.project || null;
       }
     } catch (err) {
-      console.warn("Impossible de charger les données du projet:", err.message);
+      console.warn('Impossible de charger les données du projet:', err.message);
     }
 
     // -------------------------------------------------------------------------------------
     // ÉTAPE 2 : INDEXATION ET DOCUMENTATION CONTEXTUELLE LLAMAINDEX.TS
     // -------------------------------------------------------------------------------------
-    const projectInfoText = `Nom du Projet: ${projectDetails?.name || "Projet"}
-Description: ${projectDetails?.description || "Aucune description"}`;
+    const projectInfoText = `Nom du Projet: ${projectDetails?.name || 'Projet'}
+Description: ${projectDetails?.description || 'Aucune description'}`;
 
-    const tasksInfoText = existingTasks.length > 0
-      ? existingTasks.map((t, idx) => `Tâche ${idx + 1}: ${t.title} | Description: ${t.description || "Sans description"}`).join("\n")
-      : "Aucune tâche existante.";
+    const tasksInfoText =
+      existingTasks.length > 0
+        ? existingTasks
+            .map(
+              (t, idx) =>
+                `Tâche ${idx + 1}: ${t.title} | Description: ${t.description || 'Sans description'}`
+            )
+            .join('\n')
+        : 'Aucune tâche existante.';
 
     // Instanciation de la classe Document officielle LlamaIndex.TS
     const contextDocument = new Document({
@@ -140,12 +161,23 @@ Consignes :
 
     let generatedTasks = [];
     try {
-      const cleanJson = textOutput.replace(/```json/g, "").replace(/```/g, "").trim();
+      const cleanJson = textOutput
+        .replace(/```json/g, '')
+        .replace(/```/g, '')
+        .trim();
       generatedTasks = JSON.parse(cleanJson);
     } catch (parseErr) {
-      console.error("Erreur de parsing du JSON LlamaIndex.TS:", parseErr, textOutput);
+      console.error(
+        'Erreur de parsing du JSON LlamaIndex.TS:',
+        parseErr,
+        textOutput
+      );
       return NextResponse.json(
-        { message: "Le format de réponse de l'IA via LlamaIndex.TS n'a pas pu être analysé.", rawText: textOutput },
+        {
+          message:
+            "Le format de réponse de l'IA via LlamaIndex.TS n'a pas pu être analysé.",
+          rawText: textOutput,
+        },
         { status: 500 }
       );
     }
@@ -154,12 +186,16 @@ Consignes :
       success: true,
       tasks: generatedTasks,
       ragContextCount: existingTasks.length,
-      framework: "LlamaIndex.TS",
+      framework: 'LlamaIndex.TS',
     });
   } catch (err) {
-    console.error("Erreur interne lors du RAG LlamaIndex.TS:", err);
+    console.error('Erreur interne lors du RAG LlamaIndex.TS:', err);
     return NextResponse.json(
-      { message: err.message || "Une erreur interne est survenue lors de l'exécution de LlamaIndex.TS." },
+      {
+        message:
+          err.message ||
+          "Une erreur interne est survenue lors de l'exécution de LlamaIndex.TS.",
+      },
       { status: 500 }
     );
   }

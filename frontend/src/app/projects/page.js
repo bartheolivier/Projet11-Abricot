@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * =========================================================================================
@@ -13,13 +13,13 @@
  * =========================================================================================
  */
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { Plus, Edit2, Trash2, Folder, Users } from "lucide-react";
-import CreateProjectModal from "@/components/CreateProjectModal";
-import EditProjectModal from "@/components/EditProjectModal";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { Plus, Edit2, Trash2, Folder, Users } from 'lucide-react';
+import CreateProjectModal from '@/components/CreateProjectModal';
+import EditProjectModal from '@/components/EditProjectModal';
 
 export default function Projects() {
   const router = useRouter();
@@ -38,17 +38,17 @@ export default function Projects() {
   const fetchProfileAndProjects = async () => {
     try {
       const token = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("token="))
-        ?.split("=")[1];
+        .split('; ')
+        .find((row) => row.startsWith('token='))
+        ?.split('=')[1];
 
       if (!token) {
-        router.push("/");
+        router.push('/');
         return;
       }
 
       // 1. Récupération de l'identifiant de l'utilisateur connecté
-      const profileRes = await fetch("/api/auth/profile", {
+      const profileRes = await fetch('/api/auth/profile', {
         headers: { Authorization: `Bearer ${token}` },
       });
       let userId = null;
@@ -59,12 +59,12 @@ export default function Projects() {
       }
 
       // 2. Récupération des projets accessibles à l'utilisateur
-      const projectsRes = await fetch("/api/projects", {
+      const projectsRes = await fetch('/api/projects', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!projectsRes.ok) {
-        throw new Error("Erreur de récupération des projets");
+        throw new Error('Erreur de récupération des projets');
       }
 
       const responseJson = await projectsRes.json();
@@ -81,12 +81,17 @@ export default function Projects() {
               const tasksJson = await tasksRes.json();
               const tasks = tasksJson.data?.tasks || [];
               const total = tasks.length;
-              const done = tasks.filter((t) => t.status === "DONE").length;
+              const done = tasks.filter((t) => t.status === 'DONE').length;
               const progress = total > 0 ? Math.round((done / total) * 100) : 0;
-              return { ...project, progress, totalTasks: total, doneTasks: done };
+              return {
+                ...project,
+                progress,
+                totalTasks: total,
+                doneTasks: done,
+              };
             }
           } catch (err) {
-            console.error("Erreur calcul progression projet:", err);
+            console.error('Erreur calcul progression projet:', err);
           }
           return { ...project, progress: 0, totalTasks: 0, doneTasks: 0 };
         })
@@ -111,27 +116,29 @@ export default function Projects() {
     e.preventDefault();
     e.stopPropagation();
 
-    if (!confirm(`Voulez-vous vraiment supprimer le projet "${projectName}" ?`)) {
+    if (
+      !confirm(`Voulez-vous vraiment supprimer le projet "${projectName}" ?`)
+    ) {
       return;
     }
 
     try {
       const token = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("token="))
-        ?.split("=")[1];
+        .split('; ')
+        .find((row) => row.startsWith('token='))
+        ?.split('=')[1];
 
       const res = await fetch(`/api/projects/${projectId}`, {
-        method: "DELETE",
+        method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!res.ok) {
         const json = await res.json();
-        throw new Error(json.message || "Impossible de supprimer ce projet");
+        throw new Error(json.message || 'Impossible de supprimer ce projet');
       }
 
-      toast.success("Projet supprimé avec succès.");
+      toast.success('Projet supprimé avec succès.');
       fetchProfileAndProjects();
     } catch (err) {
       toast.error(err.message);
@@ -146,20 +153,29 @@ export default function Projects() {
   };
 
   // Algorithme de génération de couleur d'avatar basée sur le nom
-  const colors = ["#ffe8d6", "#e2ece9", "#f0efeb", "#ddbea9", "#a8dadc", "#f4a261"];
+  const colors = [
+    '#ffe8d6',
+    '#e2ece9',
+    '#f0efeb',
+    '#ddbea9',
+    '#a8dadc',
+    '#f4a261',
+  ];
   const getAvatarColor = (name) => {
     if (!name) return colors[0];
-    const charCodeSum = name.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    const charCodeSum = name
+      .split('')
+      .reduce((sum, char) => sum + char.charCodeAt(0), 0);
     return colors[charCodeSum % colors.length];
   };
 
   const getInitials = (name) => {
-    if (!name) return "";
+    if (!name) return '';
     const parts = name.trim().split(/\s+/);
     if (parts.length >= 2) {
       return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
     }
-    return parts[0] ? parts[0].substring(0, 2).toUpperCase() : "";
+    return parts[0] ? parts[0].substring(0, 2).toUpperCase() : '';
   };
 
   if (isLoading) {
@@ -178,7 +194,10 @@ export default function Projects() {
           <h1 className="projects-title">Mes projets</h1>
           <p className="projects-subtitle">Gérez vos projets</p>
         </div>
-        <button className="btn-primary" onClick={() => setIsCreateModalOpen(true)}>
+        <button
+          className="btn-primary"
+          onClick={() => setIsCreateModalOpen(true)}
+        >
           <Plus size={18} aria-hidden="true" /> Créer un projet
         </button>
       </div>
@@ -187,14 +206,18 @@ export default function Projects() {
       <div className="projects-grid">
         {projects.map((project) => {
           const isOwner = project.ownerId === currentUserId;
-          const isAdmin = project.userRole === "ADMIN" || isOwner;
+          const isAdmin = project.userRole === 'ADMIN' || isOwner;
           const otherMembers = (project.members || []).filter(
             (m) => (m.user?.id || m.id) !== project.ownerId
           );
           const totalTeamMembers = 1 + otherMembers.length;
 
           return (
-            <Link href={`/projects/${project.id}`} key={project.id} className="project-card-link">
+            <Link
+              href={`/projects/${project.id}`}
+              key={project.id}
+              className="project-card-link"
+            >
               <div className="project-card">
                 <div className="project-card-top">
                   <div className="project-icon-title">
@@ -214,7 +237,9 @@ export default function Projects() {
                       </button>
                       <button
                         className="card-action-btn delete-btn"
-                        onClick={(e) => handleDeleteProject(e, project.id, project.name)}
+                        onClick={(e) =>
+                          handleDeleteProject(e, project.id, project.name)
+                        }
                         title="Supprimer le projet"
                         aria-label={`Supprimer le projet ${project.name}`}
                       >
@@ -225,14 +250,16 @@ export default function Projects() {
                 </div>
 
                 <p className="project-card-desc">
-                  {project.description || "Aucune description fournie."}
+                  {project.description || 'Aucune description fournie.'}
                 </p>
 
                 {/* Barre de progression visuelle (%) */}
                 <div className="project-progress-container">
                   <div className="project-progress-header">
                     <span>Progression</span>
-                    <span className="progress-percentage">{project.progress}%</span>
+                    <span className="progress-percentage">
+                      {project.progress}%
+                    </span>
                   </div>
                   <div className="project-progress-bar-bg">
                     <div
@@ -241,7 +268,8 @@ export default function Projects() {
                     />
                   </div>
                   <span className="tasks-completed-text">
-                    {project.doneTasks || 0}/{project.totalTasks || 0} tâches terminées
+                    {project.doneTasks || 0}/{project.totalTasks || 0} tâches
+                    terminées
                   </span>
                 </div>
 
@@ -256,10 +284,11 @@ export default function Projects() {
                       <div className="owner-pill-wrapper">
                         <div
                           className="project-member-avatar owner"
-                          style={{ backgroundColor: "#ebdcd0" }}
+                          style={{ backgroundColor: '#ebdcd0' }}
                           title={`Propriétaire : ${project.owner.name || project.owner.email}`}
                         >
-                          {getInitials(project.owner.name) || getInitials(project.owner.email)}
+                          {getInitials(project.owner.name) ||
+                            getInitials(project.owner.email)}
                         </div>
                         <span className="project-owner-pill">Propriétaire</span>
                       </div>
@@ -269,10 +298,15 @@ export default function Projects() {
                       <div
                         key={member.user?.id || member.id}
                         className="project-member-avatar"
-                        style={{ backgroundColor: getAvatarColor(member.user?.name || member.user?.email) }}
+                        style={{
+                          backgroundColor: getAvatarColor(
+                            member.user?.name || member.user?.email
+                          ),
+                        }}
                         title={member.user?.name || member.user?.email}
                       >
-                        {getInitials(member.user?.name) || getInitials(member.user?.email)}
+                        {getInitials(member.user?.name) ||
+                          getInitials(member.user?.email)}
                       </div>
                     ))}
                   </div>
