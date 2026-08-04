@@ -36,11 +36,11 @@ npm install
 # 3. Appliquer les migrations et initialiser la base de données SQLite
 npx prisma migrate dev
 
-# 4. Lancer le serveur backend (Port 5000)
+# 4. Lancer le serveur backend (Port 8000)
 npm run dev
 ```
 
-> 💡 Le serveur Backend sera accessible sur `http://localhost:5000`.
+> 💡 Le serveur Backend sera accessible sur `http://localhost:8000`.
 
 ---
 
