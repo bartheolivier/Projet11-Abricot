@@ -100,7 +100,7 @@ export default function EditProjectModal({
           ?.split('=')[1];
 
         const res = await fetch(
-          `/api/users/search?q=${encodeURIComponent(searchQuery.trim())}`,
+          `/api/users/search?query=${encodeURIComponent(searchQuery.trim())}&q=${encodeURIComponent(searchQuery.trim())}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
