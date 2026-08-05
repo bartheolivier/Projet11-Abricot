@@ -73,5 +73,7 @@ export const api = {
 
   // Utilisateurs
   searchUsers: (query) =>
-    fetchWithAuth(`/api/users/search?query=${encodeURIComponent(query)}`),
+    fetchWithAuth(
+      `/api/users/search?query=${encodeURIComponent(query)}&q=${encodeURIComponent(query)}`
+    ),
 };
