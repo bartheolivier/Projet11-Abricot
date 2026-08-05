@@ -32,7 +32,7 @@ export default function NotFound() {
 
       {/* Bouton d'action direct permettant de revenir en toute sécurité au tableau de bord */}
       <Link href="/dashboard" className="btn-primary not-found-btn">
-        <ArrowLeft size={18} aria-hidden="true" /> Retour au tableau de bord
+        <ArrowLeft size={18} aria-hidden="true" /> Retour
       </Link>
     </div>
   );
