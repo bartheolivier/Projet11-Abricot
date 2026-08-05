@@ -150,10 +150,6 @@ export default function EditProjectModal({
         .find((row) => row.startsWith('token='))
         ?.split('=')[1];
 
-      const contributors = selectedUsers
-        .map((u) => u.email?.trim())
-        .filter((email) => email && email.includes('@'));
-
       const res = await fetch(`/api/projects/${project.id}`, {
         method: 'PUT',
         headers: {
@@ -163,7 +159,6 @@ export default function EditProjectModal({
         body: JSON.stringify({
           name: name.trim(),
           description: description.trim(),
-          contributors,
         }),
       });
 
@@ -173,6 +168,46 @@ export default function EditProjectModal({
         throw new Error(
           json.message || 'Erreur lors de la modification du projet'
         );
+      }
+
+      // 2. Gérer l'ajout et la suppression des collaborateurs
+      // Car la route PUT de Next.js/Backend n'inclut pas les contributeurs
+      const originalMemberIds = (project.members || []).map(
+        (m) => m.userId || m.user?.id
+      );
+      const newSelectedIds = selectedUsers.map((u) => u.id);
+
+      // Utilisateurs à ajouter
+      const usersToAdd = selectedUsers.filter(
+        (u) => !originalMemberIds.includes(u.id)
+      );
+      for (const user of usersToAdd) {
+        if (user.email) {
+          await fetch(`/api/projects/${project.id}/contributors`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email: user.email }),
+          });
+        }
+      }
+
+      // Utilisateurs à supprimer
+      const membersToRemove = (project.members || []).filter(
+        (m) =>
+          (m.userId || m.user?.id) &&
+          !newSelectedIds.includes(m.userId || m.user?.id)
+      );
+      for (const member of membersToRemove) {
+        const userId = member.userId || member.user?.id;
+        await fetch(`/api/projects/${project.id}/contributors/${userId}`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
       }
 
       toast.success('Projet mis à jour avec succès !');
