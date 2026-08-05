@@ -15,7 +15,7 @@ export default function NotFound() {
       </p>
 
       <Link href="/dashboard" className="btn-primary not-found-btn">
-        <ArrowLeft size={18} aria-hidden="true" /> Retour au tableau de bord
+        <ArrowLeft size={18} aria-hidden="true" /> Retour
       </Link>
     </div>
   );
