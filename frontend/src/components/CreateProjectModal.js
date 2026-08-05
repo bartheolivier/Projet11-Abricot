@@ -91,7 +91,13 @@ export default function CreateProjectModal({
       return;
     }
 
-    const contributors = selectedUsers.map((u) => u.email);
+    const contributors = Array.from(
+      new Set(
+        selectedUsers
+          .flatMap((u) => [u.email, u.email?.toLowerCase()])
+          .filter(Boolean)
+      )
+    );
     createProjectMutation.mutate({
       name: name.trim(),
       description: description.trim(),
