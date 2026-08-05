@@ -335,8 +335,7 @@ export default function ProjectDetails({ params }) {
   const otherMembers = (project.members || []).filter(
     (m) => (m.user?.id || m.id) !== project.ownerId
   );
-  const isAdmin =
-    project.userRole === 'ADMIN' || project.ownerId === currentUserId;
+  const isOwner = project.ownerId === currentUserId;
 
   return (
     <div className="project-details-container">
@@ -353,7 +352,7 @@ export default function ProjectDetails({ params }) {
           <div className="project-details-info">
             <div className="project-title-row">
               <h1 className="project-details-title">{project.name}</h1>
-              {isAdmin && (
+              {isOwner && (
                 <button
                   onClick={() => setIsEditModalOpen(true)}
                   className="project-edit-link"
@@ -544,7 +543,7 @@ export default function ProjectDetails({ params }) {
                 const isTaskCreator =
                   task.creatorId === currentUserId ||
                   task.creator?.id === currentUserId;
-                const canManageTask = isAdmin || isTaskCreator;
+                const canManageTask = isOwner || isTaskCreator;
 
                 return (
                   <div key={task.id} className="task-card">

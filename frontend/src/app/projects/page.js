@@ -206,7 +206,6 @@ export default function Projects() {
       <div className="projects-grid">
         {projects.map((project) => {
           const isOwner = project.ownerId === currentUserId;
-          const isAdmin = project.userRole === 'ADMIN' || isOwner;
           const otherMembers = (project.members || []).filter(
             (m) => (m.user?.id || m.id) !== project.ownerId
           );
@@ -224,8 +223,8 @@ export default function Projects() {
                     <h2 className="project-card-title">{project.name}</h2>
                   </div>
 
-                  {/* Boutons d'édition/suppression réservés aux administrateurs (RBAC) */}
-                  {isAdmin && (
+                  {/* Boutons d'édition/suppression réservés au propriétaire */}
+                  {isOwner && (
                     <div className="project-card-actions">
                       <button
                         className="card-action-btn"
