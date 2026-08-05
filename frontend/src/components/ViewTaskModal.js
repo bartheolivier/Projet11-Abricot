@@ -1,18 +1,24 @@
 'use client';
 
+/**
+ * =========================================================================================
+ * MODALE DE CONSULTATION DÉTAILLÉE DE TÂCHE (VIEW TASK MODAL COMPONENT)
+ * =========================================================================================
+ * Fichier : src/components/ViewTaskModal.js
+ * Rôle : Fenêtre modale en lecture seule permettant d'inspecter une tâche :
+ *        1. Affichage du titre, de la description et du statut (badge sous le titre).
+ *        2. Affichage du projet parent et de l'échéance.
+ *        3. Affichage des membres assignés avec leurs initiales et couleurs d'avatar.
+ *        4. Historique complet des commentaires avec les avatars des auteurs.
+ *        5. Accessibilité WCAG 2.1 (Touche Échap, ARIA, Focus Trap).
+ * =========================================================================================
+ */
+
 import React, { useEffect } from 'react';
-import {
-  X,
-  Calendar,
-  Folder,
-  MessageSquare,
-  CheckCircle,
-  Clock,
-  AlertCircle,
-} from 'lucide-react';
+import { X, Calendar, Folder } from 'lucide-react';
 
 export default function ViewTaskModal({ isOpen, task, onClose }) {
-  // Verrouiller le défilement du fond + Gestion de la touche Échap (WCAG 2.1)
+  // Accessibilité WCAG 2.1 : Touche Échap et verrouillage du scroll arrière-plan
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
@@ -34,72 +40,64 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
 
   if (!isOpen || !task) return null;
 
-  // Calcul des couleurs et initiales pour les avatars des collaborateurs
-  const getInitials = (name) => {
-    if (!name) return '?';
-    const parts = name.trim().split(' ');
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return name.slice(0, 2).toUpperCase();
-  };
-
-  const getAvatarColor = (identifier) => {
-    if (!identifier) return '#e0e0e0';
-    let hash = 0;
-    for (let i = 0; i < identifier.length; i++) {
-      hash = identifier.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const colors = [
-      '#ffeaa7',
-      '#fab1a0',
-      '#ff7675',
-      '#fd79a8',
-      '#a29bfe',
-      '#74b9ff',
-      '#81ecec',
-      '#55efc4',
-    ];
-    return colors[Math.abs(hash) % colors.length];
-  };
-
-  const getStatusBadge = (status) => {
+  /**
+   * Retourne le libellé et la classe CSS du badge de statut
+   */
+  const getStatusDetails = (status) => {
     switch (status) {
       case 'TODO':
-        return { label: 'À faire', className: 'badge-todo', icon: Clock };
+        return { label: 'À faire', className: 'badge-todo' };
       case 'IN_PROGRESS':
-        return {
-          label: 'En cours',
-          className: 'badge-progress',
-          icon: AlertCircle,
-        };
+        return { label: 'En cours', className: 'badge-progress' };
       case 'DONE':
-        return {
-          label: 'Terminée',
-          className: 'badge-done',
-          icon: CheckCircle,
-        };
+        return { label: 'Terminée', className: 'badge-done' };
+      case 'CANCELLED':
+        return { label: 'Annulée', className: 'badge-cancelled' };
       default:
-        return { label: status, className: 'badge-todo', icon: Clock };
+        return { label: status, className: '' };
     }
   };
 
-  const statusDetails = getStatusBadge(task.status);
-  const StatusIcon = statusDetails.icon;
-
-  // Extraire les collaborateurs assignés
-  const assigneesList = (task.assignees || []).map((a) => a.user || a);
-
-  // Formater la date d'échéance
+  /**
+   * Formate une chaîne de date ISO en français (ex: "5 août 2026")
+   */
   const formatDate = (dateString) => {
-    if (!dateString) return 'Non définie';
-    const d = new Date(dateString);
-    return d.toLocaleDateString('fr-FR', {
+    if (!dateString) return 'Aucune échéance';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('fr-FR', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
     });
   };
+
+  // Palette de couleurs et calcul des initiales pour les avatars
+  const colors = [
+    '#ffe8d6',
+    '#e2ece9',
+    '#f0efeb',
+    '#ddbea9',
+    '#a8dadc',
+    '#f4a261',
+  ];
+  const getAvatarColor = (name) => {
+    if (!name) return colors[0];
+    const charCodeSum = name
+      .split('')
+      .reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    return colors[charCodeSum % colors.length];
+  };
+
+  const getInitials = (name) => {
+    if (!name) return '';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return parts[0] ? parts[0].substring(0, 2).toUpperCase() : '';
+  };
+
+  const statusInfo = getStatusDetails(task.status);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -108,163 +106,131 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="modal-title-view"
+        aria-labelledby="modal-title-view-task"
       >
-        {/* Bouton fermer avec aria-label WCAG */}
+        {/* Bouton de fermeture de la modale */}
         <button
           className="modal-close-btn"
           onClick={onClose}
-          aria-label="Fermer la modale de détails"
+          aria-label="Fermer la vue détaillée de la tâche"
           title="Fermer"
         >
           <X size={20} aria-hidden="true" />
         </button>
 
+        {/* En-tête de la modale : Titre de la tâche en premier, puis pastille de statut sous le titre */}
         <div className="view-modal-header">
-          <h2 id="modal-title-view" className="modal-title">
-            Détails de la tâche
+          <h2 id="modal-title-view-task" className="modal-title">
+            {task.title}
           </h2>
+          <div className="view-modal-badge-wrapper">
+            <span className={`status-badge ${statusInfo.className}`}>
+              {statusInfo.label}
+            </span>
+          </div>
         </div>
 
         <div className="view-modal-body">
-          {/* Titre */}
-          <div className="view-field-group">
-            <label className="view-field-label">Titre</label>
-            <p className="view-field-value title-value">{task.title}</p>
-          </div>
-
-          {/* Description */}
-          <div className="view-field-group">
-            <label className="view-field-label">Description</label>
-            <div className="view-field-value desc-value">
-              {task.description || 'Aucune description fournie.'}
-            </div>
-          </div>
-
-          {/* Projet & Échéance */}
-          <div className="view-fields-row">
-            <div className="view-field-group">
-              <label className="view-field-label">Projet associé</label>
-              <div className="view-field-value inline-flex">
-                <Folder size={16} className="field-icon" aria-hidden="true" />
-                <span>{task.project?.name || 'Sans projet'}</span>
-              </div>
-            </div>
-
-            <div className="view-field-group">
-              <label className="view-field-label">Échéance</label>
-              <div className="view-field-value inline-flex">
-                <Calendar size={16} className="field-icon" aria-hidden="true" />
-                <span>{formatDate(task.dueDate)}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Collaborateurs assignés */}
-          <div className="view-field-group">
-            <label className="view-field-label">
-              Assigné à ({assigneesList.length})
-            </label>
-            {assigneesList.length > 0 ? (
-              <div className="view-assignees-capsules-list">
-                {assigneesList.map((user) => (
-                  <div key={user.id || user.email} className="assignee-capsule">
-                    <div
-                      className="assignee-capsule-avatar"
-                      style={{
-                        backgroundColor: getAvatarColor(
-                          user.name || user.email
-                        ),
-                      }}
-                      aria-hidden="true"
-                    >
-                      {getInitials(user.name || user.email)}
-                    </div>
-                    <span className="assignee-capsule-name">
-                      {user.name || user.email}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="no-assignees-text">Aucun collaborateur assigné</p>
-            )}
-          </div>
-
-          {/* Statut de la tâche */}
-          <div className="view-field-group">
-            <label className="view-field-label">Statut</label>
-            <div>
-              <span className={`status-badge ${statusDetails.className}`}>
-                <StatusIcon
-                  size={14}
-                  className="status-icon"
-                  aria-hidden="true"
-                />
-                {statusDetails.label}
+          {/* Métadonnées principales de la tâche (Projet, Échéance) */}
+          <div className="task-detail-section">
+            <div className="detail-row">
+              <span className="detail-label">
+                <Folder size={16} aria-hidden="true" /> Projet :
+              </span>
+              <span className="detail-value">
+                {task.project?.name || 'Sans projet'}
               </span>
             </div>
+
+            <div className="detail-row">
+              <span className="detail-label">
+                <Calendar size={16} aria-hidden="true" /> Échéance :
+              </span>
+              <span className="detail-value">{formatDate(task.dueDate)}</span>
+            </div>
           </div>
 
-          {/* Commentaires de la tâche */}
-          <div className="view-field-group">
-            <label className="view-field-label">
-              Commentaires ({(task.comments || []).length})
-            </label>
-            {(task.comments || []).length > 0 ? (
-              <div className="view-comments-list">
-                {(task.comments || []).map((c, index) => {
-                  const authorName =
-                    c.user?.name ||
-                    c.user?.email ||
-                    c.author?.name ||
-                    c.author?.email ||
-                    'Utilisateur';
+          {/* Description complète de la tâche */}
+          <div className="task-detail-section">
+            <h3 className="section-subtitle">Description</h3>
+            <p className="task-full-desc">
+              {task.description ||
+                'Aucune description fournie pour cette tâche.'}
+            </p>
+          </div>
+
+          {/* Membres assignés avec pastilles et avatars */}
+          {task.assignees && task.assignees.length > 0 && (
+            <div className="task-detail-section">
+              <h3 className="section-subtitle">
+                Membres assignés ({task.assignees.length})
+              </h3>
+              <div className="assignees-capsules-list">
+                {task.assignees.map((assignee) => {
+                  const userObj = assignee.user || assignee;
+                  const nameStr =
+                    userObj.name || userObj.email || 'Utilisateur';
                   return (
-                    <div key={c.id || index} className="view-comment-item">
+                    <div
+                      className="assignee-capsule"
+                      key={userObj.id || userObj.email}
+                    >
                       <div
-                        className="view-comment-avatar"
-                        style={{ backgroundColor: getAvatarColor(authorName) }}
-                        aria-hidden="true"
+                        className="assignee-capsule-avatar"
+                        style={{ backgroundColor: getAvatarColor(nameStr) }}
                       >
-                        {getInitials(authorName)}
+                        {getInitials(nameStr)}
                       </div>
-                      <div className="view-comment-content-box">
-                        <div className="view-comment-meta">
-                          <span className="view-comment-author">
+                      <span className="assignee-capsule-name">{nameStr}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Section Historique des commentaires */}
+          <div className="task-detail-section">
+            <h3 className="section-subtitle">
+              Commentaires ({task.comments?.length || 0})
+            </h3>
+            {task.comments && task.comments.length > 0 ? (
+              <div className="comments-list">
+                {task.comments.map((comment) => {
+                  const authorObj = comment.author || comment.user || {};
+                  const authorName =
+                    authorObj.name || authorObj.email || 'Utilisateur';
+                  return (
+                    <div className="comment-item" key={comment.id}>
+                      <div className="comment-header">
+                        <div className="comment-author-info">
+                          <div
+                            className="comment-author-avatar"
+                            style={{
+                              backgroundColor: getAvatarColor(authorName),
+                            }}
+                          >
+                            {getInitials(authorName)}
+                          </div>
+                          <span className="comment-author-name">
                             {authorName}
                           </span>
-                          {c.createdAt && (
-                            <span className="view-comment-date">
-                              {new Date(c.createdAt).toLocaleDateString(
-                                'fr-FR'
-                              )}
-                            </span>
-                          )}
                         </div>
-                        <p className="view-comment-text">{c.content}</p>
+                        <span className="comment-date">
+                          {formatDate(comment.createdAt)}
+                        </span>
                       </div>
+                      <p className="comment-content">{comment.content}</p>
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <p className="no-assignees-text">
-                Aucun commentaire pour le moment.
+              <p className="no-comments-text">
+                Aucun commentaire sur cette tâche.
               </p>
             )}
           </div>
-        </div>
-
-        {/* Pied de modale */}
-        <div className="view-modal-footer">
-          <button
-            type="button"
-            className="modal-btn-close-only"
-            onClick={onClose}
-          >
-            Fermer
-          </button>
         </div>
       </div>
     </div>
