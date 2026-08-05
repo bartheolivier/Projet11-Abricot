@@ -26,6 +26,23 @@ body {
   min-height: 100vh;
 }
 
+/* =========================================================================================
+ * INDICATEUR DE FOCUS VISUEL HAUTE VISIBILITÉ (ACCESSIBILITÉ WCAG 2.1 AA - KEYBOARD FOCUS)
+ * =========================================================================================
+ * Rôle : Remplace les contours sombres par un anneau orange vif (#ff6b00) décalé de 3px.
+ *        Rend le focus clavier 100% visible sur TOUS les éléments (boutons noirs, liens, modales).
+ * =========================================================================================
+ */
+:focus-visible {
+  outline: 3px solid #ff6b00 !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 4px rgba(255, 107, 0, 0.3) !important;
+}
+
+:focus:not(:focus-visible) {
+  outline: none !important;
+}
+
 main.app-main-content {
   padding: 2rem;
   flex: 1;
