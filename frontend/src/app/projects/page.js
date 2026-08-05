@@ -106,8 +106,7 @@ export default function Projects() {
               (m) => m.user?.id !== project.ownerId
             );
 
-            const isAdmin =
-              project.userRole === 'ADMIN' || project.ownerId === currentUserId;
+            const isOwner = project.ownerId === currentUserId;
 
             // Calcul de la progression
             const tasksList = project.tasks || [];
@@ -126,7 +125,7 @@ export default function Projects() {
                 key={project.id}
                 className="project-card"
               >
-                {isAdmin && (
+                {isOwner && (
                   <div className="project-card-actions">
                     <button
                       onClick={(e) => handleEditProject(e, project)}
