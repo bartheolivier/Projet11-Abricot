@@ -122,13 +122,9 @@ export default function EditProjectModal({
       return;
     }
 
-    const contributors = Array.from(
-      new Set(
-        selectedUsers
-          .flatMap((u) => [u.email, u.email?.toLowerCase()])
-          .filter(Boolean)
-      )
-    );
+    const contributors = selectedUsers
+      .map((u) => u.email?.trim())
+      .filter((email) => email && email.includes('@'));
 
     updateProjectMutation.mutate({
       id: project.id,
