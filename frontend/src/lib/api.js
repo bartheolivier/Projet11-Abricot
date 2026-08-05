@@ -48,6 +48,15 @@ export const api = {
     }),
   deleteProject: (id) =>
     fetchWithAuth(`/api/projects/${id}`, { method: 'DELETE' }),
+  addContributor: ({ projectId, email }) =>
+    fetchWithAuth(`/api/projects/${projectId}/contributors`, {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+  removeContributor: ({ projectId, userId }) =>
+    fetchWithAuth(`/api/projects/${projectId}/contributors/${userId}`, {
+      method: 'DELETE',
+    }),
 
   // Tâches
   getProjectTasks: (projectId) =>

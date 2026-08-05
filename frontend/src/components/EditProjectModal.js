@@ -122,16 +122,43 @@ export default function EditProjectModal({
       return;
     }
 
-    const contributors = selectedUsers
-      .map((u) => u.email?.trim())
-      .filter((email) => email && email.includes('@'));
-
+    // 1. Mettre à jour les informations du projet
     updateProjectMutation.mutate({
       id: project.id,
       name: name.trim(),
       description: description.trim(),
-      contributors,
     });
+
+    // 2. Gérer l'ajout et la suppression des collaborateurs
+    const originalMemberIds = (project.members || []).map(
+      (m) => m.userId || m.user?.id
+    );
+    const newSelectedIds = selectedUsers.map((u) => u.id);
+
+    // Utilisateurs à ajouter
+    const usersToAdd = selectedUsers.filter(
+      (u) => !originalMemberIds.includes(u.id)
+    );
+    for (const user of usersToAdd) {
+      if (user.email) {
+        api
+          .addContributor({ projectId: project.id, email: user.email })
+          .catch(console.error);
+      }
+    }
+
+    // Utilisateurs à supprimer
+    const membersToRemove = (project.members || []).filter(
+      (m) =>
+        (m.userId || m.user?.id) &&
+        !newSelectedIds.includes(m.userId || m.user?.id)
+    );
+    for (const member of membersToRemove) {
+      const userId = member.userId || member.user?.id;
+      api
+        .removeContributor({ projectId: project.id, userId })
+        .catch(console.error);
+    }
   };
 
   const isFormValid = name.trim().length > 0 && description.trim().length > 0;
