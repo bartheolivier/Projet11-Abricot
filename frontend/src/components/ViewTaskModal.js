@@ -5,17 +5,17 @@
  * MODALE DE CONSULTATION DÉTAILLÉE DE TÂCHE (VIEW TASK MODAL COMPONENT)
  * =========================================================================================
  * Fichier : src/components/ViewTaskModal.js
- * Rôle : Fenêtre modale en lecture seule (ou consultation) permettant d'inspecter une tâche :
- *        1. Affichage du titre, de la description, du statut badge placé sous le titre.
- *        2. Résolution dynamique et robuste du nom de l'auteur créateur (100% autonome en Frontend).
- *        3. Affichage du projet parent, de l'échéance et des membres assignés.
+ * Rôle : Fenêtre modale en lecture seule permettant d'inspecter une tâche :
+ *        1. Affichage du titre, de la description et du statut (badge sous le titre).
+ *        2. Affichage du projet parent et de l'échéance.
+ *        3. Affichage des membres assignés avec leurs initiales et couleurs d'avatar.
  *        4. Historique complet des commentaires avec les avatars des auteurs.
  *        5. Accessibilité WCAG 2.1 (Touche Échap, ARIA, Focus Trap).
  * =========================================================================================
  */
 
 import React, { useEffect } from 'react';
-import { X, Calendar, Folder, User } from 'lucide-react';
+import { X, Calendar, Folder } from 'lucide-react';
 
 export default function ViewTaskModal({ isOpen, task, onClose }) {
   // Accessibilité WCAG 2.1 : Touche Échap et verrouillage du scroll arrière-plan
@@ -97,64 +97,6 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
     return parts[0] ? parts[0].substring(0, 2).toUpperCase() : '';
   };
 
-  /**
-   * =======================================================================================
-   * ALGORITHME DE RÉSOLUTION AUTONOME DU CRÉATEUR DE LA TÂCHE (FRONTEND)
-   * =======================================================================================
-   * Rôle : Permet de déterminer le nom complet ou l'email du créateur sans aucune modification
-   *        du code Backend fourni.
-   * Stratégie de Fallback en 5 étapes :
-   *   Étape 1 : Propriété directe `task.creator.name` ou `task.creator.email`.
-   *   Étape 2 : Recoupement de `task.creatorId` avec l'identifiant du propriétaire du projet.
-   *   Étape 3 : Recoupement de `task.creatorId` avec les membres assignés à la tâche.
-   *   Étape 4 : Recoupement de `task.creatorId` avec les auteurs des commentaires enregistrés.
-   *   Étape 5 : Extraction du premier membre assigné ou du premier auteur de commentaire.
-   * =======================================================================================
-   */
-  const getCreatorName = () => {
-    // 1. Détection directe si l'objet creator est fourni dans la tâche
-    if (task.creator?.name) return task.creator.name;
-    if (task.creator?.email) return task.creator.email;
-    if (task.creatorName) return task.creatorName;
-    if (task.createdByName) return task.createdByName;
-
-    // 2. Si creatorId est présent, recoupement avec les objets reliés dans le Frontend
-    if (task.creatorId) {
-      // Recoupement avec le propriétaire du projet
-      if (task.project?.owner?.id === task.creatorId) {
-        return task.project.owner.name || task.project.owner.email;
-      }
-      // Recoupement avec la liste des personnes assignées à la tâche
-      if (task.assignees) {
-        for (const a of task.assignees) {
-          const u = a.user || a;
-          if (u && u.id === task.creatorId) return u.name || u.email;
-        }
-      }
-      // Recoupement avec les auteurs des commentaires de la tâche
-      if (task.comments) {
-        for (const c of task.comments) {
-          const u = c.author || c.user;
-          if (u && u.id === task.creatorId) return u.name || u.email;
-        }
-      }
-    }
-
-    // 3. Fallbacks contextuels intelligents si creatorId n'a pas pu être résolu
-    if (task.assignees && task.assignees.length > 0) {
-      const firstUser = task.assignees[0].user || task.assignees[0];
-      if (firstUser?.name) return firstUser.name;
-    }
-
-    if (task.comments && task.comments.length > 0) {
-      const firstComment = task.comments[0];
-      const author = firstComment.author || firstComment.user;
-      if (author?.name) return author.name;
-    }
-
-    return 'Non précisé';
-  };
-
   const statusInfo = getStatusDetails(task.status);
 
   return (
@@ -189,7 +131,7 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
         </div>
 
         <div className="view-modal-body">
-          {/* Métadonnées principales de la tâche (Projet, Échéance, Créateur) */}
+          {/* Métadonnées principales de la tâche (Projet, Échéance) */}
           <div className="task-detail-section">
             <div className="detail-row">
               <span className="detail-label">
@@ -205,14 +147,6 @@ export default function ViewTaskModal({ isOpen, task, onClose }) {
                 <Calendar size={16} aria-hidden="true" /> Échéance :
               </span>
               <span className="detail-value">{formatDate(task.dueDate)}</span>
-            </div>
-
-            {/* Affichage résolu du nom de l'auteur créateur */}
-            <div className="detail-row">
-              <span className="detail-label">
-                <User size={16} aria-hidden="true" /> Créateur :
-              </span>
-              <span className="detail-value">{getCreatorName()}</span>
             </div>
           </div>
 
