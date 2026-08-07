@@ -237,14 +237,10 @@ export default function CreateProjectModal({
 
           {/* Champ Sélecteur de Contributeurs */}
           <div className="form-group" ref={dropdownRef}>
-            <label
-              htmlFor="create-project-contributors-trigger"
-              id="contributors-label"
-            >
+            <span className="form-label" id="contributors-label">
               Contributeurs
-            </label>
+            </span>
             <div
-              id="create-project-contributors-trigger"
               className="contributors-select-input"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               onKeyDown={(e) => {

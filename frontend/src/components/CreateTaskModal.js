@@ -235,11 +235,10 @@ export default function CreateTaskModal({
 
           {/* Assignation aux membres du projet */}
           <div className="form-group" ref={dropdownRef}>
-            <label htmlFor="create-task-assignees-trigger" id="assignees-label">
+            <span className="form-label" id="assignees-label">
               Assigner à
-            </label>
+            </span>
             <div
-              id="create-task-assignees-trigger"
               className="contributors-select-input"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               onKeyDown={(e) => {
