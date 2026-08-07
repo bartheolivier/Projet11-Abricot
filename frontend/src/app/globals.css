@@ -135,7 +135,7 @@ main.app-main-content {
 }
 
 .dashboard-subtitle {
-  color: #666;
+  color: #555555;
 }
 
 .header-actions {
@@ -177,7 +177,7 @@ main.app-main-content {
 }
 
 /* Boutons de bascule (Toggle) */
-/* --- COMMUTATEURS DE VUE (MAQUETTE CONFORME) --- */
+/* --- COMMUTATEURS DE VUE (MAQUETTE CONFORME WCAG AA) --- */
 .view-toggles {
   display: flex;
   align-items: center;
@@ -196,9 +196,9 @@ main.app-main-content {
   border-radius: 10px;
   border: none;
   background: transparent;
-  color: #d35400;
+  color: #b03e00;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition:
     background-color 0.2s ease,
@@ -207,11 +207,12 @@ main.app-main-content {
 
 .btn-toggle:hover {
   background: #fff0e6;
+  color: #9e3700;
 }
 
 .btn-toggle.active {
   background: #ffe8d6;
-  color: #d35400;
+  color: #9c3500;
   font-weight: 600;
   border: none;
   box-shadow: none;
@@ -258,7 +259,7 @@ main.app-main-content {
 
 .list-subtitle {
   font-size: 0.88rem;
-  color: #888888;
+  color: #595959;
   font-weight: 500;
   margin: 0;
 }
@@ -284,6 +285,11 @@ main.app-main-content {
     box-shadow 0.2s;
 }
 
+.search-input-mockup::placeholder {
+  color: #595959;
+  opacity: 1;
+}
+
 .search-input-mockup:focus {
   border-color: #e65100;
   box-shadow: 0 0 0 2px rgba(230, 81, 0, 0.1);
@@ -292,7 +298,7 @@ main.app-main-content {
 .search-input-icon {
   position: absolute;
   right: 0.85rem;
-  color: #999999;
+  color: #595959;
   pointer-events: none;
 }
 
@@ -333,7 +339,7 @@ main.app-main-content {
 
 .task-card-desc-text {
   font-size: 0.9rem;
-  color: #666666;
+  color: #555555;
   margin: 0;
   line-height: 1.5;
 }
@@ -352,11 +358,11 @@ main.app-main-content {
   align-items: center;
   gap: 0.6rem;
   font-size: 0.82rem;
-  color: #888888;
+  color: #595959;
 }
 
 .meta-separator {
-  color: #dddddd;
+  color: #a0a0a0;
 }
 
 .btn-voir-mockup {
@@ -378,7 +384,7 @@ main.app-main-content {
   transform: translateY(-1px);
 }
 
-/* Badges de statut */
+/* Badges de statut (Conformes WCAG AA >= 4.5:1) */
 .badge-status {
   padding: 0.25rem 0.75rem;
   border-radius: 999px;
@@ -394,17 +400,17 @@ main.app-main-content {
 
 .status-todo {
   background: #ffe5e5;
-  color: #d32f2f;
+  color: #c62828;
 }
 
 .status-in-progress {
   background: #fff4e5;
-  color: #e65100;
+  color: #b83a00;
 }
 
 .status-done {
   background: #e6f4ea;
-  color: #2e7d32;
+  color: #216625;
 }
 
 /* --- BARRE DE NAVIGATION (NAVBAR) --- */
@@ -531,8 +537,8 @@ main.app-main-content {
 }
 
 .kanban-column-count {
-  background: #f1f3f5;
-  color: #666;
+  background: #e2e8f0;
+  color: #374151;
   font-size: 0.8rem;
   font-weight: bold;
   padding: 0.2rem 0.6rem;
@@ -584,7 +590,7 @@ main.app-main-content {
 
 .kanban-card-desc {
   font-size: 0.85rem;
-  color: #666;
+  color: #555555;
   margin: 0;
   line-height: 1.5;
   display: -webkit-box;
@@ -598,7 +604,7 @@ main.app-main-content {
   flex-wrap: wrap;
   gap: 0.75rem;
   font-size: 0.75rem;
-  color: #888;
+  color: #595959;
   align-items: center;
   border-top: 1px solid #f5f5f5;
   padding-top: 0.75rem;
@@ -2175,12 +2181,12 @@ main.app-main-content {
 
 .status-badge.badge-todo {
   background-color: #ffe3e3;
-  color: #d63031;
+  color: #c62828;
 }
 
 .status-badge.badge-progress {
-  background-color: #ffeaa7;
-  color: #d35400;
+  background-color: #fff2d6;
+  color: #b83a00;
 }
 
 .status-badge.badge-done {
@@ -2190,7 +2196,7 @@ main.app-main-content {
 
 .status-badge.badge-cancelled {
   background-color: #f5f5f5;
-  color: #7f8c8d;
+  color: #374151;
 }
 
 /* --- MODALE DE GÉNÉRATION D'IA DE TÂCHES --- */
