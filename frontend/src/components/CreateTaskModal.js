@@ -1,5 +1,18 @@
 'use client';
 
+/**
+ * =========================================================================================
+ * MODALE DE CRÉATION DE TÂCHE (CREATE TASK MODAL COMPONENT)
+ * =========================================================================================
+ * Fichier : src/components/CreateTaskModal.js
+ * Rôle : Formulaire de création de tâche au sein d'un projet :
+ *        1. Saisie du titre, de la description et de la date d'échéance.
+ *        2. Attribution à un ou plusieurs collaborateurs (Membres du projet).
+ *        3. Sélection du statut initial (À faire, En cours, Terminée).
+ *        4. Accessibilité WCAG 2.1 (Focus, Échap, ARIA).
+ * =========================================================================================
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
@@ -11,7 +24,6 @@ import {
   Calendar,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useCreateTaskMutation } from '@/hooks/useTasksQuery';
 
 export default function CreateTaskModal({
   isOpen,
@@ -19,6 +31,7 @@ export default function CreateTaskModal({
   onClose,
   onTaskCreated,
 }) {
+  // États locaux de la tâche
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -27,23 +40,11 @@ export default function CreateTaskModal({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const dropdownRef = useRef(null);
 
-  const createTaskMutation = useCreateTaskMutation({
-    onSuccess: () => {
-      setTitle('');
-      setDescription('');
-      setDueDate('');
-      setSelectedAssignees([]);
-      setStatus('TODO');
-      setSearchQuery('');
-      if (onTaskCreated) onTaskCreated();
-      onClose();
-    },
-  });
-
-  // Verrouiller le défilement du fond + Touche Échap (WCAG 2.1)
+  // Accessibilité WCAG 2.1 : Verrouillage du scroll arrière-plan & fermeture touche Échap
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
@@ -63,7 +64,7 @@ export default function CreateTaskModal({
     };
   }, [isOpen, onClose]);
 
-  // Fermer le dropdown si on clique en dehors
+  // Fermeture du dropdown au clic extérieur
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -76,32 +77,36 @@ export default function CreateTaskModal({
 
   if (!isOpen || !project) return null;
 
+  // Rassembler tous les membres du projet éligibles pour l'assignation
   const allMembers = [];
   if (project.owner) {
     allMembers.push(project.owner);
   }
   if (project.members) {
     project.members.forEach((m) => {
-      const u = m.user || m;
-      if (u && !allMembers.some((existing) => existing.id === u.id)) {
-        allMembers.push(u);
+      const userObj = m.user || m;
+      if (
+        userObj &&
+        !allMembers.some((existing) => existing.id === userObj.id)
+      ) {
+        allMembers.push(userObj);
       }
     });
   }
 
+  // Filtrage des membres selon le mot-clé de recherche
   const filteredMembers = allMembers.filter((u) => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return true;
-    return (
-      (u.name && u.name.toLowerCase().includes(query)) ||
-      (u.email && u.email.toLowerCase().includes(query))
-    );
+    const nameMatch = u.name && u.name.toLowerCase().includes(query);
+    const emailMatch = u.email && u.email.toLowerCase().includes(query);
+    return nameMatch || emailMatch;
   });
 
   const handleToggleAssignee = (user) => {
     setSelectedAssignees((prev) => {
-      const isAlreadySelected = prev.some((u) => u.id === user.id);
-      if (isAlreadySelected) {
+      const exists = prev.some((u) => u.id === user.id);
+      if (exists) {
         return prev.filter((u) => u.id !== user.id);
       } else {
         return [...prev, user];
@@ -109,30 +114,64 @@ export default function CreateTaskModal({
     });
   };
 
-  const handleSubmit = (e) => {
+  /**
+   * SOUMISSION ET CRÉATION DE LA TÂCHE
+   */
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title.trim() || !description.trim() || !dueDate) {
-      toast.error("Veuillez remplir le titre, la description et l'échéance.");
+    if (!title.trim() || !description.trim()) {
+      toast.error('Veuillez remplir le titre et la description.');
       return;
     }
 
-    const assigneeIds = selectedAssignees.map((u) => u.id);
+    setIsSubmitting(true);
+    try {
+      const token = document.cookie
+        .split('; ')
+        .find((row) => row.startsWith('token='))
+        ?.split('=')[1];
 
-    createTaskMutation.mutate({
-      projectId: project.id,
-      title: title.trim(),
-      description: description.trim(),
-      dueDate,
-      status,
-      assigneeIds,
-    });
+      const assigneeIds = selectedAssignees.map((u) => u.id);
+
+      const res = await fetch(`/api/projects/${project.id}/tasks`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: title.trim(),
+          description: description.trim(),
+          dueDate: dueDate || undefined,
+          status,
+          assigneeIds,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(
+          json.message || 'Erreur lors de la création de la tâche'
+        );
+      }
+
+      toast.success('Tâche créée avec succès !');
+      setTitle('');
+      setDescription('');
+      setDueDate('');
+      setSelectedAssignees([]);
+      setStatus('TODO');
+      if (onTaskCreated) onTaskCreated();
+      onClose();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const isFormValid =
-    title.trim().length > 0 &&
-    description.trim().length > 0 &&
-    dueDate.length > 0;
-  const isSubmitting = createTaskMutation.isPending;
+  const isFormValid = title.trim().length > 0 && description.trim().length > 0;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -165,7 +204,7 @@ export default function CreateTaskModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="form-input"
-              placeholder="Saisissez le titre de la tâche"
+              placeholder="Ex: Maquettage des modales"
               required
             />
           </div>
@@ -177,41 +216,30 @@ export default function CreateTaskModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="form-input modal-textarea"
-              placeholder="Saisissez la description de la tâche"
-              rows={3}
+              placeholder="Ex: Réaliser les maquettes Figma pour l'expérience utilisateur..."
+              rows={4}
               required
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="task-duedate">Échéance*</label>
+            <label htmlFor="task-due-date">Date d'échéance</label>
             <input
               type="date"
-              id="task-duedate"
+              id="task-due-date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
               className="form-input"
-              required
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="task-status">Statut</label>
-            <select
-              id="task-status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="form-input"
-            >
-              <option value="TODO">À faire</option>
-              <option value="IN_PROGRESS">En cours</option>
-              <option value="DONE">Terminée</option>
-            </select>
-          </div>
-
+          {/* Assignation aux membres du projet */}
           <div className="form-group" ref={dropdownRef}>
-            <label id="assignees-label">Assigner à des collaborateurs</label>
+            <label htmlFor="create-task-assignees-trigger" id="assignees-label">
+              Assigner à
+            </label>
             <div
+              id="create-task-assignees-trigger"
               className="contributors-select-input"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               onKeyDown={(e) => {
@@ -234,8 +262,8 @@ export default function CreateTaskModal({
                 }
               >
                 {selectedAssignees.length === 0
-                  ? 'Sélectionner un ou plusieurs membres'
-                  : `${selectedAssignees.length} membre${selectedAssignees.length > 1 ? 's' : ''} assigné(s)`}
+                  ? 'Choisir un ou plusieurs membres'
+                  : `${selectedAssignees.length} membre${selectedAssignees.length > 1 ? 's' : ''}`}
               </span>
               {isDropdownOpen ? (
                 <ChevronUp size={16} aria-hidden="true" />
@@ -254,12 +282,12 @@ export default function CreateTaskModal({
                   />
                   <input
                     type="text"
-                    placeholder="Filtrer les membres..."
+                    placeholder="Rechercher un membre..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="dropdown-search-input"
                     onClick={(e) => e.stopPropagation()}
-                    aria-label="Rechercher des collaborateurs à assigner"
+                    aria-label="Rechercher des membres à assigner"
                     autoFocus
                   />
                 </div>
@@ -269,7 +297,6 @@ export default function CreateTaskModal({
                     const isSelected = selectedAssignees.some(
                       (u) => u.id === user.id
                     );
-
                     return (
                       <div
                         key={user.id}
@@ -298,18 +325,13 @@ export default function CreateTaskModal({
                         </div>
                         <div className="option-details">
                           <span className="option-name">
-                            {user.name || user.email}
+                            {user.name || 'Utilisateur sans nom'}
                           </span>
                           <span className="option-email">{user.email}</span>
                         </div>
                       </div>
                     );
                   })}
-                  {filteredMembers.length === 0 && (
-                    <div className="dropdown-status-item">
-                      Aucun membre trouvé
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -330,7 +352,7 @@ export default function CreateTaskModal({
                 Création...
               </>
             ) : (
-              'Créer la tâche'
+              'Ajouter la tâche'
             )}
           </button>
         </form>

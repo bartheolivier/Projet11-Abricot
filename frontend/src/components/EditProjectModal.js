@@ -1,5 +1,17 @@
 'use client';
 
+/**
+ * =========================================================================================
+ * MODALE D'ÉDITION DE PROJET (EDIT PROJECT MODAL COMPONENT)
+ * =========================================================================================
+ * Fichier : src/components/EditProjectModal.js
+ * Rôle : Formulaire de modification d'un projet existant (Réservé aux Administrateurs) :
+ *        1. Pré-remplissage automatique du nom, de la description et des membres actuels.
+ *        2. Ajout/Suppression de collaborateurs.
+ *        3. Envoi des modifications au backend via `PUT /api/projects/:id`.
+ * =========================================================================================
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
@@ -10,8 +22,6 @@ import {
   Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useUpdateProjectMutation } from '@/hooks/useProjectsQuery';
-import { api } from '@/lib/api';
 
 export default function EditProjectModal({
   isOpen,
@@ -26,17 +36,25 @@ export default function EditProjectModal({
   const [searchResults, setSearchResults] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const dropdownRef = useRef(null);
 
-  const updateProjectMutation = useUpdateProjectMutation({
-    onSuccess: () => {
-      if (onProjectUpdated) onProjectUpdated();
-      onClose();
-    },
-  });
+  // Pré-remplissage des champs lors de l'ouverture
+  useEffect(() => {
+    if (project) {
+      setName(project.name || '');
+      setDescription(project.description || '');
 
-  // Verrouiller le défilement du fond + Touche Échap (WCAG 2.1)
+      const currentMembers = (project.members || [])
+        .map((m) => m.user || m)
+        .filter((u) => u.id !== project.ownerId);
+
+      setSelectedUsers(currentMembers);
+    }
+  }, [project, isOpen]);
+
+  // Accessibilité WCAG 2.1 : Touche Échap et défilement
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
@@ -56,20 +74,6 @@ export default function EditProjectModal({
     };
   }, [isOpen, onClose]);
 
-  // Charger les données du projet
-  useEffect(() => {
-    if (project) {
-      setName(project.name || '');
-      setDescription(project.description || '');
-
-      const contributorsOnly = (project.members || [])
-        .filter((m) => (m.user?.id || m.id) !== project.ownerId)
-        .map((m) => m.user || m);
-      setSelectedUsers(contributorsOnly);
-    }
-  }, [project, isOpen]);
-
-  // Fermer le dropdown si on clique en dehors
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -80,7 +84,7 @@ export default function EditProjectModal({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Rechercher des utilisateurs via le client API
+  // Recherche des utilisateurs avec anti-rebonds (Debounce 300ms)
   useEffect(() => {
     if (searchQuery.trim().length < 2) {
       setSearchResults([]);
@@ -90,8 +94,22 @@ export default function EditProjectModal({
     const delayDebounceFn = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const json = await api.searchUsers(searchQuery);
-        setSearchResults(json.data?.users || []);
+        const token = document.cookie
+          .split('; ')
+          .find((row) => row.startsWith('token='))
+          ?.split('=')[1];
+
+        const res = await fetch(
+          `/api/users/search?query=${encodeURIComponent(searchQuery.trim())}&q=${encodeURIComponent(searchQuery.trim())}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        if (res.ok) {
+          const json = await res.json();
+          setSearchResults(json.data?.users || []);
+        }
       } catch (err) {
         console.error('Erreur recherche utilisateurs:', err);
       } finally {
@@ -115,54 +133,94 @@ export default function EditProjectModal({
     });
   };
 
-  const handleSubmit = (e) => {
+  /**
+   * SOUMISSION ET MISE À JOUR DU PROJET (PUT /api/projects/:id)
+   */
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim() || !description.trim()) {
       toast.error('Veuillez remplir le titre et la description.');
       return;
     }
 
-    // 1. Mettre à jour les informations du projet
-    updateProjectMutation.mutate({
-      id: project.id,
-      name: name.trim(),
-      description: description.trim(),
-    });
+    setIsSubmitting(true);
+    try {
+      const token = document.cookie
+        .split('; ')
+        .find((row) => row.startsWith('token='))
+        ?.split('=')[1];
 
-    // 2. Gérer l'ajout et la suppression des collaborateurs
-    const originalMemberIds = (project.members || []).map(
-      (m) => m.userId || m.user?.id
-    );
-    const newSelectedIds = selectedUsers.map((u) => u.id);
+      const res = await fetch(`/api/projects/${project.id}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: name.trim(),
+          description: description.trim(),
+        }),
+      });
 
-    // Utilisateurs à ajouter
-    const usersToAdd = selectedUsers.filter(
-      (u) => !originalMemberIds.includes(u.id)
-    );
-    for (const user of usersToAdd) {
-      if (user.email) {
-        api
-          .addContributor({ projectId: project.id, email: user.email })
-          .catch(console.error);
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(
+          json.message || 'Erreur lors de la modification du projet'
+        );
       }
-    }
 
-    // Utilisateurs à supprimer
-    const membersToRemove = (project.members || []).filter(
-      (m) =>
-        (m.userId || m.user?.id) &&
-        !newSelectedIds.includes(m.userId || m.user?.id)
-    );
-    for (const member of membersToRemove) {
-      const userId = member.userId || member.user?.id;
-      api
-        .removeContributor({ projectId: project.id, userId })
-        .catch(console.error);
+      // 2. Gérer l'ajout et la suppression des collaborateurs
+      // Car la route PUT de Next.js/Backend n'inclut pas les contributeurs
+      const originalMemberIds = (project.members || []).map(
+        (m) => m.userId || m.user?.id
+      );
+      const newSelectedIds = selectedUsers.map((u) => u.id);
+
+      // Utilisateurs à ajouter
+      const usersToAdd = selectedUsers.filter(
+        (u) => !originalMemberIds.includes(u.id)
+      );
+      for (const user of usersToAdd) {
+        if (user.email) {
+          await fetch(`/api/projects/${project.id}/contributors`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email: user.email }),
+          });
+        }
+      }
+
+      // Utilisateurs à supprimer
+      const membersToRemove = (project.members || []).filter(
+        (m) =>
+          (m.userId || m.user?.id) &&
+          !newSelectedIds.includes(m.userId || m.user?.id)
+      );
+      for (const member of membersToRemove) {
+        const userId = member.userId || member.user?.id;
+        await fetch(`/api/projects/${project.id}/contributors/${userId}`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+
+      toast.success('Projet mis à jour avec succès !');
+      if (onProjectUpdated) onProjectUpdated();
+      onClose();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const isFormValid = name.trim().length > 0 && description.trim().length > 0;
-  const isSubmitting = updateProjectMutation.isPending;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -195,7 +253,6 @@ export default function EditProjectModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="form-input"
-              placeholder="Saisissez le titre du projet"
               required
             />
           </div>
@@ -207,15 +264,20 @@ export default function EditProjectModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="form-input modal-textarea"
-              placeholder="Saisissez la description du projet"
               rows={4}
               required
             />
           </div>
 
           <div className="form-group" ref={dropdownRef}>
-            <label id="edit-contributors-label">Contributeurs</label>
+            <label
+              htmlFor="edit-project-contributors-trigger"
+              id="edit-contributors-label"
+            >
+              Contributeurs
+            </label>
             <div
+              id="edit-project-contributors-trigger"
               className="contributors-select-input"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               onKeyDown={(e) => {
@@ -320,9 +382,7 @@ export default function EditProjectModal({
                   ) : (
                     searchResults
                       .filter(
-                        (user) =>
-                          user.id !== project.ownerId &&
-                          !selectedUsers.some((u) => u.id === user.id)
+                        (user) => !selectedUsers.some((u) => u.id === user.id)
                       )
                       .map((user) => (
                         <div
@@ -366,10 +426,10 @@ export default function EditProjectModal({
                   className="animate-spin"
                   aria-hidden="true"
                 />{' '}
-                Enregistrement...
+                Sauvegarde...
               </>
             ) : (
-              'Enregistrer les modifications'
+              'Sauvegarder les modifications'
             )}
           </button>
         </form>

@@ -1,5 +1,17 @@
 'use client';
 
+/**
+ * =========================================================================================
+ * MODALE DE MODIFICATION DE TÂCHE (EDIT TASK MODAL COMPONENT)
+ * =========================================================================================
+ * Fichier : src/components/EditTaskModal.js
+ * Rôle : Formulaire d'édition d'une tâche existante :
+ *        1. Pré-remplissage dynamique du titre, de la description, de la date d'échéance et du statut.
+ *        2. Modification des assignés (membres du projet).
+ *        3. Transmission de la requête `PUT /api/projects/:projectId/tasks/:taskId`.
+ * =========================================================================================
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
@@ -10,7 +22,6 @@ import {
   Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useUpdateTaskMutation } from '@/hooks/useTasksQuery';
 
 export default function EditTaskModal({
   isOpen,
@@ -27,17 +38,36 @@ export default function EditTaskModal({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const dropdownRef = useRef(null);
 
-  const updateTaskMutation = useUpdateTaskMutation({
-    onSuccess: () => {
-      if (onTaskUpdated) onTaskUpdated();
-      onClose();
-    },
-  });
+  // Pré-remplissage des champs de la tâche sélectionnée
+  useEffect(() => {
+    if (task) {
+      setTitle(task.title || '');
+      setDescription(task.description || '');
+      setStatus(task.status || 'TODO');
 
-  // Verrouiller le défilement du fond + Touche Échap (WCAG 2.1)
+      if (task.dueDate) {
+        const formattedDate = new Date(task.dueDate)
+          .toISOString()
+          .split('T')[0];
+        setDueDate(formattedDate);
+      } else {
+        setDueDate('');
+      }
+
+      if (task.assignees) {
+        const currentAssignees = task.assignees.map((a) => a.user || a);
+        setSelectedAssignees(currentAssignees);
+      } else {
+        setSelectedAssignees([]);
+      }
+    }
+  }, [task, isOpen]);
+
+  // Accessibilité WCAG 2.1 : Touche Échap et scroll
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
@@ -57,30 +87,6 @@ export default function EditTaskModal({
     };
   }, [isOpen, onClose]);
 
-  // Charger les données de la tâche
-  useEffect(() => {
-    if (task) {
-      setTitle(task.title || '');
-      setDescription(task.description || '');
-
-      if (task.dueDate) {
-        const d = new Date(task.dueDate);
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        setDueDate(`${year}-${month}-${day}`);
-      } else {
-        setDueDate('');
-      }
-
-      const initialUsers = (task.assignees || []).map((a) => a.user || a);
-      setSelectedAssignees(initialUsers);
-
-      setStatus(task.status || 'TODO');
-    }
-  }, [task, isOpen]);
-
-  // Fermer le dropdown si on clique en dehors
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -93,15 +99,19 @@ export default function EditTaskModal({
 
   if (!isOpen || !project || !task) return null;
 
+  // Rassembler tous les membres du projet éligibles
   const allMembers = [];
   if (project.owner) {
     allMembers.push(project.owner);
   }
   if (project.members) {
     project.members.forEach((m) => {
-      const u = m.user || m;
-      if (u && !allMembers.some((existing) => existing.id === u.id)) {
-        allMembers.push(u);
+      const userObj = m.user || m;
+      if (
+        userObj &&
+        !allMembers.some((existing) => existing.id === userObj.id)
+      ) {
+        allMembers.push(userObj);
       }
     });
   }
@@ -109,16 +119,15 @@ export default function EditTaskModal({
   const filteredMembers = allMembers.filter((u) => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return true;
-    return (
-      (u.name && u.name.toLowerCase().includes(query)) ||
-      (u.email && u.email.toLowerCase().includes(query))
-    );
+    const nameMatch = u.name && u.name.toLowerCase().includes(query);
+    const emailMatch = u.email && u.email.toLowerCase().includes(query);
+    return nameMatch || emailMatch;
   });
 
   const handleToggleAssignee = (user) => {
     setSelectedAssignees((prev) => {
-      const isAlreadySelected = prev.some((u) => u.id === user.id);
-      if (isAlreadySelected) {
+      const exists = prev.some((u) => u.id === user.id);
+      if (exists) {
         return prev.filter((u) => u.id !== user.id);
       } else {
         return [...prev, user];
@@ -126,30 +135,59 @@ export default function EditTaskModal({
     });
   };
 
-  const handleSubmit = (e) => {
+  /**
+   * SOUMISSION ET MISE À JOUR DE LA TÂCHE (PUT)
+   */
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title.trim() || !description.trim() || !dueDate) {
-      toast.error("Veuillez remplir le titre, la description et l'échéance.");
+    if (!title.trim() || !description.trim()) {
+      toast.error('Veuillez remplir le titre et la description.');
       return;
     }
 
-    const assigneeIds = selectedAssignees.map((u) => u.id);
+    setIsSubmitting(true);
+    try {
+      const token = document.cookie
+        .split('; ')
+        .find((row) => row.startsWith('token='))
+        ?.split('=')[1];
 
-    updateTaskMutation.mutate({
-      id: task.id,
-      title: title.trim(),
-      description: description.trim(),
-      dueDate,
-      status,
-      assigneeIds,
-    });
+      const assigneeIds = selectedAssignees.map((u) => u.id);
+
+      const res = await fetch(`/api/projects/${project.id}/tasks/${task.id}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: title.trim(),
+          description: description.trim(),
+          dueDate: dueDate || undefined,
+          status,
+          assigneeIds,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(
+          json.message || 'Erreur lors de la modification de la tâche'
+        );
+      }
+
+      toast.success('Tâche modifiée avec succès !');
+      if (onTaskUpdated) onTaskUpdated();
+      onClose();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const isFormValid =
-    title.trim().length > 0 &&
-    description.trim().length > 0 &&
-    dueDate.length > 0;
-  const isSubmitting = updateTaskMutation.isPending;
+  const isFormValid = title.trim().length > 0 && description.trim().length > 0;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -182,7 +220,6 @@ export default function EditTaskModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="form-input"
-              placeholder="Saisissez le titre de la tâche"
               required
             />
           </div>
@@ -194,20 +231,7 @@ export default function EditTaskModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="form-input modal-textarea"
-              placeholder="Saisissez la description de la tâche"
-              rows={3}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="edit-task-duedate">Échéance*</label>
-            <input
-              type="date"
-              id="edit-task-duedate"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="form-input"
+              rows={4}
               required
             />
           </div>
@@ -223,14 +247,30 @@ export default function EditTaskModal({
               <option value="TODO">À faire</option>
               <option value="IN_PROGRESS">En cours</option>
               <option value="DONE">Terminée</option>
+              <option value="CANCELLED">Annulée</option>
             </select>
           </div>
 
+          <div className="form-group">
+            <label htmlFor="edit-task-due-date">Date d'échéance</label>
+            <input
+              type="date"
+              id="edit-task-due-date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="form-input"
+            />
+          </div>
+
           <div className="form-group" ref={dropdownRef}>
-            <label id="edit-assignees-label">
-              Assigner à des collaborateurs
+            <label
+              htmlFor="edit-task-assignees-trigger"
+              id="edit-assignees-label"
+            >
+              Assigner à
             </label>
             <div
+              id="edit-task-assignees-trigger"
               className="contributors-select-input"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               onKeyDown={(e) => {
@@ -253,8 +293,8 @@ export default function EditTaskModal({
                 }
               >
                 {selectedAssignees.length === 0
-                  ? 'Sélectionner un ou plusieurs membres'
-                  : `${selectedAssignees.length} membre${selectedAssignees.length > 1 ? 's' : ''} assigné(s)`}
+                  ? 'Choisir un ou plusieurs membres'
+                  : `${selectedAssignees.length} membre${selectedAssignees.length > 1 ? 's' : ''}`}
               </span>
               {isDropdownOpen ? (
                 <ChevronUp size={16} aria-hidden="true" />
@@ -273,12 +313,12 @@ export default function EditTaskModal({
                   />
                   <input
                     type="text"
-                    placeholder="Filtrer les membres..."
+                    placeholder="Rechercher un membre..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="dropdown-search-input"
                     onClick={(e) => e.stopPropagation()}
-                    aria-label="Rechercher des collaborateurs à assigner"
+                    aria-label="Rechercher des membres à assigner"
                     autoFocus
                   />
                 </div>
@@ -288,7 +328,6 @@ export default function EditTaskModal({
                     const isSelected = selectedAssignees.some(
                       (u) => u.id === user.id
                     );
-
                     return (
                       <div
                         key={user.id}
@@ -317,18 +356,13 @@ export default function EditTaskModal({
                         </div>
                         <div className="option-details">
                           <span className="option-name">
-                            {user.name || user.email}
+                            {user.name || 'Utilisateur sans nom'}
                           </span>
                           <span className="option-email">{user.email}</span>
                         </div>
                       </div>
                     );
                   })}
-                  {filteredMembers.length === 0 && (
-                    <div className="dropdown-status-item">
-                      Aucun membre trouvé
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -346,10 +380,10 @@ export default function EditTaskModal({
                   className="animate-spin"
                   aria-hidden="true"
                 />{' '}
-                Enregistrement...
+                Sauvegarde...
               </>
             ) : (
-              'Enregistrer les modifications'
+              'Sauvegarder les modifications'
             )}
           </button>
         </form>
