@@ -135,7 +135,7 @@ main.app-main-content {
 }
 
 .dashboard-subtitle {
-  color: #666;
+  color: #555555;
 }
 
 .header-actions {
@@ -177,29 +177,45 @@ main.app-main-content {
 }
 
 /* Boutons de bascule (Toggle) */
+/* --- COMMUTATEURS DE VUE (MAQUETTE CONFORME WCAG AA) --- */
 .view-toggles {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-}
-
-.btn-toggle {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  border: 1px solid #eee;
+  background: transparent;
+  padding: 0;
+  border: none;
+  margin-bottom: 1.5rem;
+}
+
+.btn-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: #b03e00;
+  font-size: 0.9rem;
+  font-weight: 600;
   cursor: pointer;
-  background: white;
-  color: #666;
-  transition: all 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.btn-toggle:hover {
+  background: #fff0e6;
+  color: #9e3700;
 }
 
 .btn-toggle.active {
-  background: #fff0e6;
-  color: #ff6b00;
-  border-color: #fff0e6;
+  background: #ffe8d6;
+  color: #9c3500;
+  font-weight: 600;
+  border: none;
+  box-shadow: none;
 }
 
 /* Conteneur principal des tâches */
@@ -217,89 +233,184 @@ main.app-main-content {
   gap: 1rem;
 }
 
+/* Panneau conteneur de la liste de tâches (Maquette Dashboard) */
+.task-list-container {
+  background: white;
+  border: 1px solid #eeeeee;
+  border-radius: 16px;
+  padding: 2.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  margin-top: 1.5rem;
+}
+
 .list-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
+  align-items: flex-start;
+  margin-bottom: 2rem;
 }
 
 .list-title {
-  font-weight: bold;
-  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0 0 0.35rem 0;
+  color: #1a1a1a;
 }
 
 .list-subtitle {
-  color: #888;
-  font-weight: normal;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
+  color: #595959;
+  font-weight: 500;
+  margin: 0;
 }
 
-.search-input {
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-  width: 300px;
+/* Barre de recherche avec icône Loupe */
+.search-bar-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
-/* Carte de tâche */
-.task-card {
-  border: 1px solid #eee;
+.search-input-mockup {
+  padding: 0.55rem 2.5rem 0.55rem 1rem;
   border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  width: 250px;
+  font-size: 0.88rem;
+  outline: none;
+  background: white;
+  color: #333333;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.search-input-mockup::placeholder {
+  color: #595959;
+  opacity: 1;
+}
+
+.search-input-mockup:focus {
+  border-color: #e65100;
+  box-shadow: 0 0 0 2px rgba(230, 81, 0, 0.1);
+}
+
+.search-input-icon {
+  position: absolute;
+  right: 0.85rem;
+  color: #595959;
+  pointer-events: none;
+}
+
+/* Cartes de tâches de la maquette (Alignement exact) */
+.task-card-mockup {
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
   padding: 1.5rem;
+  background: white;
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.task-card-mockup:hover {
+  border-color: #e0e0e0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.task-card-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.task-card-title-text {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+  flex: 1;
+}
+
+.task-card-desc-text {
+  font-size: 0.9rem;
+  color: #555555;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.task-card-bottom-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: white;
-}
-
-.task-title {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.1rem;
-}
-
-.task-desc {
-  color: #666;
-  margin: 0 0 1rem 0;
-  font-size: 0.9rem;
-}
-
-.task-meta {
-  display: flex;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
   gap: 1rem;
-  color: #888;
-  font-size: 0.8rem;
+}
+
+.task-card-meta-items {
+  display: flex;
   align-items: center;
+  gap: 0.6rem;
+  font-size: 0.82rem;
+  color: #595959;
 }
 
-.task-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 1rem;
+.meta-separator {
+  color: #a0a0a0;
 }
 
-/* Badges de statut */
+.btn-voir-mockup {
+  background: #1a1a1a;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.55rem 1.75rem;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    transform 0.1s;
+}
+
+.btn-voir-mockup:hover {
+  background: #333333;
+  transform: translateY(-1px);
+}
+
+/* Badges de statut (Conformes WCAG AA >= 4.5:1) */
 .badge-status {
   padding: 0.25rem 0.75rem;
   border-radius: 999px;
   font-size: 0.8rem;
   font-weight: bold;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
 }
 
 .status-todo {
   background: #ffe5e5;
-  color: #d32f2f;
+  color: #c62828;
 }
 
 .status-in-progress {
   background: #fff4e5;
-  color: #e65100;
+  color: #b83a00;
 }
 
 .status-done {
   background: #e6f4ea;
-  color: #2e7d32;
+  color: #216625;
 }
 
 /* --- BARRE DE NAVIGATION (NAVBAR) --- */
@@ -426,8 +537,8 @@ main.app-main-content {
 }
 
 .kanban-column-count {
-  background: #f1f3f5;
-  color: #666;
+  background: #e2e8f0;
+  color: #374151;
   font-size: 0.8rem;
   font-weight: bold;
   padding: 0.2rem 0.6rem;
@@ -473,11 +584,13 @@ main.app-main-content {
   margin: 0;
   color: var(--text-color);
   line-height: 1.4;
+  flex: 1;
+  min-width: 0;
 }
 
 .kanban-card-desc {
   font-size: 0.85rem;
-  color: #666;
+  color: #555555;
   margin: 0;
   line-height: 1.5;
   display: -webkit-box;
@@ -491,7 +604,7 @@ main.app-main-content {
   flex-wrap: wrap;
   gap: 0.75rem;
   font-size: 0.75rem;
-  color: #888;
+  color: #595959;
   align-items: center;
   border-top: 1px solid #f5f5f5;
   padding-top: 0.75rem;
@@ -795,10 +908,10 @@ main.app-main-content {
 }
 
 .projects-title {
-  font-size: 2.2rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  margin: 0 0 0.5rem 0;
-  color: var(--text-color);
+  margin: 0 0 0.4rem 0;
+  color: #1a1a1a;
 }
 
 .projects-subtitle {
@@ -829,6 +942,37 @@ main.app-main-content {
   }
 }
 
+.project-card-link {
+  text-decoration: none !important;
+  color: inherit !important;
+  display: block;
+}
+
+.project-card-link h2,
+.project-card-link p,
+.project-card-link span {
+  text-decoration: none !important;
+}
+
+.project-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.project-icon-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.project-folder-icon {
+  color: #1a1a1a;
+  flex-shrink: 0;
+}
+
 .project-card {
   background: white;
   border: 1px solid #eee;
@@ -853,9 +997,9 @@ main.app-main-content {
 .project-card-title {
   font-size: 1.25rem;
   font-weight: 700;
-  margin: 0 0 0.75rem 0;
+  margin: 0;
   color: var(--text-color);
-  padding-right: 3.5rem; /* Place pour les actions rapides */
+  text-decoration: none !important;
 }
 
 .project-card-desc {
@@ -948,37 +1092,50 @@ main.app-main-content {
   transition: width 0.4s ease-out;
 }
 
-.project-tasks-text {
-  font-size: 0.85rem;
-  color: #888;
-  margin: 0;
+.tasks-completed-text {
+  font-size: 0.78rem;
+  color: #888888;
+  margin-top: 0.35rem;
+  display: block;
 }
 
 /* Équipe */
 .project-team-container {
   border-top: 1px solid #f5f5f5;
-  padding-top: 1.5rem;
+  padding-top: 1.25rem;
   margin-top: auto;
 }
 
-.project-team-title {
-  font-size: 0.85rem;
-  color: #888;
+.project-team-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: #777777;
   font-weight: 600;
-  margin: 0 0 1rem 0;
+  margin-bottom: 0.75rem;
 }
 
-.project-team-members {
+.project-team-pills {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
 }
 
-.team-member-group {
+.owner-pill-wrapper {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.35rem;
+}
+
+.project-owner-pill {
+  background-color: #ffe8d6;
+  color: #d35400;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.65rem;
+  border-radius: 16px;
 }
 
 .project-member-avatar {
@@ -1094,10 +1251,10 @@ main.app-main-content {
 }
 
 .project-details-title {
-  font-size: 2.2rem;
+  font-size: 1.5rem;
   font-weight: 700;
   margin: 0;
-  color: var(--text-color);
+  color: #1a1a1a;
 }
 
 .project-edit-link {
@@ -1113,7 +1270,7 @@ main.app-main-content {
 
 .project-details-desc {
   color: #666;
-  font-size: 1rem;
+  font-size: 0.95rem;
   margin: 0;
   line-height: 1.5;
   max-width: 800px;
@@ -1123,10 +1280,10 @@ main.app-main-content {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
+  padding: 0.65rem 1.5rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  background-color: #e67e22; /* Orange vif */
+  background-color: #d35400; /* Orange principal */
   color: white;
   border: none;
   border-radius: 8px;
@@ -1135,76 +1292,81 @@ main.app-main-content {
 }
 
 .btn-orange:hover {
-  background-color: #d35400;
+  background-color: #b94600;
 }
 
-/* Barre des contributeurs */
+/* Barre des contributeurs (Conforme à la maquette sans cadra blanc individuel) */
 .contributors-bar {
-  background-color: #f5f5f5;
+  background-color: #f8f9fa;
   border-radius: 12px;
-  padding: 1.25rem 2rem;
+  padding: 1rem 1.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
   flex-wrap: wrap;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .contributors-count-label {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: #1a1a1a;
 }
 
 .contributors-count-label .light-text {
   font-weight: 500;
-  color: #666;
+  color: #777;
   margin-left: 0.5rem;
 }
 
 .contributors-list {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.6rem;
   flex-wrap: wrap;
 }
 
 .contributor-capsule {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  background: white;
-  border: 1px solid #e5e5e5;
-  padding: 0.4rem 1rem 0.4rem 0.4rem;
-  border-radius: 30px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  gap: 0.4rem;
+  background: transparent;
+  border: none;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .capsule-avatar {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: #333;
+  background: #e9ecef;
 }
 
 .capsule-name {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #333;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #495057;
+  background: #e9ecef;
+  padding: 0.2rem 0.65rem;
+  border-radius: 14px;
 }
 
 .capsule-name.owner-badge {
   color: #d35400;
   background-color: #ffe8d6;
-  padding: 0.15rem 0.5rem;
-  border-radius: 12px;
-  font-size: 0.8rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
 }
 
 /* Section Tâches */
@@ -1651,31 +1813,6 @@ main.app-main-content {
   overscroll-behavior: contain;
 }
 
-/* Styles spécifiques Radix UI (Overlay & Content séparés) */
-.radix-overlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  z-index: 2000;
-}
-
-.radix-content {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 2001;
-  background: white;
-  width: calc(100% - 2rem);
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-  border-radius: 12px;
-  padding: 3rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-}
-
 .modal-content {
   background: white;
   width: 100%;
@@ -2034,19 +2171,22 @@ main.app-main-content {
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  text-align: center !important;
 }
 
 .status-badge.badge-todo {
   background-color: #ffe3e3;
-  color: #d63031;
+  color: #c62828;
 }
 
 .status-badge.badge-progress {
-  background-color: #ffeaa7;
-  color: #d35400;
+  background-color: #fff2d6;
+  color: #b83a00;
 }
 
 .status-badge.badge-done {
@@ -2056,7 +2196,7 @@ main.app-main-content {
 
 .status-badge.badge-cancelled {
   background-color: #f5f5f5;
-  color: #7f8c8d;
+  color: #374151;
 }
 
 /* --- MODALE DE GÉNÉRATION D'IA DE TÂCHES --- */
@@ -2313,9 +2453,15 @@ main.app-main-content {
 
 .view-modal-header {
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
   margin-bottom: 1.5rem;
+  padding-right: 2.5rem;
+}
+
+.view-modal-badge-wrapper {
+  margin-top: 0.25rem;
 }
 
 .view-modal-body {
@@ -2480,37 +2626,42 @@ main.app-main-content {
 
 .segmented-toggle {
   display: flex;
-  background: #f1f3f5;
-  padding: 4px;
-  border-radius: 10px;
-  gap: 4px;
-  border: 1px solid #e9ecef;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  border: none;
 }
 
 .segmented-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  font-size: 0.88rem;
-  font-weight: 600;
+  gap: 0.5rem;
+  padding: 0.55rem 1.1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
   border: none;
   background: transparent;
-  color: #666;
-  border-radius: 7px;
+  color: #d35400;
+  border-radius: 10px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .segmented-btn:hover {
-  color: #111;
-  background: rgba(255, 255, 255, 0.5);
+  background: #fff0e6;
+  color: #d35400;
 }
 
 .segmented-btn.active {
-  background: white;
-  color: #e65100;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  background: #ffe8d6;
+  color: #d35400;
+  font-weight: 600;
+  border: none;
+  box-shadow: none;
 }
 
 /* --- VUE CALENDRIER DU PROJET --- */
@@ -2626,7 +2777,7 @@ main.app-main-content {
 
 .calendar-weekdays-header {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   background: #f8f9fa;
   border-bottom: 1px solid #e0e0e0;
   text-align: center;
@@ -2643,7 +2794,7 @@ main.app-main-content {
 
 .calendar-days-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   grid-auto-rows: minmax(110px, auto);
 }
 
@@ -2657,6 +2808,8 @@ main.app-main-content {
   background: white;
   transition: background 0.15s;
   min-height: 110px;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .calendar-day-cell:nth-child(7n) {
@@ -2710,14 +2863,16 @@ main.app-main-content {
   flex-direction: column;
   gap: 0.3rem;
   overflow-y: auto;
-  max-height: 80px;
+  max-height: 120px;
+  min-width: 0;
+  width: 100%;
 }
 
 .calendar-task-chip {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.35rem;
-  padding: 0.25rem 0.45rem;
+  padding: 0.35rem 0.45rem;
   border-radius: 6px;
   font-size: 0.78rem;
   font-weight: 600;
@@ -2725,9 +2880,13 @@ main.app-main-content {
   transition:
     transform 0.1s,
     box-shadow 0.15s;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  text-align: left;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .calendar-task-chip:hover {
@@ -2740,6 +2899,15 @@ main.app-main-content {
   height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.chip-task-title {
+  flex: 1;
+  min-width: 0;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.25;
 }
 
 .cal-badge-todo {
