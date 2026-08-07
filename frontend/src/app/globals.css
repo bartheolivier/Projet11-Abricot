@@ -1904,7 +1904,13 @@ main.app-main-content {
 }
 
 .contributors-select-input .placeholder-text {
-  color: #888;
+  color: #374151;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #374151;
+  opacity: 1;
 }
 
 .contributors-select-input .selected-count-text {

@@ -263,8 +263,14 @@ export default function EditTaskModal({
           </div>
 
           <div className="form-group" ref={dropdownRef}>
-            <label id="edit-assignees-label">Assigner à</label>
+            <label
+              htmlFor="edit-task-assignees-trigger"
+              id="edit-assignees-label"
+            >
+              Assigner à
+            </label>
             <div
+              id="edit-task-assignees-trigger"
               className="contributors-select-input"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               onKeyDown={(e) => {
