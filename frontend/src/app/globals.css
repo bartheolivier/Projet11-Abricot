@@ -1286,7 +1286,7 @@ main.app-main-content {
   padding: 0.65rem 1.5rem;
   font-size: 0.95rem;
   font-weight: 600;
-  background-color: #d35400; /* Orange principal */
+  background-color: #b94600;
   color: white;
   border: none;
   border-radius: 8px;
@@ -1295,7 +1295,7 @@ main.app-main-content {
 }
 
 .btn-orange:hover {
-  background-color: #b94600;
+  background-color: #9c3500;
 }
 
 /* Barre des contributeurs (Conforme à la maquette sans cadra blanc individuel) */
@@ -1319,7 +1319,7 @@ main.app-main-content {
 
 .contributors-count-label .light-text {
   font-weight: 500;
-  color: #777;
+  color: #374151;
   margin-left: 0.5rem;
 }
 
@@ -1350,22 +1350,23 @@ main.app-main-content {
   justify-content: center;
   font-size: 0.72rem;
   font-weight: 700;
-  color: #333;
+  color: #1a1a1a;
   background: #e9ecef;
 }
 
 .capsule-name {
   font-size: 0.82rem;
   font-weight: 500;
-  color: #495057;
+  color: #374151;
   background: #e9ecef;
   padding: 0.2rem 0.65rem;
   border-radius: 14px;
 }
 
 .capsule-name.owner-badge {
-  color: #d35400;
-  background-color: #ffe8d6;
+  color: #7c2d12;
+  background-color: #ffedd5;
+  border: 1px solid #fdba74;
   padding: 0.2rem 0.65rem;
   border-radius: 14px;
   font-size: 0.82rem;
@@ -1398,7 +1399,8 @@ main.app-main-content {
 }
 
 .tasks-section-subtitle {
-  color: #888;
+  color: #374151;
+  font-weight: 500;
   font-size: 0.9rem;
   margin: 0;
 }
@@ -1421,7 +1423,7 @@ main.app-main-content {
   border-radius: 8px;
   padding: 0.5rem 2.2rem 0.5rem 1rem;
   font-size: 0.9rem;
-  color: #333;
+  color: #1a1a1a;
   background: white;
   cursor: pointer;
   appearance: none;
@@ -1441,7 +1443,7 @@ main.app-main-content {
   position: absolute;
   right: 0.75rem;
   pointer-events: none;
-  color: #666;
+  color: #374151;
 }
 
 .control-search input {
@@ -1449,7 +1451,7 @@ main.app-main-content {
   border-radius: 8px;
   padding: 0.5rem 1rem;
   font-size: 0.9rem;
-  color: #333;
+  color: #1a1a1a;
   background: #fff;
   width: 220px;
   cursor: text;
@@ -1514,9 +1516,9 @@ main.app-main-content {
 }
 
 .task-menu-btn {
-  background: #fdfdfd;
-  border: 1px solid #ddd;
-  color: #888;
+  background: #e2e8f0;
+  border: 1px solid #cbd5e1;
+  color: #1a1a1a;
   cursor: pointer;
   width: 44px;
   height: 32px;
@@ -1531,14 +1533,14 @@ main.app-main-content {
 }
 
 .task-menu-btn:hover {
-  background-color: #f5f5f5;
-  border-color: #ccc;
-  color: #333;
+  background-color: #cbd5e1;
+  border-color: #94a3b8;
+  color: #1a1a1a;
 }
 
 .task-card-desc {
   font-size: 0.95rem;
-  color: #666;
+  color: #374151;
   line-height: 1.5;
   margin: 0 0 1.5rem 0;
 }
@@ -1558,11 +1560,12 @@ main.app-main-content {
 }
 
 .meta-label {
-  color: #888;
+  color: #374151;
+  font-weight: 500;
 }
 
 .meta-icon {
-  color: #555;
+  color: #374151;
 }
 
 .meta-value {
@@ -2643,10 +2646,10 @@ main.app-main-content {
   gap: 0.5rem;
   padding: 0.55rem 1.1rem;
   font-size: 0.9rem;
-  font-weight: 500;
-  border: none;
-  background: transparent;
-  color: #d35400;
+  font-weight: 600;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #9a3412;
   border-radius: 10px;
   cursor: pointer;
   transition:
@@ -2655,15 +2658,15 @@ main.app-main-content {
 }
 
 .segmented-btn:hover {
-  background: #fff0e6;
-  color: #d35400;
+  background: #fff7ed;
+  color: #7c2d12;
 }
 
 .segmented-btn.active {
-  background: #ffe8d6;
-  color: #d35400;
+  background: #ffedd5;
+  color: #7c2d12;
   font-weight: 600;
-  border: none;
+  border: 1px solid #fdba74;
   box-shadow: none;
 }
 
