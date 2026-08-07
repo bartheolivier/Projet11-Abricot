@@ -1,12 +1,24 @@
 'use client';
 
+/**
+ * =========================================================================================
+ * VUE CALENDRIER INTERACTIVE DES TÂCHES (PROJECT CALENDAR VIEW COMPONENT)
+ * =========================================================================================
+ * Fichier : src/components/ProjectCalendarView.js
+ * Rôle : Composant de visualisation sous forme de calendrier mensuel interactif :
+ *        1. Navigation par mois et par année.
+ *        2. Placement automatique des tâches sur leurs jours d'échéance respectifs (`dueDate`).
+ *        3. Badges de couleur par statut (À faire, En cours, Terminée).
+ *        4. Clic sur une tâche pour ouvrir la modale de consultation détaillée.
+ * =========================================================================================
+ */
+
 import React, { useState } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  Calendar as CalendarIcon,
 } from 'lucide-react';
 
 export default function ProjectCalendarView({ tasks, onSelectTask }) {
@@ -32,7 +44,7 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
 
   const dayNames = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
-  // Génération de la liste des années (-5 ans à +5 ans par rapport à l'année en cours)
+  // Génération de la liste déroulante des années (-5 ans à +5 ans)
   const currentYearNow = new Date().getFullYear();
   const yearsList = [];
   for (let y = currentYearNow - 5; y <= currentYearNow + 5; y++) {
@@ -43,22 +55,11 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
     yearsList.sort((a, b) => a - b);
   }
 
-  // Changements de mois et d'années
-  const handlePrevMonth = () => {
-    setCurrentDate(new Date(year, month - 1, 1));
-  };
-
-  const handleNextMonth = () => {
-    setCurrentDate(new Date(year, month + 1, 1));
-  };
-
-  const handlePrevYear = () => {
-    setCurrentDate(new Date(year - 1, month, 1));
-  };
-
-  const handleNextYear = () => {
-    setCurrentDate(new Date(year + 1, month, 1));
-  };
+  // Fonctions de navigation dans le calendrier
+  const handlePrevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+  const handleNextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+  const handlePrevYear = () => setCurrentDate(new Date(year - 1, month, 1));
+  const handleNextYear = () => setCurrentDate(new Date(year + 1, month, 1));
 
   const handleMonthChange = (e) => {
     const newMonth = parseInt(e.target.value, 10);
@@ -70,72 +71,36 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
     setCurrentDate(new Date(newYear, month, 1));
   };
 
-  const handleToday = () => {
-    setCurrentDate(new Date());
-  };
-
-  // Calculer la grille du calendrier
+  // Calcul du nombre de jours et du jour de démarrage dans la grille mensuelle
   const firstDayOfMonth = new Date(year, month, 1);
-  let startingDayOfWeek = (firstDayOfMonth.getDay() + 6) % 7;
+  const lastDayOfMonth = new Date(year, month + 1, 0);
+  const totalDays = lastDayOfMonth.getDate();
 
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const daysInPrevMonth = new Date(year, month, 0).getDate();
+  // En JS, dimanche = 0, lundi = 1. On ajuste pour démarrer à lundi = 0
+  let startingDay = firstDayOfMonth.getDay() - 1;
+  if (startingDay === -1) startingDay = 6;
 
   const today = new Date();
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const isCurrentMonth =
+    today.getFullYear() === year && today.getMonth() === month;
+  const todayDate = today.getDate();
 
-  const calendarDays = [];
-
-  // Jours du mois précédent
-  for (let i = startingDayOfWeek - 1; i >= 0; i--) {
-    const dayNum = daysInPrevMonth - i;
-    const prevDate = new Date(year, month - 1, dayNum);
-    const dateStr = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}-${String(prevDate.getDate()).padStart(2, '0')}`;
-    calendarDays.push({
-      dayNumber: dayNum,
-      dateStr,
-      isCurrentMonth: false,
-      isToday: dateStr === todayStr,
+  /**
+   * Associe les tâches de la liste à chaque jour du mois selon leur date d'échéance `dueDate`
+   */
+  const getTasksForDay = (day) => {
+    return tasks.filter((t) => {
+      if (!t.dueDate) return false;
+      const taskDate = new Date(t.dueDate);
+      return (
+        taskDate.getFullYear() === year &&
+        taskDate.getMonth() === month &&
+        taskDate.getDate() === day
+      );
     });
-  }
+  };
 
-  // Jours du mois en cours
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    calendarDays.push({
-      dayNumber: d,
-      dateStr,
-      isCurrentMonth: true,
-      isToday: dateStr === todayStr,
-    });
-  }
-
-  // Jours du mois suivant
-  const remainingCells = (7 - (calendarDays.length % 7)) % 7;
-  for (let j = 1; j <= remainingCells; j++) {
-    const nextDate = new Date(year, month + 1, j);
-    const dateStr = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;
-    calendarDays.push({
-      dayNumber: j,
-      dateStr,
-      isCurrentMonth: false,
-      isToday: dateStr === todayStr,
-    });
-  }
-
-  // Regrouper les tâches par date (Format YYYY-MM-DD)
-  const tasksByDate = {};
-  (tasks || []).forEach((t) => {
-    if (!t.dueDate) return;
-    const d = new Date(t.dueDate);
-    const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    if (!tasksByDate[dateKey]) {
-      tasksByDate[dateKey] = [];
-    }
-    tasksByDate[dateKey].push(t);
-  });
-
-  const getStatusClass = (status) => {
+  const getBadgeClass = (status) => {
     switch (status) {
       case 'TODO':
         return 'cal-badge-todo';
@@ -149,35 +114,24 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
   };
 
   return (
-    <div
-      className="project-calendar-container"
-      role="region"
-      aria-label="Calendrier du projet"
-    >
-      {/* En-tête de navigation du calendrier */}
+    <div className="project-calendar-container">
+      {/* En-tête de la barre de navigation du calendrier */}
       <div className="calendar-header-nav">
         <div className="calendar-month-title">
-          <CalendarIcon
-            size={20}
-            className="cal-header-icon"
-            aria-hidden="true"
-          />
           <div className="calendar-select-group">
-            {/* Sélecteur de mois avec aria-label */}
             <select
               value={month}
               onChange={handleMonthChange}
               className="cal-header-select"
               aria-label="Sélectionner le mois"
             >
-              {monthNames.map((mName, idx) => (
-                <option key={idx} value={idx}>
-                  {mName}
+              {monthNames.map((name, index) => (
+                <option key={index} value={index}>
+                  {name}
                 </option>
               ))}
             </select>
 
-            {/* Sélecteur d'année avec aria-label */}
             <select
               value={year}
               onChange={handleYearChange}
@@ -194,50 +148,38 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
         </div>
 
         <div className="calendar-nav-actions">
-          <button
-            className="btn-cal-today"
-            onClick={handleToday}
-            aria-label="Revenir à la date d'aujourd'hui"
-          >
-            Aujourd'hui
-          </button>
-
-          <div
-            className="btn-group-nav"
-            role="group"
-            aria-label="Navigation dans le temps"
-          >
+          <div className="btn-group-nav">
             <button
-              className="btn-cal-nav"
               onClick={handlePrevYear}
-              aria-label="Année précédente (-1 an)"
-              title="Année précédente (-1 an)"
+              className="btn-cal-nav"
+              title="Année précédente"
+              aria-label="Année précédente"
             >
-              <ChevronsLeft size={18} aria-hidden="true" />
+              <ChevronsLeft size={16} aria-hidden="true" />
             </button>
             <button
-              className="btn-cal-nav"
               onClick={handlePrevMonth}
-              aria-label="Mois précédent"
+              className="btn-cal-nav"
               title="Mois précédent"
+              aria-label="Mois précédent"
             >
-              <ChevronLeft size={18} aria-hidden="true" />
+              <ChevronLeft size={16} aria-hidden="true" />
             </button>
             <button
-              className="btn-cal-nav"
               onClick={handleNextMonth}
-              aria-label="Mois suivant"
+              className="btn-cal-nav"
               title="Mois suivant"
+              aria-label="Mois suivant"
             >
-              <ChevronRight size={18} aria-hidden="true" />
+              <ChevronRight size={16} aria-hidden="true" />
             </button>
             <button
-              className="btn-cal-nav"
               onClick={handleNextYear}
-              aria-label="Année suivante (+1 an)"
-              title="Année suivante (+1 an)"
+              className="btn-cal-nav"
+              title="Année suivante"
+              aria-label="Année suivante"
             >
-              <ChevronsRight size={18} aria-hidden="true" />
+              <ChevronsRight size={16} aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -245,60 +187,57 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
 
       {/* Grille du calendrier */}
       <div className="calendar-grid">
-        {/* Jours de la semaine */}
-        <div className="calendar-weekdays-header" role="row">
-          {dayNames.map((name, i) => (
-            <div key={i} className="weekday-name" role="columnheader">
-              {name}
+        {/* Noms des jours de la semaine */}
+        <div className="calendar-weekdays-header">
+          {dayNames.map((d) => (
+            <div key={d} className="weekday-name">
+              {d}
             </div>
           ))}
         </div>
 
-        {/* Cellules des jours */}
+        {/* Cases des jours du mois */}
         <div className="calendar-days-grid">
-          {calendarDays.map((day, idx) => {
-            const dayTasks = tasksByDate[day.dateStr] || [];
+          {/* Cases vides pour combler le début de semaine */}
+          {Array.from({ length: startingDay }).map((_, idx) => (
+            <div
+              key={`empty-${idx}`}
+              className="calendar-day-cell other-month"
+            />
+          ))}
+
+          {/* Cases réelles des jours du mois */}
+          {Array.from({ length: totalDays }).map((_, idx) => {
+            const dayNum = idx + 1;
+            const dayTasks = getTasksForDay(dayNum);
+            const isToday = isCurrentMonth && todayDate === dayNum;
 
             return (
               <div
-                key={idx}
-                className={`calendar-day-cell ${!day.isCurrentMonth ? 'other-month' : ''} ${day.isToday ? 'today-cell' : ''}`}
+                key={dayNum}
+                className={`calendar-day-cell ${isToday ? 'today-cell' : ''}`}
               >
                 <div className="cell-day-header">
                   <span
-                    className={`day-number ${day.isToday ? 'today-badge' : ''}`}
+                    className={`day-number ${isToday ? 'today-badge' : ''}`}
                   >
-                    {day.dayNumber}
+                    {dayNum}
                   </span>
                   {dayTasks.length > 0 && (
-                    <span className="tasks-count-pill">
-                      {dayTasks.length}{' '}
-                      {dayTasks.length > 1 ? 'tâches' : 'tâche'}
-                    </span>
+                    <span className="tasks-count-pill">{dayTasks.length}</span>
                   )}
                 </div>
 
-                {/* Liste des tâches du jour avec support clavier WCAG */}
                 <div className="cell-tasks-list">
-                  {dayTasks.map((task) => (
-                    <div
-                      key={task.id}
-                      className={`calendar-task-chip ${getStatusClass(task.status)}`}
-                      onClick={() => onSelectTask && onSelectTask(task)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          onSelectTask && onSelectTask(task);
-                        }
-                      }}
-                      tabIndex={0}
-                      role="button"
-                      aria-label={`Voir les détails de la tâche: ${task.title}`}
-                      title={`${task.title} (${task.status})`}
+                  {dayTasks.map((t) => (
+                    <button
+                      key={t.id}
+                      className={`calendar-task-chip ${getBadgeClass(t.status)}`}
+                      onClick={() => onSelectTask(t)}
                     >
                       <span className="chip-status-dot" aria-hidden="true" />
-                      <span className="chip-task-title">{task.title}</span>
-                    </div>
+                      <span className="chip-task-title">{t.title}</span>
+                    </button>
                   ))}
                 </div>
               </div>

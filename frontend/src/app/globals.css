@@ -1264,7 +1264,7 @@ main.app-main-content {
 .project-edit-link {
   background: none;
   border: none;
-  color: #d35400;
+  color: #9a3412;
   font-size: 0.95rem;
   font-weight: 600;
   text-decoration: underline;
@@ -1273,7 +1273,7 @@ main.app-main-content {
 }
 
 .project-details-desc {
-  color: #666;
+  color: #374151;
   font-size: 0.95rem;
   margin: 0;
   line-height: 1.5;
@@ -2727,11 +2727,11 @@ textarea::placeholder {
 }
 
 .cal-header-select.year-select {
-  color: #e65100;
+  color: #9a3412;
 }
 
 .cal-header-icon {
-  color: #e65100;
+  color: #9a3412;
 }
 
 .calendar-nav-actions {
@@ -2795,7 +2795,7 @@ textarea::placeholder {
   border-bottom: 1px solid #e0e0e0;
   text-align: center;
   font-weight: 700;
-  color: #666;
+  color: #374151;
   font-size: 0.85rem;
 }
 
@@ -2835,7 +2835,7 @@ textarea::placeholder {
 }
 
 .calendar-day-cell.today-cell {
-  background: rgba(230, 81, 0, 0.03);
+  background: rgba(154, 52, 18, 0.05);
 }
 
 .cell-day-header {
@@ -2847,7 +2847,7 @@ textarea::placeholder {
 .day-number {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #444;
+  color: #374151;
   width: 24px;
   height: 24px;
   display: flex;
@@ -2857,7 +2857,7 @@ textarea::placeholder {
 }
 
 .day-number.today-badge {
-  background: #e65100;
+  background: #9a3412;
   color: white;
   font-weight: 700;
 }
@@ -2865,8 +2865,8 @@ textarea::placeholder {
 .tasks-count-pill {
   font-size: 0.7rem;
   font-weight: 600;
-  color: #777;
-  background: #eee;
+  color: #374151;
+  background: #e2e8f0;
   padding: 0.15rem 0.4rem;
   border-radius: 10px;
 }
@@ -2924,30 +2924,30 @@ textarea::placeholder {
 }
 
 .cal-badge-todo {
-  background: #fff3e0;
-  color: #e65100;
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .cal-badge-todo .chip-status-dot {
-  background: #e65100;
+  background: #991b1b;
 }
 
 .cal-badge-progress {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: #ffedd5;
+  color: #9a3412;
 }
 
 .cal-badge-progress .chip-status-dot {
-  background: #1976d2;
+  background: #9a3412;
 }
 
 .cal-badge-done {
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: #dcfce7;
+  color: #166534;
 }
 
 .cal-badge-done .chip-status-dot {
-  background: #2e7d32;
+  background: #166534;
 }
 
 .chip-task-title {
