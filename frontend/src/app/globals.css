@@ -2,11 +2,14 @@
 
 :root {
   /* Couleurs principales (à ajuster selon Figma) */
-  --primary-color: #ff7e67; /* Exemple pour Abricot */
-  --background-color: #f9f9f9;
-  --text-color: #333333;
-  --text-light: #777777;
-  --error: #ff4d4f;
+  --primary-color: #e65100;
+  --primary-hover: #b94600;
+  --secondary-color: #f8f9fa;
+  --text-color: #1a1a1a;
+  --text-muted: #595959;
+  --border-color: #e0e0e0;
+  --error: #dc2626;
+  --success: #2e7d32;
 
   /* Typographie */
   --font-main: 'Inter', sans-serif;
@@ -818,7 +821,7 @@ main.app-main-content {
 }
 
 .profile-subtitle {
-  color: #666;
+  color: #374151;
   font-size: 1rem;
   margin: 0 0 2.5rem 0;
 }
@@ -847,14 +850,14 @@ main.app-main-content {
   right: 15px;
   background: none;
   border: none;
-  color: #d35400;
+  color: #9a3412;
   font-weight: 600;
   cursor: pointer;
   font-size: 0.9rem;
 }
 
 .btn-password-cancel {
-  color: #888;
+  color: #374151;
 }
 
 .profile-btn-submit {
@@ -876,7 +879,7 @@ main.app-main-content {
 }
 
 .avatar-circle.active {
-  background-color: #d35400;
+  background-color: #9a3412;
   color: white;
 }
 
