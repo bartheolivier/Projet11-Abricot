@@ -674,7 +674,7 @@ main.app-main-content {
   font-family: var(--font-main);
   font-size: 2.2rem;
   font-weight: 700;
-  color: #d35400; /* Orange foncé */
+  color: #9a3412;
   margin: 0 0 2rem 0;
 }
 
@@ -704,7 +704,7 @@ main.app-main-content {
   border: 1px solid #ddd;
   border-radius: 8px;
   background-color: white;
-  color: #333;
+  color: #1a1a1a;
   transition: border-color 0.2s;
   outline: none;
 }
@@ -737,7 +737,7 @@ main.app-main-content {
 
 .auth-forgot-password a {
   font-size: 0.9rem;
-  color: #d35400;
+  color: #9a3412;
   text-decoration: underline;
 }
 
@@ -745,12 +745,12 @@ main.app-main-content {
   margin-top: auto;
   padding-top: 2rem;
   font-size: 0.9rem;
-  color: #555;
+  color: #374151;
   text-align: left;
 }
 
 .auth-footer a {
-  color: #d35400;
+  color: #9a3412;
   font-weight: 600;
   text-decoration: underline;
 }
