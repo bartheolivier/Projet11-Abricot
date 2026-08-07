@@ -14,18 +14,22 @@
  */
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation'; // Hook Next.js pour la navigation programmatique (redirection)
-import Link from 'next/link'; // Composant Next.js pour la navigation sans rechargement de page (SPA)
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { toast } from 'sonner';
 
 export default function Home() {
-  // ---------------------------------------------------------------------------------------
-  // ÉTATS REACT (LOCAL STATE)
-  // ---------------------------------------------------------------------------------------
-  const [email, setEmail] = useState(''); // Stocke la saisie de l'email
-  const [password, setPassword] = useState(''); // Stocke la saisie du mot de passe
-  const [error, setError] = useState(''); // Stocke le message d'erreur éventuel en cas d'échec
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
-  const router = useRouter(); // Initialisation du routeur Next.js pour effectuer la redirection après connexion
+  const router = useRouter();
+
+  const handleForgotPassword = () => {
+    toast.info(
+      "La réinitialisation du mot de passe n'est pas encore disponible."
+    );
+  };
 
   /**
    * SOUMISSION DU FORMULAIRE DE CONNEXION
@@ -131,7 +135,13 @@ export default function Home() {
           </form>
 
           <div className="auth-forgot-password">
-            <Link href="/forgot-password">Mot de passe oublié ?</Link>
+            <button
+              type="button"
+              onClick={handleForgotPassword}
+              className="auth-forgot-password-btn"
+            >
+              Mot de passe oublié ?
+            </button>
           </div>
 
           <div className="auth-footer">
