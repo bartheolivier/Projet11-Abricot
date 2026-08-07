@@ -1005,7 +1005,7 @@ main.app-main-content {
 
 .project-card-desc {
   font-size: 0.95rem;
-  color: #666;
+  color: #374151;
   line-height: 1.5;
   margin: 0 0 2rem 0;
   /* Troncature à 3 lignes */
@@ -1034,7 +1034,7 @@ main.app-main-content {
 }
 
 .card-action-btn {
-  background: #f5f5f5;
+  background: #e2e8f0;
   border: none;
   border-radius: 6px;
   width: 28px;
@@ -1043,14 +1043,14 @@ main.app-main-content {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #555;
+  color: #1a1a1a;
   transition:
     background-color 0.2s,
     color 0.2s;
 }
 
 .card-action-btn:hover {
-  background: #e5e5e5;
+  background: #cbd5e1;
   color: #1a1a1a;
 }
 
@@ -1068,8 +1068,8 @@ main.app-main-content {
   display: flex;
   justify-content: space-between;
   font-size: 0.85rem;
-  color: #888;
-  font-weight: 500;
+  color: #374151;
+  font-weight: 600;
   margin-bottom: 0.5rem;
 }
 
@@ -1095,7 +1095,8 @@ main.app-main-content {
 
 .tasks-completed-text {
   font-size: 0.78rem;
-  color: #888888;
+  color: #374151;
+  font-weight: 500;
   margin-top: 0.35rem;
   display: block;
 }
@@ -1112,7 +1113,7 @@ main.app-main-content {
   align-items: center;
   gap: 0.4rem;
   font-size: 0.82rem;
-  color: #777777;
+  color: #374151;
   font-weight: 600;
   margin-bottom: 0.75rem;
 }
@@ -1131,8 +1132,9 @@ main.app-main-content {
 }
 
 .project-owner-pill {
-  background-color: #ffe8d6;
-  color: #d35400;
+  background-color: #ffedd5;
+  color: #7c2d12;
+  border: 1px solid #fdba74;
   font-size: 0.75rem;
   font-weight: 600;
   padding: 0.2rem 0.65rem;
