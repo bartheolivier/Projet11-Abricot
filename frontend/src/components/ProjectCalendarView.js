@@ -234,8 +234,6 @@ export default function ProjectCalendarView({ tasks, onSelectTask }) {
                       key={t.id}
                       className={`calendar-task-chip ${getBadgeClass(t.status)}`}
                       onClick={() => onSelectTask(t)}
-                      title={t.title}
-                      aria-label={`Tâche : ${t.title}`}
                     >
                       <span className="chip-status-dot" aria-hidden="true" />
                       <span className="chip-task-title">{t.title}</span>
