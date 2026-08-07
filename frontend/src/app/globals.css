@@ -52,11 +52,12 @@ main.app-main-content {
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  color: #374151;
 }
 
 .empty-search-msg {
   text-align: center;
-  color: #888;
+  color: #374151;
   padding: 2rem;
 }
 
@@ -135,7 +136,7 @@ main.app-main-content {
 }
 
 .dashboard-subtitle {
-  color: #555555;
+  color: #374151;
 }
 
 .header-actions {
@@ -177,7 +178,7 @@ main.app-main-content {
 }
 
 /* Boutons de bascule (Toggle) */
-/* --- COMMUTATEURS DE VUE (MAQUETTE CONFORME WCAG AA) --- */
+/* --- COMMUTATEURS DE VUE (CONFORME WCAG AAA >= 7:1) --- */
 .view-toggles {
   display: flex;
   align-items: center;
@@ -194,9 +195,9 @@ main.app-main-content {
   gap: 0.5rem;
   padding: 0.55rem 1.1rem;
   border-radius: 10px;
-  border: none;
-  background: transparent;
-  color: #b03e00;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #9a3412;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
@@ -206,15 +207,15 @@ main.app-main-content {
 }
 
 .btn-toggle:hover {
-  background: #fff0e6;
-  color: #9e3700;
+  background: #fff7ed;
+  color: #7c2d12;
 }
 
 .btn-toggle.active {
-  background: #ffe8d6;
-  color: #9c3500;
+  background: #ffedd5;
+  color: #7c2d12;
   font-weight: 600;
-  border: none;
+  border: 1px solid #fdba74;
   box-shadow: none;
 }
 
@@ -259,7 +260,7 @@ main.app-main-content {
 
 .list-subtitle {
   font-size: 0.88rem;
-  color: #595959;
+  color: #374151;
   font-weight: 500;
   margin: 0;
 }
@@ -279,14 +280,14 @@ main.app-main-content {
   font-size: 0.88rem;
   outline: none;
   background: white;
-  color: #333333;
+  color: #1a1a1a;
   transition:
     border-color 0.2s,
     box-shadow 0.2s;
 }
 
 .search-input-mockup::placeholder {
-  color: #595959;
+  color: #374151;
   opacity: 1;
 }
 
@@ -298,7 +299,7 @@ main.app-main-content {
 .search-input-icon {
   position: absolute;
   right: 0.85rem;
-  color: #595959;
+  color: #374151;
   pointer-events: none;
 }
 
@@ -339,7 +340,7 @@ main.app-main-content {
 
 .task-card-desc-text {
   font-size: 0.9rem;
-  color: #555555;
+  color: #374151;
   margin: 0;
   line-height: 1.5;
 }
@@ -358,11 +359,11 @@ main.app-main-content {
   align-items: center;
   gap: 0.6rem;
   font-size: 0.82rem;
-  color: #595959;
+  color: #374151;
 }
 
 .meta-separator {
-  color: #a0a0a0;
+  color: #4b5563;
 }
 
 .btn-voir-mockup {
@@ -384,7 +385,7 @@ main.app-main-content {
   transform: translateY(-1px);
 }
 
-/* Badges de statut (Conformes WCAG AA >= 4.5:1) */
+/* Badges de statut (Conformes WCAG AAA >= 7:1) */
 .badge-status {
   padding: 0.25rem 0.75rem;
   border-radius: 999px;
@@ -399,18 +400,18 @@ main.app-main-content {
 }
 
 .status-todo {
-  background: #ffe5e5;
-  color: #c62828;
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .status-in-progress {
-  background: #fff4e5;
-  color: #b83a00;
+  background: #ffedd5;
+  color: #9a3412;
 }
 
 .status-done {
-  background: #e6f4ea;
-  color: #216625;
+  background: #dcfce7;
+  color: #166534;
 }
 
 /* --- BARRE DE NAVIGATION (NAVBAR) --- */
@@ -2180,22 +2181,22 @@ main.app-main-content {
 }
 
 .status-badge.badge-todo {
-  background-color: #ffe3e3;
-  color: #c62828;
+  background-color: #fee2e2;
+  color: #991b1b;
 }
 
 .status-badge.badge-progress {
-  background-color: #fff2d6;
-  color: #b83a00;
+  background-color: #ffedd5;
+  color: #9a3412;
 }
 
 .status-badge.badge-done {
-  background-color: #d4edda;
-  color: #155724;
+  background-color: #dcfce7;
+  color: #166534;
 }
 
 .status-badge.badge-cancelled {
-  background-color: #f5f5f5;
+  background-color: #f3f4f6;
   color: #374151;
 }
 
