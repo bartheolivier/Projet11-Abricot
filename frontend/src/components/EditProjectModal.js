@@ -270,14 +270,10 @@ export default function EditProjectModal({
           </div>
 
           <div className="form-group" ref={dropdownRef}>
-            <label
-              htmlFor="edit-project-contributors-trigger"
-              id="edit-contributors-label"
-            >
+            <span className="form-label" id="edit-contributors-label">
               Contributeurs
-            </label>
+            </span>
             <div
-              id="edit-project-contributors-trigger"
               className="contributors-select-input"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               onKeyDown={(e) => {

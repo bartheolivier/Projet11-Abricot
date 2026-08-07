@@ -688,10 +688,11 @@ main.app-main-content {
   gap: 0.5rem;
 }
 
-.form-group label {
+.form-group label,
+.form-group .form-label {
   font-size: 0.9rem;
-  font-weight: 500;
-  color: #333;
+  font-weight: 600;
+  color: #374151;
 }
 
 .form-input {
