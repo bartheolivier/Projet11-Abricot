@@ -30,20 +30,40 @@ body {
 }
 
 /* =========================================================================================
- * INDICATEUR DE FOCUS VISUEL HAUTE VISIBILITÉ (ACCESSIBILITÉ WCAG 2.1 AA - KEYBOARD FOCUS)
+ * INDICATEUR DE FOCUS VISUEL CLAVIER (ACCESSIBILITÉ WCAG 2.1 AA - KEYBOARD FOCUS)
  * =========================================================================================
- * Rôle : Remplace les contours sombres par un anneau orange vif (#ff6b00) décalé de 3px.
- *        Rend le focus clavier 100% visible sur TOUS les éléments (boutons noirs, liens, modales).
+ * Rôle : 1. En navigation au CLAVIER (Touche Tab) : Affiche un anneau orange vif haute visibilité.
+ *        2. Au CLIC DE SOURIS : Supprime le gros cadre orange superflu et conserve un contour
+ *           champ propre et subtil sans anneau externe.
  * =========================================================================================
  */
-:focus-visible {
+
+/* Navigation au CLAVIER sur les éléments cliquables/interactifs */
+button:focus-visible,
+a:focus-visible,
+[role='button']:focus-visible,
+[role='tab']:focus-visible,
+[role='option']:focus-visible,
+[tabindex]:focus-visible {
   outline: 3px solid #ff6b00 !important;
   outline-offset: 3px !important;
   box-shadow: 0 0 0 4px rgba(255, 107, 0, 0.3) !important;
 }
 
+/* Focus propre pour les champs de saisie (inputs, select, textarea) au clic et à la saisie */
+input:focus,
+textarea:focus,
+select:focus,
+.contributors-select-input:focus {
+  outline: none !important;
+  border-color: #e65100 !important;
+  box-shadow: 0 0 0 3px rgba(230, 81, 0, 0.15) !important;
+}
+
+/* Annulation du cadre orange externe au clic de souris sur TOUS les éléments */
 :focus:not(:focus-visible) {
   outline: none !important;
+  box-shadow: none !important;
 }
 
 main.app-main-content {
