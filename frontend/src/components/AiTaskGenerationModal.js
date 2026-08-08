@@ -1,10 +1,36 @@
 'use client';
 
+/**
+ * =========================================================================================
+ * MODALE DE GÉNÉRATION DE TÂCHES PAR IA (RAG & GEMINI LLM)
+ * =========================================================================================
+ * Fichier : src/components/AiTaskGenerationModal.js
+ * Rôle : Composant d'assistance intelligente basé sur la RAG (Retrieval-Augmented Generation) :
+ *
+ * WORKFLOW TECHNIQUE & EXPÉRIENCE UTILISATEUR :
+ * -----------------------------------------------------------------------------------------
+ * 1. Saisie de l'intention utilisateur (Prompt) :
+ *    L'utilisateur saisit en langage naturel les tâches souhaitées (ex: "Mettre en place la page de paiement Stripe").
+ *
+ * 2. Appel du Route Handler RAG (`/api/ai/generate-tasks`) :
+ *    Transmet le `projectId` et le `prompt`. Le serveur backend instancie LlamaIndex.TS pour
+ *    analyser le projet et ses tâches existantes, afin de produire des suggestions originales.
+ *
+ * 3. Prévisualisation & Édition Inline (UX Interactive) :
+ *    Les tâches générées s'affichent sous forme de cartes d'action. L'utilisateur a le contrôle total :
+ *    - Modifier le titre et la description directement dans la modale (✏️).
+ *    - Supprimer une carte non pertinente (🗑️).
+ *    - Régénérer ou ajouter d'autres suggestions via la barre de saisie.
+ *
+ * 4. Persistance séquentielle en Base de Données :
+ *    Le clic sur "+ Ajouter les tâches" soumet séquentiellement la liste finale vers l'API REST
+ *    (`POST /api/projects/:id/tasks`), garantissant l'intégrité de la base de données.
+ * =========================================================================================
+ */
+
 import React, { useState, useEffect } from 'react';
 import { X, Sparkles, Plus, Trash2, Edit3, Check, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
 
 export default function AiTaskGenerationModal({
   isOpen,
@@ -18,14 +44,14 @@ export default function AiTaskGenerationModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
 
+  // Édition d'une tâche individuelle dans la prévisualisation
   const [editTitle, setEditTitle] = useState('');
   const [editDesc, setEditDesc] = useState('');
 
-  const queryClient = useQueryClient();
-
+  // Accessibilité WCAG 2.1 : Verrouillage du scroll arrière-plan & fermeture touche Échap
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && onClose) {
+      if (e.key === 'Escape') {
         onClose();
       }
     };
@@ -40,10 +66,13 @@ export default function AiTaskGenerationModal({
       document.body.style.overflow = '';
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   if (!isOpen || !project) return null;
 
+  /**
+   * SOUMISSION DU PROMPT DE GÉNÉRATION IA
+   */
   const handleGenerate = async (e) => {
     if (e) e.preventDefault();
     if (!prompt.trim()) {
@@ -58,6 +87,7 @@ export default function AiTaskGenerationModal({
         .find((row) => row.startsWith('token='))
         ?.split('=')[1];
 
+      // Envoi de la requête au backend RAG + LLM Gemini
       const response = await fetch('/api/ai/generate-tasks', {
         method: 'POST',
         headers: {
@@ -91,6 +121,9 @@ export default function AiTaskGenerationModal({
     }
   };
 
+  /**
+   * Suppression d'une carte de la prévisualisation
+   */
   const handleDeleteCard = (index) => {
     setGeneratedTasks((prev) => prev.filter((_, i) => i !== index));
     if (editingIndex === index) {
@@ -98,12 +131,18 @@ export default function AiTaskGenerationModal({
     }
   };
 
+  /**
+   * Démarrage du mode édition inline pour une carte générée
+   */
   const handleStartEdit = (index, task) => {
     setEditingIndex(index);
     setEditTitle(task.title);
     setEditDesc(task.description);
   };
 
+  /**
+   * Sauvegarde de l'édition inline
+   */
   const handleSaveEdit = (index) => {
     if (!editTitle.trim()) {
       toast.error('Le titre ne peut pas être vide.');
@@ -119,39 +158,54 @@ export default function AiTaskGenerationModal({
     setEditingIndex(null);
   };
 
+  /**
+   * VALIDATION FINALE : CRÉATION DE TOUTES LES TÂCHES GÉNÉRÉES DANS LE PROJET
+   */
   const handleConfirmAddTasks = async () => {
     if (generatedTasks.length === 0) return;
 
     setIsSubmitting(true);
     try {
+      const token = document.cookie
+        .split('; ')
+        .find((row) => row.startsWith('token='))
+        ?.split('=')[1];
+
+      if (!token) {
+        toast.error('Session expirée. Veuillez vous reconnecter.');
+        return;
+      }
+
       const defaultDueDate = new Date();
       defaultDueDate.setDate(defaultDueDate.getDate() + 7);
       const formattedDueDate = defaultDueDate.toISOString().split('T')[0];
 
       let addedCount = 0;
 
+      // Création séquentielle de chaque tâche prévisualisée dans le projet
       for (const t of generatedTasks) {
-        try {
-          await api.createTask({
-            projectId: project.id,
+        const res = await fetch(`/api/projects/${project.id}/tasks`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
             title: t.title,
             description: t.description || '',
             dueDate: formattedDueDate,
             priority: 'MEDIUM',
-          });
+          }),
+        });
+
+        if (res.ok) {
           addedCount++;
-        } catch (e) {
-          console.error('Erreur création tâche IA', e);
         }
       }
 
       toast.success(
         `${addedCount} tâche(s) ajoutée(s) au projet avec succès !`
       );
-
-      // Invalidation automatique des requêtes React Query pour synchroniser instantanément l'UI
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
 
       setGeneratedTasks([]);
       setPrompt('');
@@ -182,7 +236,7 @@ export default function AiTaskGenerationModal({
           <X size={20} aria-hidden="true" />
         </button>
 
-        {/* En-tête conforme à la maquette : icône étincelle orange + titre */}
+        {/* En-tête conforme aux maquettes officielles : Icône orange + Titre dynamique */}
         <div className="ai-modal-header">
           <Sparkles size={24} className="ai-sparkle-icon" aria-hidden="true" />
           <h2 id="modal-title-ai" className="ai-title">
@@ -211,6 +265,7 @@ export default function AiTaskGenerationModal({
                 return (
                   <div key={idx} className="ai-generated-task-card">
                     {isEditing ? (
+                      /* Formulaire d'édition inline */
                       <div className="ai-card-edit-mode">
                         <input
                           type="text"
@@ -238,6 +293,7 @@ export default function AiTaskGenerationModal({
                         </button>
                       </div>
                     ) : (
+                      /* Carte de prévisualisation normale */
                       <>
                         <h3 className="ai-card-title">{t.title}</h3>
                         <p className="ai-card-desc">
@@ -268,6 +324,7 @@ export default function AiTaskGenerationModal({
                 );
               })}
 
+              {/* Bouton d'action principal "+ Ajouter les tâches" */}
               <div className="ai-submit-tasks-wrapper">
                 <button
                   type="button"
@@ -295,7 +352,7 @@ export default function AiTaskGenerationModal({
           ) : null}
         </div>
 
-        {/* Barre de saisie en bas (Pill shape) conforme à la maquette */}
+        {/* Barre de saisie du prompt (Champ Pill shape) */}
         <form onSubmit={handleGenerate} className="ai-prompt-bar-container">
           <div className="ai-prompt-bar">
             <input
