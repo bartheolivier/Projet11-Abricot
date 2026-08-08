@@ -6,10 +6,25 @@
  * =========================================================================================
  * Fichier : src/components/AiTaskGenerationModal.js
  * Rôle : Composant d'assistance intelligente basé sur la RAG (Retrieval-Augmented Generation) :
- *        1. Transmet l'intention utilisateur au serveur backend /api/ai/generate-tasks.
- *        2. Le backend injecte les tâches existantes dans LlamaIndex.TS pour éviter les doublons.
- *        3. Présente les cartes générées dans l'interface sous forme de prévisualisation modifiable (✏️) ou supprimable (🗑️).
- *        4. Valide l'ajout global des tâches sélectionnées dans le projet.
+ *
+ * WORKFLOW TECHNIQUE & EXPÉRIENCE UTILISATEUR :
+ * -----------------------------------------------------------------------------------------
+ * 1. Saisie de l'intention utilisateur (Prompt) :
+ *    L'utilisateur saisit en langage naturel les tâches souhaitées (ex: "Mettre en place la page de paiement Stripe").
+ *
+ * 2. Appel du Route Handler RAG (`/api/ai/generate-tasks`) :
+ *    Transmet le `projectId` et le `prompt`. Le serveur backend instancie LlamaIndex.TS pour
+ *    analyser le projet et ses tâches existantes, afin de produire des suggestions originales.
+ *
+ * 3. Prévisualisation & Édition Inline (UX Interactive) :
+ *    Les tâches générées s'affichent sous forme de cartes d'action. L'utilisateur a le contrôle total :
+ *    - Modifier le titre et la description directement dans la modale (✏️).
+ *    - Supprimer une carte non pertinente (🗑️).
+ *    - Régénérer ou ajouter d'autres suggestions via la barre de saisie.
+ *
+ * 4. Persistance séquentielle en Base de Données :
+ *    Le clic sur "+ Ajouter les tâches" soumet séquentiellement la liste finale vers l'API REST
+ *    (`POST /api/projects/:id/tasks`), garantissant l'intégrité de la base de données.
  * =========================================================================================
  */
 

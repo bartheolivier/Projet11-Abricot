@@ -3,12 +3,25 @@
  * ROUTE API BACKEND RAG (RETRIEVAL-AUGMENTED GENERATION) AVEC LLAMAINDEX.TS & GEMINI
  * =========================================================================================
  * Fichier : src/app/api/ai/generate-tasks/route.js
- * Rôle : Route API serveur (Next.js Route Handler) qui orchestre l'IA générative :
- *        1. Masque et protège la clé d'API Google Gemini côté serveur.
- *        2. Charge les tâches existantes du projet (Phase 1 : Retrieval).
- *        3. Crée un document d'indexation vectorielle via LlamaIndex.TS (Document & SummaryIndex).
- *        4. Transmet le prompt ancré au QueryEngine LLM Gemini (Phase 2 : Augmented Generation).
- *        5. Nettoie et valide la réponse au format JSON structuré.
+ * Rôle : Route Handler Next.js (serveur) orchestrant la génération intelligente de tâches.
+ *
+ * CONCEPT PÉDAGOGIQUE CLÉ - QU'EST-CE QUE LA RAG ET LLAMAINDEX.TS ?
+ * -----------------------------------------------------------------------------------------
+ * 1. RAG (Retrieval-Augmented Generation) :
+ *    Une IA comme Gemini possède une culture générale vaste mais NE CONNAÎT PAS le contexte
+ *    privé de votre application (vos projets, vos tâches existantes).
+ *    La RAG résout ce problème en 2 temps :
+ *    - RETRIEVAL (Récupération) : On extrait les données privées existantes (ici : le projet et ses tâches).
+ *    - AUGMENTED GENERATION (Génération Augmentée) : On injecte ce contexte au LLM pour qu'il
+ *      génère des tâches hyper-pertinentes et SANS DOUBLONS.
+ *
+ * 2. LLAMAINDEX.TS :
+ *    C'est le framework orchestrateur spécialisé dans la connexion entre vos données privées et les LLM.
+ *    Il fournit des abstractions clés :
+ *    - `Document` : Conteneur structuré de texte et métadonnées.
+ *    - `SummaryIndex` : Indexation contextuelle résumant les documents.
+ *    - `Settings` : Configuration globale unifiée (LLM Gemini + Modèle d'Embeddings).
+ *    - `asQueryEngine()` : Transforme l'index en moteur d'interrogation intelligent.
  * =========================================================================================
  */
 
@@ -21,13 +34,18 @@ import {
   GEMINI_EMBEDDING_MODEL,
 } from '@llamaindex/google';
 
+/**
+ * GESTIONNAIRE DE REQUÊTE HTTP POST (/api/ai/generate-tasks)
+ */
 export async function POST(request) {
   try {
+    // -------------------------------------------------------------------------------------
+    // 1. EXTRACTION ET VALIDATION DES DONNÉES ENTRANTES DU CLIENT
+    // -------------------------------------------------------------------------------------
     const authHeader = request.headers.get('authorization');
     const body = await request.json();
     const { projectId, prompt } = body;
 
-    // Validation des données entrantes du client
     if (!projectId || !prompt || !prompt.trim()) {
       return NextResponse.json(
         { message: 'Le projet et la description (prompt) sont requis.' },
@@ -35,7 +53,10 @@ export async function POST(request) {
       );
     }
 
-    // Vérification de la configuration de la clé API Gemini
+    // -------------------------------------------------------------------------------------
+    // 2. SÉCURISATION ET CONFIGURATION DE LA CLÉ D'API GEMINI (CÔTÉ SERVEUR)
+    // -------------------------------------------------------------------------------------
+    // La clé API reste strictement confidentielle sur le serveur et n'est jamais exposée au navigateur.
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey || apiKey.includes('votre_cle')) {
       return NextResponse.json(
@@ -48,40 +69,45 @@ export async function POST(request) {
       );
     }
 
-    // Sélection dynamique du modèle LLM Gemini officiel dans LlamaIndex.TS
+    // -------------------------------------------------------------------------------------
+    // 3. INITIALISATION DU FRAMEWORK LLAMAINDEX.TS (MODÈLE LLM & EMBEDDINGS)
+    // -------------------------------------------------------------------------------------
+    // Sélection du modèle LLM Gemini officiel (Gemini 2.5 Flash / Gemini 1.5 Flash)
     const modelEnum =
       GEMINI_MODEL.GEMINI_2_5_FLASH_LATEST ||
       GEMINI_MODEL.GEMINI_PRO_1_5_FLASH_LATEST ||
       GEMINI_MODEL.GEMINI_PRO;
 
-    // Configuration de l'agent LLM Gemini et du modèle de Vector Embeddings
+    // Instanciation de l'agent de génération de texte (LLM Gemini)
     const geminiLlm = new Gemini({
       apiKey: apiKey,
       model: modelEnum,
     });
 
+    // Instanciation du modèle d'Embeddings (Vectorisation sémantique du texte)
     const geminiEmbed = new GeminiEmbedding({
       apiKey: apiKey,
       model: GEMINI_EMBEDDING_MODEL.TEXT_EMBEDDING_004 || 'text-embedding-004',
     });
 
-    // Patch d'optimisation LlamaIndex.TS pour définir les métadonnées de contexte Embedding
+    // Configuration des métadonnées de la fenêtre de contexte
     geminiEmbed.metadata = {
       model: GEMINI_EMBEDDING_MODEL.TEXT_EMBEDDING_004 || 'text-embedding-004',
       contextWindow: 2048,
     };
 
-    // Attribution globale dans les paramètres LlamaIndex.TS
+    // Injection globale des configurations dans le Singleton Settings de LlamaIndex.TS
     Settings.llm = geminiLlm;
     Settings.embedModel = geminiEmbed;
 
     // -------------------------------------------------------------------------------------
-    // ÉTAPE 1 : RETRIEVAL (RECUPÉRATION DU CONTEXTE DU PROJET ET DES TÂCHES EXISTANTES)
+    // 4. PHASE RETRIEVAL : RÉCUPÉRATION DU CONTEXTE EXPLICITE (PROJET + TÂCHES EXISTANTES)
     // -------------------------------------------------------------------------------------
     let existingTasks = [];
     let projectDetails = null;
 
     try {
+      // Récupération des tâches existantes pour alimenter la mémoire anti-doublon
       const tasksRes = await fetch(
         `http://localhost:3000/api/projects/${projectId}/tasks`,
         {
@@ -93,6 +119,7 @@ export async function POST(request) {
         existingTasks = tasksData.data?.tasks || [];
       }
 
+      // Récupération des métadonnées du projet (Nom et Description)
       const projRes = await fetch(
         `http://localhost:3000/api/projects/${projectId}`,
         {
@@ -104,11 +131,14 @@ export async function POST(request) {
         projectDetails = projData.data?.project || null;
       }
     } catch (err) {
-      console.warn('Impossible de charger les données du projet:', err.message);
+      console.warn(
+        'Impossible de charger le contexte existant du projet:',
+        err.message
+      );
     }
 
     // -------------------------------------------------------------------------------------
-    // ÉTAPE 2 : INDEXATION ET DOCUMENTATION CONTEXTUELLE LLAMAINDEX.TS
+    // 5. PHASE INDEXATION : CRÉATION DU DOCUMENT CONTEXTUEL LLAMAINDEX.TS
     // -------------------------------------------------------------------------------------
     const projectInfoText = `Nom du Projet: ${projectDetails?.name || 'Projet'}
 Description: ${projectDetails?.description || 'Aucune description'}`;
@@ -123,29 +153,32 @@ Description: ${projectDetails?.description || 'Aucune description'}`;
             .join('\n')
         : 'Aucune tâche existante.';
 
-    // Instanciation de la classe Document officielle LlamaIndex.TS
+    // Création d'un objet Document LlamaIndex contenant l'intégralité du contexte métier
     const contextDocument = new Document({
-      text: `INFORMATIONS DU PROJET:\n${projectInfoText}\n\nTÂCHES DÉJÀ EXISTANTES DANS CE PROJET (NE PAS DUPLIQUER):\n${tasksInfoText}`,
+      text: `INFORMATIONS DU PROJET:\n${projectInfoText}\n\nTÂCHES DÉJÀ EXISTANTES DANS CE PROJET (MEMOIRE ANTI-DOUBLON):\n${tasksInfoText}`,
       metadata: { projectId, tasksCount: existingTasks.length },
     });
 
     // -------------------------------------------------------------------------------------
-    // ÉTAPE 3 : CRÉATION DE L'INDEX SUMMARYINDEX ET DU QUERY ENGINE RAG
+    // 6. PHASE AUGMENTED GENERATION : INTERROGATION DU QUERY ENGINE RAG
     // -------------------------------------------------------------------------------------
+    // Construit l'index de synthèse SummaryIndex à partir du Document LlamaIndex
     const index = await SummaryIndex.fromDocuments([contextDocument]);
+
+    // Transforme l'index en moteur de requête connecté au LLM Gemini
     const queryEngine = index.asQueryEngine({
       llm: geminiLlm,
     });
 
-    // Prompt fortement ancré transmis au QueryEngine
-    const ragQuery = `Vous êtes un assistant expert en gestion de projet.
+    // Prompt fortement ancré (Prompt Engineering) imposant la structure et le format JSON
+    const ragQuery = `Vous êtes un assistant expert en gestion de projet agile.
 Sur la base du contexte du projet et des tâches existantes fournies dans le document :
 Demande de l'utilisateur : "${prompt.trim()}"
 
-Consignes :
-1. Analysez la demande de l'utilisateur : si un nombre précis de tâches est demandé (ex: "une tâche", "1 tâche", "3 tâches"), générez EXACTEMENT le nombre de tâches demandé. Si aucune quantité précise n'est spécifiée dans la demande, générez entre 1 et 3 tâches pertinentes.
-2. Évitez TOUT doublon avec les tâches existantes.
-3. Votre réponse DOIT ÊTRE STRICTEMENT un tableau JSON valide au format suivant, sans aucun texte ou balise markdown avant ou après :
+Consignes strictes :
+1. Analysez la demande de l'utilisateur : si un nombre précis de tâches est demandé (ex: "une tâche", "1 tâche", "3 tâches"), générez EXACTEMENT le nombre de tâches demandé. Si aucune quantité n'est spécifiée, générez entre 1 et 3 tâches pertinentes.
+2. Évitez STRICTEMENT tout doublon ou redondance avec les tâches déjà existantes.
+3. Votre réponse DOIT ÊTRE STRICTEMENT un tableau JSON valide respectant le schéma ci-dessous, sans aucun texte ou balise markdown avant ou après :
 [
   {
     "title": "Titre explicite de la tâche",
@@ -154,13 +187,14 @@ Consignes :
 ]`;
 
     // -------------------------------------------------------------------------------------
-    // ÉTAPE 4 : EXÉCUTION DE LA REQUÊTE ET PARSING JSON
+    // 7. EXÉCUTION DU QUERY ENGINE ET PARSING DU JSON STRUCTURÉ
     // -------------------------------------------------------------------------------------
     const response = await queryEngine.query({ query: ragQuery });
     const textOutput = response.toString();
 
     let generatedTasks = [];
     try {
+      // Nettoyage des éventuelles balises markdown ```json et ``` injectées par le LLM
       const cleanJson = textOutput
         .replace(/```json/g, '')
         .replace(/```/g, '')
@@ -168,7 +202,7 @@ Consignes :
       generatedTasks = JSON.parse(cleanJson);
     } catch (parseErr) {
       console.error(
-        'Erreur de parsing du JSON LlamaIndex.TS:',
+        'Erreur de parsing du JSON renvoyé par LlamaIndex.TS:',
         parseErr,
         textOutput
       );
@@ -182,6 +216,9 @@ Consignes :
       );
     }
 
+    // -------------------------------------------------------------------------------------
+    // 8. RENVOI DE LA RÉPONSE AU CLIENT
+    // -------------------------------------------------------------------------------------
     return NextResponse.json({
       success: true,
       tasks: generatedTasks,
@@ -189,7 +226,7 @@ Consignes :
       framework: 'LlamaIndex.TS',
     });
   } catch (err) {
-    console.error('Erreur interne lors du RAG LlamaIndex.TS:', err);
+    console.error('Erreur interne lors du traitement RAG LlamaIndex.TS:', err);
     return NextResponse.json(
       {
         message:
