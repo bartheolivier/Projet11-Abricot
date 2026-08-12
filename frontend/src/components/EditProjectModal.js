@@ -202,21 +202,31 @@ export default function EditProjectModal({
 
   if (!isOpen || !project) return null;
 
-  const handleToggleUser = (user, e) => {
-    let nextFocusTarget = null;
-    if (e?.currentTarget) {
-      const sibling =
-        e.currentTarget.nextElementSibling ||
-        e.currentTarget.previousElementSibling;
-      if (sibling && sibling.classList.contains('contributor-option-item')) {
-        nextFocusTarget = sibling;
-      } else {
-        nextFocusTarget = dropdownRef.current?.querySelector(
-          '.dropdown-search-input'
-        );
-      }
-    }
+  const initialProjectMembers = (project.members || [])
+    .map((m) => m.user || m)
+    .filter((u) => u.id !== project.ownerId);
 
+  // Piste 1 : Liste stable des utilisateurs (ne supprime pas les divs du DOM au décochage)
+  const displayedUsers = (() => {
+    if (searchQuery.trim().length >= 2) {
+      const combined = [...searchResults];
+      selectedUsers.forEach((u) => {
+        if (!combined.some((item) => item.id === u.id)) {
+          combined.unshift(u);
+        }
+      });
+      return combined;
+    }
+    const list = [...initialProjectMembers];
+    selectedUsers.forEach((u) => {
+      if (!list.some((item) => item.id === u.id)) {
+        list.push(u);
+      }
+    });
+    return list;
+  })();
+
+  const handleToggleUser = (user) => {
     setSelectedUsers((prev) => {
       const isAlreadySelected = prev.some((u) => u.id === user.id);
       if (isAlreadySelected) {
@@ -225,12 +235,6 @@ export default function EditProjectModal({
         return [...prev, user];
       }
     });
-
-    if (nextFocusTarget) {
-      setTimeout(() => {
-        nextFocusTarget.focus();
-      }, 30);
-    }
   };
 
   /**
@@ -447,59 +451,6 @@ export default function EditProjectModal({
                 </div>
 
                 <div className="dropdown-options-list">
-                  {selectedUsers.map((user) => (
-                    <div
-                      key={`sel-${user.id}`}
-                      className="contributor-option-item selected"
-                      onClick={(e) => handleToggleUser(user, e)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Tab') {
-                          setIsDropdownOpen(false);
-                        } else if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleToggleUser(user, e);
-                        } else if (e.key === 'ArrowDown') {
-                          e.preventDefault();
-                          const next = e.currentTarget.nextElementSibling;
-                          if (
-                            next &&
-                            next.classList.contains('contributor-option-item')
-                          ) {
-                            next.focus();
-                          }
-                        } else if (e.key === 'ArrowUp') {
-                          e.preventDefault();
-                          const prev = e.currentTarget.previousElementSibling;
-                          if (
-                            prev &&
-                            prev.classList.contains('contributor-option-item')
-                          ) {
-                            prev.focus();
-                          } else {
-                            const searchInput = e.currentTarget
-                              .closest('.contributors-dropdown-menu')
-                              ?.querySelector('.dropdown-search-input');
-                            if (searchInput) searchInput.focus();
-                          }
-                        }
-                      }}
-                      tabIndex={0}
-                      role="option"
-                      aria-selected="true"
-                    >
-                      <div className="option-checkbox checked">
-                        <Check size={12} strokeWidth={3} aria-hidden="true" />
-                      </div>
-                      <div className="option-details">
-                        <span className="option-name">
-                          {user.name || 'Utilisateur sans nom'}
-                        </span>
-                        <span className="option-email">{user.email}</span>
-                      </div>
-                    </div>
-                  ))}
-
                   {isSearching ? (
                     <div className="dropdown-status-item">
                       <Loader2
@@ -509,35 +460,29 @@ export default function EditProjectModal({
                       />
                       <span>Recherche...</span>
                     </div>
-                  ) : searchResults.length === 0 ? (
-                    searchQuery.trim().length >= 2 ? (
-                      <div className="dropdown-status-item">
-                        Aucun utilisateur trouvé
-                      </div>
-                    ) : (
-                      selectedUsers.length === 0 && (
-                        <div className="dropdown-status-item instructions">
-                          Saisissez au moins 2 caractères pour rechercher
-                        </div>
-                      )
-                    )
+                  ) : displayedUsers.length === 0 ? (
+                    <div className="dropdown-status-item">
+                      {searchQuery.trim().length >= 2
+                        ? 'Aucun utilisateur trouvé'
+                        : 'Saisissez au moins 2 caractères pour rechercher'}
+                    </div>
                   ) : (
-                    searchResults
-                      .filter(
-                        (user) => !selectedUsers.some((u) => u.id === user.id)
-                      )
-                      .map((user) => (
+                    displayedUsers.map((user) => {
+                      const isSelected = selectedUsers.some(
+                        (u) => u.id === user.id
+                      );
+                      return (
                         <div
                           key={user.id}
-                          className="contributor-option-item"
-                          onClick={(e) => handleToggleUser(user, e)}
+                          className={`contributor-option-item ${isSelected ? 'selected' : ''}`}
+                          onClick={() => handleToggleUser(user)}
                           onKeyDown={(e) => {
                             if (e.key === 'Tab') {
                               setIsDropdownOpen(false);
                             } else if (e.key === 'Enter' || e.key === ' ') {
                               e.preventDefault();
                               e.stopPropagation();
-                              handleToggleUser(user, e);
+                              handleToggleUser(user);
                             } else if (e.key === 'ArrowDown') {
                               e.preventDefault();
                               const next = e.currentTarget.nextElementSibling;
@@ -570,9 +515,19 @@ export default function EditProjectModal({
                           }}
                           tabIndex={0}
                           role="option"
-                          aria-selected="false"
+                          aria-selected={isSelected}
                         >
-                          <div className="option-checkbox" />
+                          <div
+                            className={`option-checkbox ${isSelected ? 'checked' : ''}`}
+                          >
+                            {isSelected && (
+                              <Check
+                                size={12}
+                                strokeWidth={3}
+                                aria-hidden="true"
+                              />
+                            )}
+                          </div>
                           <div className="option-details">
                             <span className="option-name">
                               {user.name || 'Utilisateur sans nom'}
@@ -580,7 +535,8 @@ export default function EditProjectModal({
                             <span className="option-email">{user.email}</span>
                           </div>
                         </div>
-                      ))
+                      );
+                    })
                   )}
                 </div>
               </div>
