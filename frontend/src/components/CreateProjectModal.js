@@ -41,7 +41,6 @@ export default function CreateProjectModal({
 
   const dropdownRef = useRef(null);
   const modalRef = useRef(null);
-  const shouldFocusTriggerRef = useRef(false);
 
   // Accessibilité WCAG 2.1 : Verrouiller le défilement + Touche Échap + Focus Trap (Tab/Shift+Tab)
   useEffect(() => {
@@ -50,8 +49,11 @@ export default function CreateProjectModal({
         if (isDropdownOpen) {
           e.preventDefault();
           e.stopPropagation();
-          shouldFocusTriggerRef.current = true;
           setIsDropdownOpen(false);
+          const selectTrigger = dropdownRef.current?.querySelector(
+            '.contributors-select-input'
+          );
+          if (selectTrigger) selectTrigger.focus();
           return;
         }
         onClose();
@@ -129,10 +131,9 @@ export default function CreateProjectModal({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Gestion du focus après ouverture/fermeture du menu déroulant
+  // Auto-focus du premier contributeur lors de l'ouverture du menu déroulant
   useEffect(() => {
     if (isDropdownOpen) {
-      // Auto-focus du premier item à l'ouverture
       const timer = setTimeout(() => {
         const firstOpt = dropdownRef.current?.querySelector(
           '.contributor-option-item'
@@ -147,13 +148,6 @@ export default function CreateProjectModal({
         }
       }, 50);
       return () => clearTimeout(timer);
-    } else if (shouldFocusTriggerRef.current) {
-      // Retour du focus sur le champ declencheur après fermeture par Échap (post re-render)
-      shouldFocusTriggerRef.current = false;
-      const selectTrigger = dropdownRef.current?.querySelector(
-        '.contributors-select-input'
-      );
-      if (selectTrigger) selectTrigger.focus();
     }
   }, [isDropdownOpen]);
 
@@ -393,15 +387,7 @@ export default function CreateProjectModal({
                     onClick={(e) => e.stopPropagation()}
                     onKeyDown={(e) => {
                       e.stopPropagation();
-                      if (e.key === 'Escape') {
-                        e.preventDefault();
-                        setIsDropdownOpen(false);
-                        const selectTrigger =
-                          dropdownRef.current?.querySelector(
-                            '.contributors-select-input'
-                          );
-                        if (selectTrigger) selectTrigger.focus();
-                      } else if (e.key === 'Tab') {
+                      if (e.key === 'Tab') {
                         setIsDropdownOpen(false);
                       } else if (e.key === 'ArrowDown' || e.key === 'Enter') {
                         const firstOption = e.currentTarget
@@ -445,16 +431,7 @@ export default function CreateProjectModal({
                           className={`contributor-option-item ${isSelected ? 'selected' : ''}`}
                           onClick={() => handleToggleUser(user)}
                           onKeyDown={(e) => {
-                            if (e.key === 'Escape') {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setIsDropdownOpen(false);
-                              const selectTrigger =
-                                dropdownRef.current?.querySelector(
-                                  '.contributors-select-input'
-                                );
-                              if (selectTrigger) selectTrigger.focus();
-                            } else if (e.key === 'Tab') {
+                            if (e.key === 'Tab') {
                               setIsDropdownOpen(false);
                             } else if (e.key === 'Enter' || e.key === ' ') {
                               e.preventDefault();

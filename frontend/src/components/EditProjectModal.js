@@ -39,7 +39,6 @@ export default function EditProjectModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const dropdownRef = useRef(null);
-  const shouldFocusTriggerRef = useRef(false);
 
   // Pré-remplissage des champs lors de l'ouverture
   useEffect(() => {
@@ -64,8 +63,11 @@ export default function EditProjectModal({
         if (isDropdownOpen) {
           e.preventDefault();
           e.stopPropagation();
-          shouldFocusTriggerRef.current = true;
           setIsDropdownOpen(false);
+          const selectTrigger = dropdownRef.current?.querySelector(
+            '.contributors-select-input'
+          );
+          if (selectTrigger) selectTrigger.focus();
           return;
         }
         onClose();
@@ -142,10 +144,9 @@ export default function EditProjectModal({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Gestion du focus après ouverture/fermeture du menu déroulant
+  // Auto-focus du premier contributeur lors de l'ouverture du menu déroulant
   useEffect(() => {
     if (isDropdownOpen) {
-      // Auto-focus du premier item à l'ouverture
       const timer = setTimeout(() => {
         const firstOpt = dropdownRef.current?.querySelector(
           '.contributor-option-item'
@@ -160,13 +161,6 @@ export default function EditProjectModal({
         }
       }, 50);
       return () => clearTimeout(timer);
-    } else if (shouldFocusTriggerRef.current) {
-      // Retour du focus sur le champ declencheur après fermeture par Échap (post re-render)
-      shouldFocusTriggerRef.current = false;
-      const selectTrigger = dropdownRef.current?.querySelector(
-        '.contributors-select-input'
-      );
-      if (selectTrigger) selectTrigger.focus();
     }
   }, [isDropdownOpen]);
 
@@ -439,15 +433,7 @@ export default function EditProjectModal({
                     onClick={(e) => e.stopPropagation()}
                     onKeyDown={(e) => {
                       e.stopPropagation();
-                      if (e.key === 'Escape') {
-                        e.preventDefault();
-                        setIsDropdownOpen(false);
-                        const selectTrigger =
-                          dropdownRef.current?.querySelector(
-                            '.contributors-select-input'
-                          );
-                        if (selectTrigger) selectTrigger.focus();
-                      } else if (e.key === 'Tab') {
+                      if (e.key === 'Tab') {
                         setIsDropdownOpen(false);
                       } else if (e.key === 'ArrowDown' || e.key === 'Enter') {
                         const firstOption = e.currentTarget
@@ -491,16 +477,7 @@ export default function EditProjectModal({
                           className={`contributor-option-item ${isSelected ? 'selected' : ''}`}
                           onClick={() => handleToggleUser(user)}
                           onKeyDown={(e) => {
-                            if (e.key === 'Escape') {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setIsDropdownOpen(false);
-                              const selectTrigger =
-                                dropdownRef.current?.querySelector(
-                                  '.contributors-select-input'
-                                );
-                              if (selectTrigger) selectTrigger.focus();
-                            } else if (e.key === 'Tab') {
+                            if (e.key === 'Tab') {
                               setIsDropdownOpen(false);
                             } else if (e.key === 'Enter' || e.key === ' ') {
                               e.preventDefault();

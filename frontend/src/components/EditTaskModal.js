@@ -207,23 +207,8 @@ export default function EditTaskModal({
     return nameMatch || emailMatch;
   });
 
-  const handleToggleAssignee = (user, e) => {
+  const handleToggleAssignee = (user) => {
     if (!isOwner) return; // Seul le propriétaire du projet peut réattribuer des membres
-
-    let nextFocusTarget = null;
-    if (e?.currentTarget) {
-      const sibling =
-        e.currentTarget.nextElementSibling ||
-        e.currentTarget.previousElementSibling;
-      if (sibling && sibling.classList.contains('contributor-option-item')) {
-        nextFocusTarget = sibling;
-      } else {
-        nextFocusTarget = dropdownRef.current?.querySelector(
-          '.dropdown-search-input'
-        );
-      }
-    }
-
     setSelectedAssignees((prev) => {
       const exists = prev.some((u) => u.id === user.id);
       if (exists) {
@@ -232,12 +217,6 @@ export default function EditTaskModal({
         return [...prev, user];
       }
     });
-
-    if (nextFocusTarget) {
-      setTimeout(() => {
-        nextFocusTarget.focus();
-      }, 30);
-    }
   };
 
   /**
@@ -474,14 +453,14 @@ export default function EditTaskModal({
                       <div
                         key={user.id}
                         className={`contributor-option-item ${isSelected ? 'selected' : ''}`}
-                        onClick={(e) => handleToggleAssignee(user, e)}
+                        onClick={() => handleToggleAssignee(user)}
                         onKeyDown={(e) => {
                           if (e.key === 'Tab') {
                             setIsDropdownOpen(false);
                           } else if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
                             e.stopPropagation();
-                            handleToggleAssignee(user, e);
+                            handleToggleAssignee(user);
                           } else if (e.key === 'ArrowDown') {
                             e.preventDefault();
                             const next = e.currentTarget.nextElementSibling;
