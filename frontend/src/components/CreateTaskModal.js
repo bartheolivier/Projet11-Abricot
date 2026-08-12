@@ -137,6 +137,26 @@ export default function CreateTaskModal({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Auto-focus du premier membre lors de l'ouverture du menu déroulant
+  useEffect(() => {
+    if (isDropdownOpen) {
+      const timer = setTimeout(() => {
+        const firstOpt = dropdownRef.current?.querySelector(
+          '.contributor-option-item'
+        );
+        if (firstOpt) {
+          firstOpt.focus();
+        } else {
+          const searchInput = dropdownRef.current?.querySelector(
+            '.dropdown-search-input'
+          );
+          if (searchInput) searchInput.focus();
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isDropdownOpen]);
+
   // Pré-sélection automatique de l'utilisateur courant s'il est contributeur (non-propriétaire)
   useEffect(() => {
     if (isOpen && project && currentUserId) {
@@ -190,18 +210,38 @@ export default function CreateTaskModal({
     return nameMatch || emailMatch;
   });
 
-  const handleToggleAssignee = (user) => {
+  const handleToggleAssignee = (user, e) => {
     // Seul le propriétaire du projet peut modifier la liste des assignés
     if (!isOwner) return;
 
+    let nextFocusTarget = null;
+    if (e?.currentTarget) {
+      const sibling =
+        e.currentTarget.nextElementSibling ||
+        e.currentTarget.previousElementSibling;
+      if (sibling && sibling.classList.contains('contributor-option-item')) {
+        nextFocusTarget = sibling;
+      } else {
+        nextFocusTarget = dropdownRef.current?.querySelector(
+          '.dropdown-search-input'
+        );
+      }
+    }
+
     setSelectedAssignees((prev) => {
-      const exists = prev.some((u) => u.id === user.id);
-      if (exists) {
+      const isAlreadySelected = prev.some((u) => u.id === user.id);
+      if (isAlreadySelected) {
         return prev.filter((u) => u.id !== user.id);
       } else {
         return [...prev, user];
       }
     });
+
+    if (nextFocusTarget) {
+      setTimeout(() => {
+        nextFocusTarget.focus();
+      }, 30);
+    }
   };
 
   /**
@@ -344,23 +384,8 @@ export default function CreateTaskModal({
                   (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown')
                 ) {
                   e.preventDefault();
-                  const nextState = !isDropdownOpen;
-                  setIsDropdownOpen(nextState);
-                  if (nextState) {
-                    setTimeout(() => {
-                      const firstOpt = dropdownRef.current?.querySelector(
-                        '.contributor-option-item'
-                      );
-                      if (firstOpt) {
-                        firstOpt.focus();
-                      } else {
-                        const searchInput = dropdownRef.current?.querySelector(
-                          '.dropdown-search-input'
-                        );
-                        if (searchInput) searchInput.focus();
-                      }
-                    }, 50);
-                  }
+                  e.stopPropagation();
+                  setIsDropdownOpen(!isDropdownOpen);
                 }
               }}
               tabIndex={isOwner ? 0 : -1}
@@ -423,7 +448,9 @@ export default function CreateTaskModal({
                     onClick={(e) => e.stopPropagation()}
                     onKeyDown={(e) => {
                       e.stopPropagation();
-                      if (e.key === 'ArrowDown' || e.key === 'Enter') {
+                      if (e.key === 'Tab') {
+                        setIsDropdownOpen(false);
+                      } else if (e.key === 'ArrowDown' || e.key === 'Enter') {
                         const firstOption = e.currentTarget
                           .closest('.contributors-dropdown-menu')
                           ?.querySelector('.contributor-option-item');
@@ -447,11 +474,14 @@ export default function CreateTaskModal({
                       <div
                         key={user.id}
                         className={`contributor-option-item ${isSelected ? 'selected' : ''}`}
-                        onClick={() => handleToggleAssignee(user)}
+                        onClick={(e) => handleToggleAssignee(user, e)}
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
+                          if (e.key === 'Tab') {
+                            setIsDropdownOpen(false);
+                          } else if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
-                            handleToggleAssignee(user);
+                            e.stopPropagation();
+                            handleToggleAssignee(user, e);
                           } else if (e.key === 'ArrowDown') {
                             e.preventDefault();
                             const next = e.currentTarget.nextElementSibling;
