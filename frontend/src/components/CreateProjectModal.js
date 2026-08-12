@@ -131,6 +131,26 @@ export default function CreateProjectModal({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Auto-focus du premier contributeur lors de l'ouverture du menu déroulant
+  useEffect(() => {
+    if (isDropdownOpen) {
+      const timer = setTimeout(() => {
+        const firstOpt = dropdownRef.current?.querySelector(
+          '.contributor-option-item'
+        );
+        if (firstOpt) {
+          firstOpt.focus();
+        } else {
+          const searchInput = dropdownRef.current?.querySelector(
+            '.dropdown-search-input'
+          );
+          if (searchInput) searchInput.focus();
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isDropdownOpen]);
+
   /**
    * RECHERCHE D'UTILISATEURS DYNAMIQUE AVEC ANTI-REBONDS (DEBOUNCE 300ms)
    * Évite de surcharger l'API backend à chaque touche pressée.
@@ -175,7 +195,21 @@ export default function CreateProjectModal({
   /**
    * Bascule la sélection d'un collaborateur
    */
-  const handleToggleUser = (user) => {
+  const handleToggleUser = (user, e) => {
+    let nextFocusTarget = null;
+    if (e?.currentTarget) {
+      const sibling =
+        e.currentTarget.nextElementSibling ||
+        e.currentTarget.previousElementSibling;
+      if (sibling && sibling.classList.contains('contributor-option-item')) {
+        nextFocusTarget = sibling;
+      } else {
+        nextFocusTarget = dropdownRef.current?.querySelector(
+          '.dropdown-search-input'
+        );
+      }
+    }
+
     setSelectedUsers((prev) => {
       const isAlreadySelected = prev.some((u) => u.id === user.id);
       if (isAlreadySelected) {
@@ -184,6 +218,12 @@ export default function CreateProjectModal({
         return [...prev, user];
       }
     });
+
+    if (nextFocusTarget) {
+      setTimeout(() => {
+        nextFocusTarget.focus();
+      }, 30);
+    }
   };
 
   /**
@@ -310,23 +350,8 @@ export default function CreateProjectModal({
                   e.key === 'ArrowDown'
                 ) {
                   e.preventDefault();
-                  const nextState = !isDropdownOpen;
-                  setIsDropdownOpen(nextState);
-                  if (nextState) {
-                    setTimeout(() => {
-                      const firstOpt = dropdownRef.current?.querySelector(
-                        '.contributor-option-item'
-                      );
-                      if (firstOpt) {
-                        firstOpt.focus();
-                      } else {
-                        const searchInput = dropdownRef.current?.querySelector(
-                          '.dropdown-search-input'
-                        );
-                        if (searchInput) searchInput.focus();
-                      }
-                    }, 50);
-                  }
+                  e.stopPropagation();
+                  setIsDropdownOpen(!isDropdownOpen);
                 }
               }}
               tabIndex={0}
@@ -393,13 +418,14 @@ export default function CreateProjectModal({
                     <div
                       key={`sel-${user.id}`}
                       className="contributor-option-item selected"
-                      onClick={() => handleToggleUser(user)}
+                      onClick={(e) => handleToggleUser(user, e)}
                       onKeyDown={(e) => {
                         if (e.key === 'Tab') {
                           setIsDropdownOpen(false);
                         } else if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
-                          handleToggleUser(user);
+                          e.stopPropagation();
+                          handleToggleUser(user, e);
                         } else if (e.key === 'ArrowDown') {
                           e.preventDefault();
                           const next = e.currentTarget.nextElementSibling;
@@ -471,13 +497,14 @@ export default function CreateProjectModal({
                         <div
                           key={user.id}
                           className="contributor-option-item"
-                          onClick={() => handleToggleUser(user)}
+                          onClick={(e) => handleToggleUser(user, e)}
                           onKeyDown={(e) => {
                             if (e.key === 'Tab') {
                               setIsDropdownOpen(false);
                             } else if (e.key === 'Enter' || e.key === ' ') {
                               e.preventDefault();
-                              handleToggleUser(user);
+                              e.stopPropagation();
+                              handleToggleUser(user, e);
                             } else if (e.key === 'ArrowDown') {
                               e.preventDefault();
                               const next = e.currentTarget.nextElementSibling;
