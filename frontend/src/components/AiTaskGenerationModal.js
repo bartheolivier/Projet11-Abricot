@@ -28,7 +28,7 @@
  * =========================================================================================
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Sparkles, Plus, Trash2, Edit3, Check, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
