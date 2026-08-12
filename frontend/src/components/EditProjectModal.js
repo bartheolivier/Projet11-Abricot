@@ -64,10 +64,18 @@ export default function EditProjectModal({
           e.preventDefault();
           e.stopPropagation();
           setIsDropdownOpen(false);
-          const selectTrigger = dropdownRef.current?.querySelector(
-            '.contributors-select-input'
-          );
-          if (selectTrigger) selectTrigger.focus();
+          setTimeout(() => {
+            const submitBtn =
+              modalRef.current?.querySelector('.modal-btn-submit');
+            if (submitBtn) {
+              submitBtn.focus();
+            } else {
+              const selectTrigger = dropdownRef.current?.querySelector(
+                '.contributors-select-input'
+              );
+              if (selectTrigger) selectTrigger.focus();
+            }
+          }, 30);
           return;
         }
         onClose();
@@ -434,7 +442,15 @@ export default function EditProjectModal({
                     onKeyDown={(e) => {
                       e.stopPropagation();
                       if (e.key === 'Tab') {
+                        e.preventDefault();
                         setIsDropdownOpen(false);
+                        setTimeout(() => {
+                          const submitBtn =
+                            modalRef.current?.querySelector(
+                              '.modal-btn-submit'
+                            );
+                          if (submitBtn) submitBtn.focus();
+                        }, 30);
                       } else if (e.key === 'ArrowDown' || e.key === 'Enter') {
                         const firstOption = e.currentTarget
                           .closest('.contributors-dropdown-menu')
@@ -478,7 +494,15 @@ export default function EditProjectModal({
                           onClick={() => handleToggleUser(user)}
                           onKeyDown={(e) => {
                             if (e.key === 'Tab') {
+                              e.preventDefault();
                               setIsDropdownOpen(false);
+                              setTimeout(() => {
+                                const submitBtn =
+                                  modalRef.current?.querySelector(
+                                    '.modal-btn-submit'
+                                  );
+                                if (submitBtn) submitBtn.focus();
+                              }, 30);
                             } else if (e.key === 'Enter' || e.key === ' ') {
                               e.preventDefault();
                               e.stopPropagation();
