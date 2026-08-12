@@ -392,6 +392,18 @@ export default function CreateTaskModal({
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="dropdown-search-input"
                     onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      e.stopPropagation();
+                      if (e.key === 'ArrowDown' || e.key === 'Enter') {
+                        const firstOption = e.currentTarget
+                          .closest('.contributors-dropdown-menu')
+                          ?.querySelector('.contributor-option-item');
+                        if (firstOption) {
+                          e.preventDefault();
+                          firstOption.focus();
+                        }
+                      }
+                    }}
                     aria-label="Rechercher des membres à assigner"
                     autoFocus
                   />
@@ -411,6 +423,29 @@ export default function CreateTaskModal({
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
                             handleToggleAssignee(user);
+                          } else if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            const next = e.currentTarget.nextElementSibling;
+                            if (
+                              next &&
+                              next.classList.contains('contributor-option-item')
+                            ) {
+                              next.focus();
+                            }
+                          } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            const prev = e.currentTarget.previousElementSibling;
+                            if (
+                              prev &&
+                              prev.classList.contains('contributor-option-item')
+                            ) {
+                              prev.focus();
+                            } else {
+                              const searchInput = e.currentTarget
+                                .closest('.contributors-dropdown-menu')
+                                ?.querySelector('.dropdown-search-input');
+                              if (searchInput) searchInput.focus();
+                            }
                           }
                         }}
                         tabIndex={0}

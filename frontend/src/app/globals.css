@@ -2008,12 +2008,24 @@ textarea::placeholder {
   transition: background-color 0.2s;
 }
 
-.contributor-option-item:hover {
-  background-color: #f9f9f9;
+.contributor-option-item:hover,
+.contributor-option-item:focus,
+.contributor-option-item:focus-visible {
+  background-color: #fff3e0 !important;
+  outline: 2px solid #e65100 !important;
+  outline-offset: -2px !important;
 }
 
 .contributor-option-item.selected {
   background-color: #ffe8d6; /* Légère teinte orange */
+}
+
+.contributor-option-item.selected:hover,
+.contributor-option-item.selected:focus,
+.contributor-option-item.selected:focus-visible {
+  background-color: #ffd8b8 !important;
+  outline: 2px solid #e65100 !important;
+  outline-offset: -2px !important;
 }
 
 .option-checkbox {
