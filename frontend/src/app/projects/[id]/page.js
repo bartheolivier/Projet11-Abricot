@@ -542,8 +542,19 @@ export default function ProjectDetails({ params }) {
                 const isCommentsOpen = !!expandedComments[task.id];
                 const isTaskCreator =
                   task.creatorId === currentUserId ||
-                  task.creator?.id === currentUserId;
-                const canManageTask = isOwner || isTaskCreator;
+                  task.creator?.id === currentUserId ||
+                  task.createdById === currentUserId ||
+                  task.authorId === currentUserId;
+
+                const isSoleAssignee =
+                  Array.isArray(task.assignees) &&
+                  task.assignees.length === 1 &&
+                  (task.assignees[0]?.user?.id === currentUserId ||
+                    task.assignees[0]?.id === currentUserId ||
+                    task.assignees[0]?.userId === currentUserId);
+
+                const canManageTask =
+                  isOwner || isTaskCreator || isSoleAssignee;
 
                 return (
                   <div key={task.id} className="task-card">
