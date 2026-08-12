@@ -40,12 +40,50 @@ export default function CreateProjectModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const dropdownRef = useRef(null);
+  const modalRef = useRef(null);
 
-  // Accessibilité WCAG 2.1 : Verrouiller le défilement du fond + Touche Échap
+  // Accessibilité WCAG 2.1 : Verrouiller le défilement + Touche Échap + Focus Trap (Tab/Shift+Tab)
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         onClose();
+        return;
+      }
+
+      if (e.key === 'Tab' && modalRef.current) {
+        const focusableElements = Array.from(
+          modalRef.current.querySelectorAll(
+            'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          )
+        ).filter(
+          (el) =>
+            el.offsetWidth > 0 ||
+            el.offsetHeight > 0 ||
+            el === document.activeElement
+        );
+
+        if (focusableElements.length === 0) return;
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          if (
+            document.activeElement === firstElement ||
+            !modalRef.current.contains(document.activeElement)
+          ) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (
+            document.activeElement === lastElement ||
+            !modalRef.current.contains(document.activeElement)
+          ) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
       }
     };
 
@@ -53,15 +91,23 @@ export default function CreateProjectModal({
       document.documentElement.style.overflow = 'hidden';
       document.body.style.overflow = 'hidden';
       window.addEventListener('keydown', handleKeyDown);
-    } else {
-      document.documentElement.style.overflow = '';
-      document.body.style.overflow = '';
+
+      const timer = setTimeout(() => {
+        if (modalRef.current) {
+          const firstInput = modalRef.current.querySelector(
+            'input:not([disabled]), textarea:not([disabled]), button:not([disabled])'
+          );
+          if (firstInput) firstInput.focus();
+        }
+      }, 50);
+
+      return () => {
+        clearTimeout(timer);
+        document.documentElement.style.overflow = '';
+        document.body.style.overflow = '';
+        window.removeEventListener('keydown', handleKeyDown);
+      };
     }
-    return () => {
-      document.documentElement.style.overflow = '';
-      document.body.style.overflow = '';
-      window.removeEventListener('keydown', handleKeyDown);
-    };
   }, [isOpen, onClose]);
 
   // Fermer la liste déroulante des utilisateurs si on clique en dehors du composant
@@ -189,6 +235,7 @@ export default function CreateProjectModal({
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
+        ref={modalRef}
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
