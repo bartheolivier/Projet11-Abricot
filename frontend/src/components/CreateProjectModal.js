@@ -50,18 +50,10 @@ export default function CreateProjectModal({
           e.preventDefault();
           e.stopPropagation();
           setIsDropdownOpen(false);
-          setTimeout(() => {
-            const submitBtn =
-              modalRef.current?.querySelector('.modal-btn-submit');
-            if (submitBtn) {
-              submitBtn.focus();
-            } else {
-              const selectTrigger = dropdownRef.current?.querySelector(
-                '.contributors-select-input'
-              );
-              if (selectTrigger) selectTrigger.focus();
-            }
-          }, 30);
+          const selectTrigger = dropdownRef.current?.querySelector(
+            '.contributors-select-input'
+          );
+          if (selectTrigger) selectTrigger.focus();
           return;
         }
         onClose();
@@ -395,16 +387,16 @@ export default function CreateProjectModal({
                     onClick={(e) => e.stopPropagation()}
                     onKeyDown={(e) => {
                       e.stopPropagation();
-                      if (e.key === 'Tab') {
+                      if (e.key === 'Escape') {
                         e.preventDefault();
                         setIsDropdownOpen(false);
-                        setTimeout(() => {
-                          const submitBtn =
-                            modalRef.current?.querySelector(
-                              '.modal-btn-submit'
-                            );
-                          if (submitBtn) submitBtn.focus();
-                        }, 30);
+                        const selectTrigger =
+                          dropdownRef.current?.querySelector(
+                            '.contributors-select-input'
+                          );
+                        if (selectTrigger) selectTrigger.focus();
+                      } else if (e.key === 'Tab') {
+                        setIsDropdownOpen(false);
                       } else if (e.key === 'ArrowDown' || e.key === 'Enter') {
                         const firstOption = e.currentTarget
                           .closest('.contributors-dropdown-menu')
@@ -447,16 +439,17 @@ export default function CreateProjectModal({
                           className={`contributor-option-item ${isSelected ? 'selected' : ''}`}
                           onClick={() => handleToggleUser(user)}
                           onKeyDown={(e) => {
-                            if (e.key === 'Tab') {
+                            if (e.key === 'Escape') {
                               e.preventDefault();
+                              e.stopPropagation();
                               setIsDropdownOpen(false);
-                              setTimeout(() => {
-                                const submitBtn =
-                                  modalRef.current?.querySelector(
-                                    '.modal-btn-submit'
-                                  );
-                                if (submitBtn) submitBtn.focus();
-                              }, 30);
+                              const selectTrigger =
+                                dropdownRef.current?.querySelector(
+                                  '.contributors-select-input'
+                                );
+                              if (selectTrigger) selectTrigger.focus();
+                            } else if (e.key === 'Tab') {
+                              setIsDropdownOpen(false);
                             } else if (e.key === 'Enter' || e.key === ' ') {
                               e.preventDefault();
                               e.stopPropagation();
