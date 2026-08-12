@@ -35,6 +35,7 @@ import { toast } from 'sonner';
 export default function AiTaskGenerationModal({
   isOpen,
   project,
+  currentUserId,
   onClose,
   onTasksAdded,
 }) {
@@ -43,6 +44,8 @@ export default function AiTaskGenerationModal({
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
+
+  const isOwner = project?.ownerId === currentUserId;
 
   // Édition d'une tâche individuelle dans la prévisualisation
   const [editTitle, setEditTitle] = useState('');
@@ -185,6 +188,9 @@ export default function AiTaskGenerationModal({
 
       let addedCount = 0;
 
+      // Si l'utilisateur est contributeur (non-propriétaire), les tâches générées lui sont attribuées
+      const assigneeIds = !isOwner && currentUserId ? [currentUserId] : [];
+
       // Création séquentielle de chaque tâche prévisualisée dans le projet
       for (const t of generatedTasks) {
         const res = await fetch(`/api/projects/${project.id}/tasks`, {
@@ -198,6 +204,7 @@ export default function AiTaskGenerationModal({
             description: t.description || '',
             dueDate: formattedDueDate,
             priority: 'MEDIUM',
+            assigneeIds,
           }),
         });
 

@@ -1,16 +1,35 @@
 'use client';
 
+/**
+ * =========================================================================================
+ * PAGE DÉTAIL D'UN PROJET (PROJECT DETAILS PAGE)
+ * =========================================================================================
+ * Fichier : src/app/projects/[id]/page.js
+ * Rôle : Espace collaboratif d'un projet spécifique :
+ *        1. Affichage du titre, de la description et des contributeurs.
+ *        2. Bascule dynamique Vue Liste / Vue Calendrier.
+ *        3. Filtrage par statut et recherche instantanée de tâches.
+ *        4. Système de commentaires rétractables sous chaque tâche.
+ *        5. Bouton d'assistance IA (RAG & Gemini).
+ * =========================================================================================
+ */
+
 import React, { use, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import {
   ArrowLeft,
   Calendar,
+  CheckSquare,
   LayoutList,
+  MessageSquare,
   ChevronDown,
   ChevronUp,
   Plus,
   Sparkles,
   MoreHorizontal,
+  Search,
   Send,
   Loader2,
 } from 'lucide-react';
@@ -20,48 +39,114 @@ import EditTaskModal from '@/components/EditTaskModal';
 import AiTaskGenerationModal from '@/components/AiTaskGenerationModal';
 import ViewTaskModal from '@/components/ViewTaskModal';
 import ProjectCalendarView from '@/components/ProjectCalendarView';
-import { useProjectDetailsQuery } from '@/hooks/useProjectsQuery';
-import {
-  useProjectTasksQuery,
-  useDeleteTaskMutation,
-  useAddCommentMutation,
-} from '@/hooks/useTasksQuery';
-import { useProfileQuery } from '@/hooks/useProfileQuery';
 
 export default function ProjectDetails({ params }) {
+  // Déballement propre de la promesse `params` dans Next.js App Router
   const { id: projectId } = use(params);
+  const router = useRouter();
 
-  // Custom Hooks React Query
-  const { data: userProfile } = useProfileQuery();
-  const { data: project, isLoading: isProjectLoading } =
-    useProjectDetailsQuery(projectId);
-  const { data: tasks = [], isLoading: isTasksLoading } =
-    useProjectTasksQuery(projectId);
+  // États locaux de gestion des données du projet
+  const [project, setProject] = useState(null);
+  const [tasks, setTasks] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
-  const deleteTaskMutation = useDeleteTaskMutation();
-  const addCommentMutation = useAddCommentMutation();
-
-  const currentUserId = userProfile?.id;
-
-  // États pour les modales
+  // États de gestion des modales
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
   const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState(null);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-  const [activeView, setActiveView] = useState('list');
+  const [activeView, setActiveView] = useState('list'); // "list" ou "calendar"
   const [isViewTaskModalOpen, setIsViewTaskModalOpen] = useState(false);
   const [taskToView, setTaskToView] = useState(null);
 
-  // États pour filtre et recherche
+  // Filtres et recherche
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [activeTaskMenu, setActiveTaskMenu] = useState(null);
 
-  // États pour les commentaires
+  // Gestion des commentaires rétractables
   const [expandedComments, setExpandedComments] = useState({});
   const [newComments, setNewComments] = useState({});
+  const [submittingComment, setSubmittingComment] = useState({});
 
+  /**
+   * RÉCUPÉRATION DU PROFIL UTILISATEUR
+   */
+  const fetchProfile = async (token) => {
+    try {
+      const res = await fetch('/api/auth/profile', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setCurrentUserId(json.data?.id);
+      }
+    } catch (err) {
+      console.error('Erreur profil:', err);
+    }
+  };
+
+  /**
+   * CHARGEMENT DES DÉTAILS DU PROJET ET DES TÂCHES
+   */
+  const fetchProjectDetails = async () => {
+    try {
+      const token = document.cookie
+        .split('; ')
+        .find((row) => row.startsWith('token='))
+        ?.split('=')[1];
+
+      if (!token) {
+        router.push('/');
+        return;
+      }
+
+      await fetchProfile(token);
+
+      // Chargement des informations du projet
+      const projectRes = await fetch(`/api/projects/${projectId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!projectRes.ok) {
+        if (projectRes.status === 401) {
+          router.push('/');
+          return;
+        }
+        if (projectRes.status === 403) {
+          toast.error("Vous n'avez pas accès à ce projet.");
+          router.push('/projects');
+          return;
+        }
+        throw new Error('Projet introuvable');
+      }
+
+      const projectData = await projectRes.json();
+      setProject(projectData.data?.project);
+
+      // Chargement des tâches associées à ce projet
+      const tasksRes = await fetch(`/api/projects/${projectId}/tasks`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (tasksRes.ok) {
+        const tasksData = await tasksRes.json();
+        setTasks(tasksData.data?.tasks || []);
+      }
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProjectDetails();
+  }, [projectId]);
+
+  // Fermeture du menu contextuel lors d'un clic extérieur
   useEffect(() => {
     const handleDocumentClick = (e) => {
       if (
@@ -89,13 +174,37 @@ export default function ProjectDetails({ params }) {
     setActiveTaskMenu(null);
   };
 
-  const handleDeleteTask = (e, taskId, taskTitle) => {
+  const handleDeleteTask = async (e, taskId, taskTitle) => {
     e.preventDefault();
     e.stopPropagation();
     setActiveTaskMenu(null);
 
-    if (confirm(`Voulez-vous vraiment supprimer la tâche "${taskTitle}" ?`)) {
-      deleteTaskMutation.mutate(taskId);
+    if (!confirm(`Voulez-vous vraiment supprimer la tâche "${taskTitle}" ?`)) {
+      return;
+    }
+
+    try {
+      const token = document.cookie
+        .split('; ')
+        .find((row) => row.startsWith('token='))
+        ?.split('=')[1];
+
+      const res = await fetch(`/api/projects/${projectId}/tasks/${taskId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(
+          json.message || 'Erreur lors de la suppression de la tâche'
+        );
+      }
+
+      toast.success('Tâche supprimée avec succès.');
+      fetchProjectDetails();
+    } catch (err) {
+      toast.error(err.message);
     }
   };
 
@@ -113,19 +222,49 @@ export default function ProjectDetails({ params }) {
     }));
   };
 
-  const handleAddComment = (e, taskId) => {
+  /**
+   * AJOUT D'UN COMMENTAIRE À UNE TÂCHE
+   */
+  const handleAddComment = async (e, taskId) => {
     e.preventDefault();
     const commentContent = newComments[taskId]?.trim();
     if (!commentContent) return;
 
-    addCommentMutation.mutate(
-      { projectId, taskId, content: commentContent },
-      {
-        onSuccess: () => {
-          setNewComments((prev) => ({ ...prev, [taskId]: '' }));
-        },
+    setSubmittingComment((prev) => ({ ...prev, [taskId]: true }));
+
+    try {
+      const token = document.cookie
+        .split('; ')
+        .find((row) => row.startsWith('token='))
+        ?.split('=')[1];
+
+      const res = await fetch(
+        `/api/projects/${projectId}/tasks/${taskId}/comments`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ content: commentContent }),
+        }
+      );
+
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(
+          json.message || "Erreur lors de l'ajout du commentaire"
+        );
       }
-    );
+
+      toast.success('Commentaire ajouté !');
+      setNewComments((prev) => ({ ...prev, [taskId]: '' }));
+      fetchProjectDetails();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setSubmittingComment((prev) => ({ ...prev, [taskId]: false }));
+    }
   };
 
   const getStatusDetails = (status) => {
@@ -174,12 +313,10 @@ export default function ProjectDetails({ params }) {
     return parts[0] ? parts[0].substring(0, 2).toUpperCase() : '';
   };
 
-  const isLoading = isProjectLoading || isTasksLoading;
-
   if (isLoading) {
     return (
       <div className="project-details-container">
-        <p>Chargement des détails du projet...</p>
+        <p className="loading-text">Chargement des détails du projet...</p>
       </div>
     );
   }
@@ -202,7 +339,7 @@ export default function ProjectDetails({ params }) {
 
   return (
     <div className="project-details-container">
-      {/* Ligne d'en-tête principale */}
+      {/* En-tête du projet avec titre et boutons d'actions */}
       <div className="project-details-header">
         <div className="title-section-wrapper">
           <Link
@@ -210,7 +347,7 @@ export default function ProjectDetails({ params }) {
             className="btn-back"
             title="Retour aux projets"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={18} aria-hidden="true" />
           </Link>
           <div className="project-details-info">
             <div className="project-title-row">
@@ -235,15 +372,15 @@ export default function ProjectDetails({ params }) {
             className="btn-primary"
             onClick={() => setIsCreateTaskModalOpen(true)}
           >
-            <Plus size={16} /> Créer une tâche
+            <Plus size={16} aria-hidden="true" /> Créer une tâche
           </button>
           <button className="btn-orange" onClick={() => setIsAiModalOpen(true)}>
-            <Sparkles size={16} /> IA
+            <Sparkles size={16} aria-hidden="true" /> IA
           </button>
         </div>
       </div>
 
-      {/* Barre des Contributeurs */}
+      {/* Barre des contributeurs du projet */}
       <div className="contributors-bar">
         <span className="contributors-count-label">
           Contributeurs{' '}
@@ -293,7 +430,7 @@ export default function ProjectDetails({ params }) {
         </div>
       </div>
 
-      {/* Liste des Tâches */}
+      {/* Section des tâches */}
       <div className="tasks-section-card">
         <div className="tasks-section-header">
           <div>
@@ -307,13 +444,13 @@ export default function ProjectDetails({ params }) {
                 className={`segmented-btn ${activeView === 'list' ? 'active' : ''}`}
                 onClick={() => setActiveView('list')}
               >
-                <LayoutList size={16} /> Liste
+                <CheckSquare size={16} aria-hidden="true" /> Liste
               </button>
               <button
                 className={`segmented-btn ${activeView === 'calendar' ? 'active' : ''}`}
                 onClick={() => setActiveView('calendar')}
               >
-                <Calendar size={16} /> Calendrier
+                <Calendar size={16} aria-hidden="true" /> Calendrier
               </button>
             </div>
 
@@ -322,27 +459,42 @@ export default function ProjectDetails({ params }) {
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="status-filter-select"
+                aria-label="Filtrer par statut"
               >
-                <option value="ALL">Tous les statuts</option>
+                <option value="ALL" hidden>
+                  Statut
+                </option>
+                <option value="ALL">Tous (défaut)</option>
                 <option value="TODO">À faire</option>
                 <option value="IN_PROGRESS">En cours</option>
                 <option value="DONE">Terminée</option>
               </select>
-              <ChevronDown size={14} className="control-select-icon" />
+              <ChevronDown
+                size={14}
+                className="control-select-icon"
+                aria-hidden="true"
+              />
             </div>
 
-            <div className="control-search">
+            <div className="search-bar-wrapper">
               <input
                 type="text"
                 placeholder="Rechercher une tâche"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                className="search-input-mockup"
+                aria-label="Rechercher une tâche"
+              />
+              <Search
+                size={16}
+                className="search-input-icon"
+                aria-hidden="true"
               />
             </div>
           </div>
         </div>
 
-        {/* Vue Liste ou Vue Calendrier */}
+        {/* Vue Liste ou Vue Calendrier des tâches */}
         {(() => {
           const filteredTasks = tasks.filter((t) => {
             if (statusFilter !== 'ALL' && t.status !== statusFilter) {
@@ -395,7 +547,6 @@ export default function ProjectDetails({ params }) {
 
                 return (
                   <div key={task.id} className="task-card">
-                    {/* Titre de tâche et badges */}
                     <div className="task-card-header">
                       <div className="task-title-group">
                         <h3 className="task-card-title">{task.title}</h3>
@@ -410,8 +561,9 @@ export default function ProjectDetails({ params }) {
                             className="task-menu-btn"
                             onClick={(e) => handleToggleMenu(e, task.id)}
                             title="Actions"
+                            aria-label={`Actions pour la tâche ${task.title}`}
                           >
-                            <MoreHorizontal size={18} />
+                            <MoreHorizontal size={18} aria-hidden="true" />
                           </button>
 
                           {activeTaskMenu === task.id && (
@@ -443,7 +595,11 @@ export default function ProjectDetails({ params }) {
                     <div className="task-card-meta">
                       <div className="meta-item">
                         <span className="meta-label">Échéance :</span>
-                        <Calendar size={14} className="meta-icon" />
+                        <Calendar
+                          size={14}
+                          className="meta-icon"
+                          aria-hidden="true"
+                        />
                         <span className="meta-value">
                           {formatDate(task.dueDate)}
                         </span>
@@ -487,18 +643,18 @@ export default function ProjectDetails({ params }) {
                       <button
                         onClick={() => toggleComments(task.id)}
                         className="comments-toggle-btn"
+                        aria-expanded={isCommentsOpen}
                       >
                         <span>Commentaires ({task.comments?.length || 0})</span>
                         {isCommentsOpen ? (
-                          <ChevronUp size={16} />
+                          <ChevronUp size={16} aria-hidden="true" />
                         ) : (
-                          <ChevronDown size={16} />
+                          <ChevronDown size={16} aria-hidden="true" />
                         )}
                       </button>
 
                       {isCommentsOpen && (
                         <div className="comments-expanded-content">
-                          {/* Liste des commentaires */}
                           {task.comments && task.comments.length > 0 ? (
                             <div className="comments-list">
                               {task.comments.map((comment) => {
@@ -545,7 +701,6 @@ export default function ProjectDetails({ params }) {
                             </p>
                           )}
 
-                          {/* Formulaire d'ajout de commentaire */}
                           <form
                             onSubmit={(e) => handleAddComment(e, task.id)}
                             className="comment-form"
@@ -559,16 +714,22 @@ export default function ProjectDetails({ params }) {
                               }
                               className="comment-input"
                               required
+                              aria-label="Écrire un commentaire"
                             />
                             <button
                               type="submit"
                               className="comment-submit-btn"
-                              disabled={addCommentMutation.isPending}
+                              disabled={submittingComment[task.id]}
+                              aria-label="Envoyer le commentaire"
                             >
-                              {addCommentMutation.isPending ? (
-                                <Loader2 size={16} className="animate-spin" />
+                              {submittingComment[task.id] ? (
+                                <Loader2
+                                  size={16}
+                                  className="animate-spin"
+                                  aria-hidden="true"
+                                />
                               ) : (
-                                <Send size={16} />
+                                <Send size={16} aria-hidden="true" />
                               )}
                             </button>
                           </form>
@@ -587,28 +748,35 @@ export default function ProjectDetails({ params }) {
         isOpen={isEditModalOpen}
         project={project}
         onClose={() => setIsEditModalOpen(false)}
+        onProjectUpdated={fetchProjectDetails}
       />
 
       <CreateTaskModal
         isOpen={isCreateTaskModalOpen}
         project={project}
+        currentUserId={currentUserId}
         onClose={() => setIsCreateTaskModalOpen(false)}
+        onTaskCreated={fetchProjectDetails}
       />
 
       <EditTaskModal
         isOpen={isEditTaskModalOpen}
         project={project}
         task={taskToEdit}
+        currentUserId={currentUserId}
         onClose={() => {
           setIsEditTaskModalOpen(false);
           setTaskToEdit(null);
         }}
+        onTaskUpdated={fetchProjectDetails}
       />
 
       <AiTaskGenerationModal
         isOpen={isAiModalOpen}
         project={project}
+        currentUserId={currentUserId}
         onClose={() => setIsAiModalOpen(false)}
+        onTasksAdded={fetchProjectDetails}
       />
 
       <ViewTaskModal
