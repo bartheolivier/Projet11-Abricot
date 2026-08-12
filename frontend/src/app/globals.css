@@ -2010,10 +2010,12 @@ textarea::placeholder {
 
 .contributor-option-item:hover,
 .contributor-option-item:focus,
-.contributor-option-item:focus-visible {
+.contributor-option-item:focus-visible,
+.contributor-option-item:focus-within {
   background-color: #fff3e0 !important;
-  outline: 2px solid #e65100 !important;
-  outline-offset: -2px !important;
+  outline: 3px solid #ff6b00 !important;
+  outline-offset: -3px !important;
+  box-shadow: inset 0 0 0 2px #e65100 !important;
 }
 
 .contributor-option-item.selected {
@@ -2022,10 +2024,12 @@ textarea::placeholder {
 
 .contributor-option-item.selected:hover,
 .contributor-option-item.selected:focus,
-.contributor-option-item.selected:focus-visible {
+.contributor-option-item.selected:focus-visible,
+.contributor-option-item.selected:focus-within {
   background-color: #ffd8b8 !important;
-  outline: 2px solid #e65100 !important;
-  outline-offset: -2px !important;
+  outline: 3px solid #ff6b00 !important;
+  outline-offset: -3px !important;
+  box-shadow: inset 0 0 0 2px #e65100 !important;
 }
 
 .option-checkbox {
