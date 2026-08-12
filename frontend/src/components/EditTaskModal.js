@@ -75,6 +75,16 @@ export default function EditTaskModal({
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
+        if (isDropdownOpen) {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsDropdownOpen(false);
+          const selectTrigger = dropdownRef.current?.querySelector(
+            '.contributors-select-input'
+          );
+          if (selectTrigger) selectTrigger.focus();
+          return;
+        }
         onClose();
         return;
       }
@@ -137,7 +147,7 @@ export default function EditTaskModal({
         window.removeEventListener('keydown', handleKeyDown);
       };
     }
-  }, [isOpen, onClose]);
+  }, [isOpen, isDropdownOpen, onClose]);
 
   useEffect(() => {
     function handleClickOutside(event) {

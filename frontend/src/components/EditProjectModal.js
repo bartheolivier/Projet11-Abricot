@@ -60,6 +60,16 @@ export default function EditProjectModal({
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
+        if (isDropdownOpen) {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsDropdownOpen(false);
+          const selectTrigger = dropdownRef.current?.querySelector(
+            '.contributors-select-input'
+          );
+          if (selectTrigger) selectTrigger.focus();
+          return;
+        }
         onClose();
         return;
       }
@@ -122,7 +132,7 @@ export default function EditProjectModal({
         window.removeEventListener('keydown', handleKeyDown);
       };
     }
-  }, [isOpen, onClose]);
+  }, [isOpen, isDropdownOpen, onClose]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -374,7 +384,9 @@ export default function EditProjectModal({
                     onClick={(e) => e.stopPropagation()}
                     onKeyDown={(e) => {
                       e.stopPropagation();
-                      if (e.key === 'ArrowDown' || e.key === 'Enter') {
+                      if (e.key === 'Tab') {
+                        setIsDropdownOpen(false);
+                      } else if (e.key === 'ArrowDown' || e.key === 'Enter') {
                         const firstOption = e.currentTarget
                           .closest('.contributors-dropdown-menu')
                           ?.querySelector('.contributor-option-item');
@@ -396,7 +408,9 @@ export default function EditProjectModal({
                       className="contributor-option-item selected"
                       onClick={() => handleToggleUser(user)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
+                        if (e.key === 'Tab') {
+                          setIsDropdownOpen(false);
+                        } else if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
                           handleToggleUser(user);
                         } else if (e.key === 'ArrowDown') {
@@ -472,7 +486,9 @@ export default function EditProjectModal({
                           className="contributor-option-item"
                           onClick={() => handleToggleUser(user)}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
+                            if (e.key === 'Tab') {
+                              setIsDropdownOpen(false);
+                            } else if (e.key === 'Enter' || e.key === ' ') {
                               e.preventDefault();
                               handleToggleUser(user);
                             } else if (e.key === 'ArrowDown') {

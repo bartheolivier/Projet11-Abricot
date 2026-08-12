@@ -52,6 +52,16 @@ export default function CreateTaskModal({
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
+        if (isDropdownOpen) {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsDropdownOpen(false);
+          const selectTrigger = dropdownRef.current?.querySelector(
+            '.contributors-select-input'
+          );
+          if (selectTrigger) selectTrigger.focus();
+          return;
+        }
         onClose();
         return;
       }
@@ -114,7 +124,7 @@ export default function CreateTaskModal({
         window.removeEventListener('keydown', handleKeyDown);
       };
     }
-  }, [isOpen, onClose]);
+  }, [isOpen, isDropdownOpen, onClose]);
 
   // Fermeture du dropdown au clic extérieur
   useEffect(() => {
