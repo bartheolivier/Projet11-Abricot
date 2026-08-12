@@ -39,6 +39,7 @@ export default function EditProjectModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const dropdownRef = useRef(null);
+  const shouldFocusTriggerRef = useRef(false);
 
   // Pré-remplissage des champs lors de l'ouverture
   useEffect(() => {
@@ -63,11 +64,8 @@ export default function EditProjectModal({
         if (isDropdownOpen) {
           e.preventDefault();
           e.stopPropagation();
+          shouldFocusTriggerRef.current = true;
           setIsDropdownOpen(false);
-          const selectTrigger = dropdownRef.current?.querySelector(
-            '.contributors-select-input'
-          );
-          if (selectTrigger) selectTrigger.focus();
           return;
         }
         onClose();
@@ -144,9 +142,10 @@ export default function EditProjectModal({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Auto-focus du premier contributeur lors de l'ouverture du menu déroulant
+  // Gestion du focus après ouverture/fermeture du menu déroulant
   useEffect(() => {
     if (isDropdownOpen) {
+      // Auto-focus du premier item à l'ouverture
       const timer = setTimeout(() => {
         const firstOpt = dropdownRef.current?.querySelector(
           '.contributor-option-item'
@@ -161,6 +160,13 @@ export default function EditProjectModal({
         }
       }, 50);
       return () => clearTimeout(timer);
+    } else if (shouldFocusTriggerRef.current) {
+      // Retour du focus sur le champ declencheur après fermeture par Échap (post re-render)
+      shouldFocusTriggerRef.current = false;
+      const selectTrigger = dropdownRef.current?.querySelector(
+        '.contributors-select-input'
+      );
+      if (selectTrigger) selectTrigger.focus();
     }
   }, [isDropdownOpen]);
 
