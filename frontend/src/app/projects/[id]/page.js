@@ -754,6 +754,7 @@ export default function ProjectDetails({ params }) {
       <CreateTaskModal
         isOpen={isCreateTaskModalOpen}
         project={project}
+        currentUserId={currentUserId}
         onClose={() => setIsCreateTaskModalOpen(false)}
         onTaskCreated={fetchProjectDetails}
       />
@@ -762,6 +763,7 @@ export default function ProjectDetails({ params }) {
         isOpen={isEditTaskModalOpen}
         project={project}
         task={taskToEdit}
+        currentUserId={currentUserId}
         onClose={() => {
           setIsEditTaskModalOpen(false);
           setTaskToEdit(null);
@@ -772,6 +774,7 @@ export default function ProjectDetails({ params }) {
       <AiTaskGenerationModal
         isOpen={isAiModalOpen}
         project={project}
+        currentUserId={currentUserId}
         onClose={() => setIsAiModalOpen(false)}
         onTasksAdded={fetchProjectDetails}
       />

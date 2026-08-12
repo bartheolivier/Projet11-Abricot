@@ -27,6 +27,7 @@ export default function EditTaskModal({
   isOpen,
   project,
   task,
+  currentUserId,
   onClose,
   onTaskUpdated,
 }) {
@@ -41,6 +42,7 @@ export default function EditTaskModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const dropdownRef = useRef(null);
+  const isOwner = project?.ownerId === currentUserId;
 
   // Pré-remplissage des champs de la tâche sélectionnée
   useEffect(() => {
@@ -128,6 +130,7 @@ export default function EditTaskModal({
   });
 
   const handleToggleAssignee = (user) => {
+    if (!isOwner) return; // Seul le propriétaire du projet peut réattribuer des membres
     setSelectedAssignees((prev) => {
       const exists = prev.some((u) => u.id === user.id);
       if (exists) {
@@ -265,24 +268,32 @@ export default function EditTaskModal({
             />
           </div>
 
+          {/* Assignation aux membres du projet */}
           <div className="form-group" ref={dropdownRef}>
             <span className="form-label" id="edit-assignees-label">
               Assigner à
             </span>
             <div
-              className="contributors-select-input"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className={`contributors-select-input ${!isOwner ? 'disabled-input' : ''}`}
+              onClick={() => {
+                if (isOwner) setIsDropdownOpen(!isDropdownOpen);
+              }}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
+                if (isOwner && (e.key === 'Enter' || e.key === ' ')) {
                   e.preventDefault();
                   setIsDropdownOpen(!isDropdownOpen);
                 }
               }}
-              tabIndex={0}
-              role="button"
-              aria-haspopup="listbox"
-              aria-expanded={isDropdownOpen}
+              tabIndex={isOwner ? 0 : -1}
+              role={isOwner ? 'button' : 'region'}
+              aria-haspopup={isOwner ? 'listbox' : undefined}
+              aria-expanded={isOwner ? isDropdownOpen : undefined}
               aria-labelledby="edit-assignees-label"
+              style={
+                !isOwner
+                  ? { cursor: 'not-allowed', backgroundColor: '#f9fafb' }
+                  : {}
+              }
             >
               <span
                 className={
@@ -292,15 +303,29 @@ export default function EditTaskModal({
                 }
               >
                 {selectedAssignees.length === 0
-                  ? 'Choisir un ou plusieurs membres'
-                  : `${selectedAssignees.length} membre${selectedAssignees.length > 1 ? 's' : ''}`}
+                  ? 'Aucun membre attribué'
+                  : selectedAssignees.map((u) => u.name || u.email).join(', ')}
               </span>
-              {isDropdownOpen ? (
-                <ChevronUp size={16} aria-hidden="true" />
-              ) : (
-                <ChevronDown size={16} aria-hidden="true" />
-              )}
+              {isOwner &&
+                (isDropdownOpen ? (
+                  <ChevronUp size={16} aria-hidden="true" />
+                ) : (
+                  <ChevronDown size={16} aria-hidden="true" />
+                ))}
             </div>
+            {!isOwner && (
+              <small
+                style={{
+                  color: '#595959',
+                  fontSize: '0.8rem',
+                  marginTop: '0.25rem',
+                  display: 'block',
+                }}
+              >
+                Seul le propriétaire du projet peut modifier les membres
+                attribués à cette tâche.
+              </small>
+            )}
 
             {isDropdownOpen && (
               <div className="contributors-dropdown-menu" role="listbox">

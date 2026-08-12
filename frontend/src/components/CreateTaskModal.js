@@ -28,6 +28,7 @@ import { toast } from 'sonner';
 export default function CreateTaskModal({
   isOpen,
   project,
+  currentUserId,
   onClose,
   onTaskCreated,
 }) {
@@ -43,6 +44,8 @@ export default function CreateTaskModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const dropdownRef = useRef(null);
+
+  const isOwner = project?.ownerId === currentUserId;
 
   // Accessibilité WCAG 2.1 : Verrouillage du scroll arrière-plan & fermeture touche Échap
   useEffect(() => {
@@ -78,6 +81,31 @@ export default function CreateTaskModal({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Pré-sélection automatique de l'utilisateur courant s'il est contributeur (non-propriétaire)
+  useEffect(() => {
+    if (isOpen && project && currentUserId) {
+      if (!isOwner) {
+        const allMembers = [];
+        if (project.owner) allMembers.push(project.owner);
+        if (project.members) {
+          project.members.forEach((m) => {
+            const userObj = m.user || m;
+            if (userObj && !allMembers.some((e) => e.id === userObj.id)) {
+              allMembers.push(userObj);
+            }
+          });
+        }
+        const me = allMembers.find((u) => u.id === currentUserId) || {
+          id: currentUserId,
+          name: 'Vous-même',
+        };
+        setSelectedAssignees([me]);
+      } else {
+        setSelectedAssignees([]);
+      }
+    }
+  }, [isOpen, project, currentUserId, isOwner]);
+
   if (!isOpen || !project) return null;
 
   // Rassembler tous les membres du projet éligibles pour l'assignation
@@ -107,6 +135,9 @@ export default function CreateTaskModal({
   });
 
   const handleToggleAssignee = (user) => {
+    // Seul le propriétaire du projet peut modifier la liste des assignés
+    if (!isOwner) return;
+
     setSelectedAssignees((prev) => {
       const exists = prev.some((u) => u.id === user.id);
       if (exists) {
@@ -134,7 +165,11 @@ export default function CreateTaskModal({
         .find((row) => row.startsWith('token='))
         ?.split('=')[1];
 
-      const assigneeIds = selectedAssignees.map((u) => u.id);
+      // Si l'utilisateur est un contributeur, l'assignation est strictement restreinte à lui-même
+      const assigneeIds =
+        !isOwner && currentUserId
+          ? [currentUserId]
+          : selectedAssignees.map((u) => u.id);
 
       const res = await fetch(`/api/projects/${project.id}/tasks`, {
         method: 'POST',
@@ -242,19 +277,26 @@ export default function CreateTaskModal({
               Assigner à
             </span>
             <div
-              className="contributors-select-input"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className={`contributors-select-input ${!isOwner ? 'disabled-input' : ''}`}
+              onClick={() => {
+                if (isOwner) setIsDropdownOpen(!isDropdownOpen);
+              }}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
+                if (isOwner && (e.key === 'Enter' || e.key === ' ')) {
                   e.preventDefault();
                   setIsDropdownOpen(!isDropdownOpen);
                 }
               }}
-              tabIndex={0}
-              role="button"
-              aria-haspopup="listbox"
-              aria-expanded={isDropdownOpen}
+              tabIndex={isOwner ? 0 : -1}
+              role={isOwner ? 'button' : 'region'}
+              aria-haspopup={isOwner ? 'listbox' : undefined}
+              aria-expanded={isOwner ? isDropdownOpen : undefined}
               aria-labelledby="assignees-label"
+              style={
+                !isOwner
+                  ? { cursor: 'not-allowed', backgroundColor: '#f9fafb' }
+                  : {}
+              }
             >
               <span
                 className={
@@ -265,14 +307,28 @@ export default function CreateTaskModal({
               >
                 {selectedAssignees.length === 0
                   ? 'Choisir un ou plusieurs membres'
-                  : `${selectedAssignees.length} membre${selectedAssignees.length > 1 ? 's' : ''}`}
+                  : selectedAssignees.map((u) => u.name || u.email).join(', ')}
               </span>
-              {isDropdownOpen ? (
-                <ChevronUp size={16} aria-hidden="true" />
-              ) : (
-                <ChevronDown size={16} aria-hidden="true" />
-              )}
+              {isOwner &&
+                (isDropdownOpen ? (
+                  <ChevronUp size={16} aria-hidden="true" />
+                ) : (
+                  <ChevronDown size={16} aria-hidden="true" />
+                ))}
             </div>
+            {!isOwner && (
+              <small
+                style={{
+                  color: '#595959',
+                  fontSize: '0.8rem',
+                  marginTop: '0.25rem',
+                  display: 'block',
+                }}
+              >
+                En tant que contributeur, la tâche vous est automatiquement
+                attribuée. Seul le propriétaire peut modifier l'attribution.
+              </small>
+            )}
 
             {isDropdownOpen && (
               <div className="contributors-dropdown-menu" role="listbox">
