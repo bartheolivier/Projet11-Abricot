@@ -337,9 +337,28 @@ export default function EditTaskModal({
                 if (isOwner) setIsDropdownOpen(!isDropdownOpen);
               }}
               onKeyDown={(e) => {
-                if (isOwner && (e.key === 'Enter' || e.key === ' ')) {
+                if (
+                  isOwner &&
+                  (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown')
+                ) {
                   e.preventDefault();
-                  setIsDropdownOpen(!isDropdownOpen);
+                  const nextState = !isDropdownOpen;
+                  setIsDropdownOpen(nextState);
+                  if (nextState) {
+                    setTimeout(() => {
+                      const firstOpt = dropdownRef.current?.querySelector(
+                        '.contributor-option-item'
+                      );
+                      if (firstOpt) {
+                        firstOpt.focus();
+                      } else {
+                        const searchInput = dropdownRef.current?.querySelector(
+                          '.dropdown-search-input'
+                        );
+                        if (searchInput) searchInput.focus();
+                      }
+                    }, 50);
+                  }
                 }
               }}
               tabIndex={isOwner ? 0 : -1}

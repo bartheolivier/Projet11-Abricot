@@ -304,9 +304,29 @@ export default function CreateProjectModal({
               className="contributors-select-input"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
+                if (
+                  e.key === 'Enter' ||
+                  e.key === ' ' ||
+                  e.key === 'ArrowDown'
+                ) {
                   e.preventDefault();
-                  setIsDropdownOpen(!isDropdownOpen);
+                  const nextState = !isDropdownOpen;
+                  setIsDropdownOpen(nextState);
+                  if (nextState) {
+                    setTimeout(() => {
+                      const firstOpt = dropdownRef.current?.querySelector(
+                        '.contributor-option-item'
+                      );
+                      if (firstOpt) {
+                        firstOpt.focus();
+                      } else {
+                        const searchInput = dropdownRef.current?.querySelector(
+                          '.dropdown-search-input'
+                        );
+                        if (searchInput) searchInput.focus();
+                      }
+                    }, 50);
+                  }
                 }
               }}
               tabIndex={0}
